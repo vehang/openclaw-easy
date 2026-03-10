@@ -316,11 +316,30 @@
                             <form id="aiConfigForm">
                                 <div class="form-group">
                                     <label class="form-label">
+                                        预设提供商
+                                    </label>
+                                    <select class="form-control" id="aiProvider" onchange="selectProvider()">
+                                        <option value="">自定义</option>
+                                        <option value="openai">OpenAI</option>
+                                        <option value="azure">Azure OpenAI</option>
+                                        <option value="anthropic">Anthropic (Claude)</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                        <option value="zhipu">智谱 AI (GLM)</option>
+                                        <option value="aliyun">阿里云 (通义千问)</option>
+                                        <option value="tencent">腾讯云 (混元)</option>
+                                        <option value="moonshot">Moonshot (Kimi)</option>
+                                        <option value="baidu">百度 (文心一言)</option>
+                                    </select>
+                                    <p class="form-hint">选择预设提供商会自动填充 Base URL</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
                                         Base URL <span class="required-mark">*</span>
                                     </label>
                                     <input type="text" class="form-control" id="aiBaseUrl"
                                            placeholder="https://api.openai.com/v1" required>
-                                    <p class="form-hint">API 端点地址</p>
+                                    <p class="form-hint">API 端点地址，可手动修改</p>
                                     <div class="field-error" id="aiBaseUrlError">Base URL 不能为空</div>
                                 </div>
 
@@ -658,6 +677,75 @@
         // 当前步骤
         let currentStep = 1;
         const totalSteps = 3;
+
+        // 渠道必填字段定义
+        // 预设提供商配置
+        const PROVIDER_PRESETS = {
+            openai: {
+                name: 'OpenAI',
+                baseUrl: 'https://api.openai.com/v1',
+                models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo']
+            },
+            azure: {
+                name: 'Azure OpenAI',
+                baseUrl: 'https://YOUR_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT',
+                models: ['gpt-4', 'gpt-35-turbo']
+            },
+            anthropic: {
+                name: 'Anthropic (Claude)',
+                baseUrl: 'https://api.anthropic.com/v1',
+                models: ['claude-sonnet-4-6-20250514', 'claude-opus-4-6-20250514', 'claude-3-5-sonnet-20241022']
+            },
+            deepseek: {
+                name: 'DeepSeek',
+                baseUrl: 'https://api.deepseek.com/v1',
+                models: ['deepseek-chat', 'deepseek-reasoner']
+            },
+            zhipu: {
+                name: '智谱 AI',
+                baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+                models: ['glm-4-plus', 'glm-4-air', 'glm-4-flash']
+            },
+            aliyun: {
+                name: '阿里云 (通义千问)',
+                baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+                models: ['qwen-turbo', 'qwen-plus', 'qwen-max']
+            },
+            tencent: {
+                name: '腾讯云 (混元)',
+                baseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
+                models: ['hunyuan-lite', 'hunyuan-standard', 'hunyuan-pro']
+            },
+            moonshot: {
+                name: 'Moonshot (Kimi)',
+                baseUrl: 'https://api.moonshot.cn/v1',
+                models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k']
+            },
+            baidu: {
+                name: '百度 (文心一言)',
+                baseUrl: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat',
+                models: ['ernie-4.0-8k', 'ernie-3.5-8k']
+            }
+        };
+
+        /**
+         * 选择预设提供商
+         */
+        function selectProvider() {
+            const providerId = document.getElementById('aiProvider').value;
+            const baseUrlInput = document.getElementById('aiBaseUrl');
+            const modelIdInput = document.getElementById('aiModelId');
+
+            if (providerId && PROVIDER_PRESETS[providerId]) {
+                const preset = PROVIDER_PRESETS[providerId];
+                baseUrlInput.value = preset.baseUrl;
+                // 设置模型提示
+                modelIdInput.placeholder = `例如: ${preset.models.join(', ')}`;
+            } else {
+                baseUrlInput.value = '';
+                modelIdInput.placeholder = '例如: gpt-4o, claude-3-opus';
+            }
+        }
 
         // 渠道必填字段定义
         const CHANNEL_REQUIRED_FIELDS = {
