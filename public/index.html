@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw Easy - 配置管理</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <!-- 头部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">OC</div>
+                    <span class="logo-text">OpenClaw Easy</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline btn-sm" id="changePasswordBtn">
+                        <span>修改密码</span>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="logoutBtn">
+                        <span>退出</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <div class="container">
+                <!-- AI 模型配置 -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <span>🤖</span> AI 模型配置
+                        </h2>
+                        <div class="status-indicator success" id="aiStatus">
+                            <span class="status-dot"></span>
+                            <span>已配置</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <form id="aiConfigForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Provider <span class="required">*</span>
+                                    </label>
+                                    <select class="form-control" id="aiProvider" required>
+                                        <option value="openai">OpenAI</option>
+                                        <option value="anthropic">Anthropic (Claude)</option>
+                                        <option value="azure">Azure OpenAI</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                        <option value="moonshot">Moonshot (Kimi)</option>
+                                        <option value="zhipu">智谱 AI</option>
+                                        <option value="baidu">百度文心</option>
+                                        <option value="alibaba">阿里通义</option>
+                                        <option value="custom">自定义</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        模型 ID <span class="required">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="aiModelId"
+                                           placeholder="例如: gpt-4o, claude-3-opus" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    API Key <span class="required">*</span>
+                                </label>
+                                <input type="password" class="form-control" id="aiApiKey"
+                                       placeholder="请输入 API Key" required>
+                                <p class="form-hint">API Key 将安全存储在本地配置文件中</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Base URL</label>
+                                <input type="text" class="form-control" id="aiBaseUrl"
+                                       placeholder="可选，用于自定义 API 端点">
+                                <p class="form-hint">如使用代理或私有部署，请填写完整地址</p>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-secondary" id="testAiBtn">
+                                    测试连接
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    保存配置
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- IM 渠道配置 -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <span>💬</span> IM 渠道配置
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- 飞书 -->
+                        <div class="switch-wrapper">
+                            <div class="switch-label">
+                                <div class="switch-icon">📘</div>
+                                <div class="switch-text">
+                                    <h4>飞书</h4>
+                                    <p>接入飞书机器人，支持私聊和群聊</p>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="feishuEnabled" onchange="toggleImConfig('feishu')">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="im-config-panel" id="feishuConfig">
+                            <div class="form-group">
+                                <label class="form-label">App ID</label>
+                                <input type="text" class="form-control" id="feishuAppId"
+                                       placeholder="请输入飞书应用 App ID">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">App Secret</label>
+                                <input type="password" class="form-control" id="feishuAppSecret"
+                                       placeholder="请输入飞书应用 App Secret">
+                            </div>
+                        </div>
+
+                        <!-- 钉钉 -->
+                        <div class="switch-wrapper">
+                            <div class="switch-label">
+                                <div class="switch-icon">📙</div>
+                                <div class="switch-text">
+                                    <h4>钉钉</h4>
+                                    <p>接入钉钉机器人，支持私聊和群聊</p>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="dingtalkEnabled" onchange="toggleImConfig('dingtalk')">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="im-config-panel" id="dingtalkConfig">
+                            <div class="form-group">
+                                <label class="form-label">Client ID</label>
+                                <input type="text" class="form-control" id="dingtalkClientId"
+                                       placeholder="请输入钉钉应用 Client ID">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Client Secret</label>
+                                <input type="password" class="form-control" id="dingtalkClientSecret"
+                                       placeholder="请输入钉钉应用 Client Secret">
+                            </div>
+                        </div>
+
+                        <!-- QQ机器人 -->
+                        <div class="switch-wrapper">
+                            <div class="switch-label">
+                                <div class="switch-icon">🐧</div>
+                                <div class="switch-text">
+                                    <h4>QQ 机器人</h4>
+                                    <p>接入 QQ 机器人，支持私聊和群聊</p>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="qqbotEnabled" onchange="toggleImConfig('qqbot')">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="im-config-panel" id="qqbotConfig">
+                            <div class="form-group">
+                                <label class="form-label">App ID</label>
+                                <input type="text" class="form-control" id="qqbotAppId"
+                                       placeholder="请输入 QQ 机器人 App ID">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">App Secret</label>
+                                <input type="password" class="form-control" id="qqbotAppSecret"
+                                       placeholder="请输入 QQ 机器人 App Secret">
+                            </div>
+                        </div>
+
+                        <!-- 企业微信 -->
+                        <div class="switch-wrapper">
+                            <div class="switch-label">
+                                <div class="switch-icon">💬</div>
+                                <div class="switch-text">
+                                    <h4>企业微信</h4>
+                                    <p>接入企业微信应用机器人</p>
+                                </div>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="wecomEnabled" onchange="toggleImConfig('wecom')">
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="im-config-panel" id="wecomConfig">
+                            <div class="form-group">
+                                <label class="form-label">企业 ID (Corp ID)</label>
+                                <input type="text" class="form-control" id="wecomCorpId"
+                                       placeholder="请输入企业 ID">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Agent ID</label>
+                                <input type="text" class="form-control" id="wecomAgentId"
+                                       placeholder="请输入应用 Agent ID">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Secret</label>
+                                <input type="password" class="form-control" id="wecomSecret"
+                                       placeholder="请输入应用 Secret">
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary" id="saveImBtn">
+                                保存 IM 配置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统操作 -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <span>⚙️</span> 系统操作
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                            重启 OpenClaw Gateway 服务将使配置生效。重启期间服务将短暂不可用。
+                        </p>
+                        <button class="btn btn-warning" id="restartBtn">
+                            🔄 重启 Gateway 服务
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 修改密码模态框 -->
+    <div id="passwordModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="card" style="width: 100%; max-width: 400px; margin: 20px;">
+            <div class="card-header">
+                <h3 class="card-title">修改密码</h3>
+            </div>
+            <div class="card-body">
+                <form id="changePasswordForm">
+                    <div class="form-group">
+                        <label class="form-label">原密码</label>
+                        <input type="password" class="form-control" id="oldPassword"
+                               placeholder="请输入原密码" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword"
+                               placeholder="请输入新密码（至少6位）" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">确认新密码</label>
+                        <input type="password" class="form-control" id="confirmNewPassword"
+                               placeholder="请再次输入新密码" required>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" id="cancelPasswordBtn">取消</button>
+                        <button type="submit" class="btn btn-primary">确认修改</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        /**
+         * 主页面逻辑
+         */
+
+        // ==================== 初始化 ====================
+
+        // 页面加载时获取配置
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfig();
+        });
+
+        /**
+         * 加载配置数据
+         */
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // 未授权，检查状态
+                        const statusRes = await fetch('/api/status');
+                        const status = await statusRes.json();
+
+                        if (!status.passwordSet) {
+                            window.location.href = '/setup.html';
+                        } else {
+                            window.location.href = '/login.html';
+                        }
+                        return;
+                    }
+                    throw new Error('获取配置失败');
+                }
+
+                const config = await response.json();
+                populateConfig(config);
+                updateAiStatus(config);
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                showToast('加载配置失败', 'error');
+            }
+        }
+
+        /**
+         * 填充配置表单
+         */
+        function populateConfig(config) {
+            // AI 配置
+            if (config.ai) {
+                document.getElementById('aiProvider').value = config.ai.provider || 'openai';
+                document.getElementById('aiApiKey').value = config.ai.apiKey || '';
+                document.getElementById('aiBaseUrl').value = config.ai.baseUrl || '';
+                document.getElementById('aiModelId').value = config.ai.modelId || '';
+            }
+
+            // IM 配置
+            if (config.im) {
+                // 飞书
+                if (config.im.feishu) {
+                    document.getElementById('feishuEnabled').checked = config.im.feishu.enabled;
+                    document.getElementById('feishuAppId').value = config.im.feishu.appId || '';
+                    document.getElementById('feishuAppSecret').value = config.im.feishu.appSecret || '';
+                    if (config.im.feishu.enabled) {
+                        document.getElementById('feishuConfig').classList.add('active');
+                    }
+                }
+
+                // 钉钉
+                if (config.im.dingtalk) {
+                    document.getElementById('dingtalkEnabled').checked = config.im.dingtalk.enabled;
+                    document.getElementById('dingtalkClientId').value = config.im.dingtalk.clientId || '';
+                    document.getElementById('dingtalkClientSecret').value = config.im.dingtalk.clientSecret || '';
+                    if (config.im.dingtalk.enabled) {
+                        document.getElementById('dingtalkConfig').classList.add('active');
+                    }
+                }
+
+                // QQ机器人
+                if (config.im.qqbot) {
+                    document.getElementById('qqbotEnabled').checked = config.im.qqbot.enabled;
+                    document.getElementById('qqbotAppId').value = config.im.qqbot.appId || '';
+                    document.getElementById('qqbotAppSecret').value = config.im.qqbot.appSecret || '';
+                    if (config.im.qqbot.enabled) {
+                        document.getElementById('qqbotConfig').classList.add('active');
+                    }
+                }
+
+                // 企业微信
+                if (config.im.wecom) {
+                    document.getElementById('wecomEnabled').checked = config.im.wecom.enabled;
+                    document.getElementById('wecomCorpId').value = config.im.wecom.corpId || '';
+                    document.getElementById('wecomAgentId').value = config.im.wecom.agentId || '';
+                    document.getElementById('wecomSecret').value = config.im.wecom.secret || '';
+                    if (config.im.wecom.enabled) {
+                        document.getElementById('wecomConfig').classList.add('active');
+                    }
+                }
+            }
+        }
+
+        /**
+         * 更新 AI 状态指示器
+         */
+        function updateAiStatus(config) {
+            const statusEl = document.getElementById('aiStatus');
+            if (config.ai && config.ai.apiKey && config.ai.modelId) {
+                statusEl.className = 'status-indicator success';
+                statusEl.innerHTML = '<span class="status-dot"></span><span>已配置</span>';
+            } else {
+                statusEl.className = 'status-indicator warning';
+                statusEl.innerHTML = '<span class="status-dot"></span><span>未配置</span>';
+            }
+        }
+
+        // ==================== IM 配置切换 ====================
+
+        /**
+         * 切换 IM 配置面板显示
+         */
+        function toggleImConfig(platform) {
+            const enabled = document.getElementById(`${platform}Enabled`).checked;
+            const configPanel = document.getElementById(`${platform}Config`);
+
+            if (enabled) {
+                configPanel.classList.add('active');
+            } else {
+                configPanel.classList.remove('active');
+            }
+        }
+
+        // ==================== 表单提交 ====================
+
+        /**
+         * AI 配置表单提交
+         */
+        document.getElementById('aiConfigForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveAllConfig();
+        });
+
+        /**
+         * IM 配置保存
+         */
+        document.getElementById('saveImBtn').addEventListener('click', async () => {
+            await saveAllConfig();
+        });
+
+        /**
+         * 保存所有配置
+         */
+        async function saveAllConfig() {
+            const config = {
+                ai: {
+                    provider: document.getElementById('aiProvider').value,
+                    apiKey: document.getElementById('aiApiKey').value,
+                    baseUrl: document.getElementById('aiBaseUrl').value,
+                    modelId: document.getElementById('aiModelId').value
+                },
+                im: {
+                    feishu: {
+                        enabled: document.getElementById('feishuEnabled').checked,
+                        appId: document.getElementById('feishuAppId').value,
+                        appSecret: document.getElementById('feishuAppSecret').value
+                    },
+                    dingtalk: {
+                        enabled: document.getElementById('dingtalkEnabled').checked,
+                        clientId: document.getElementById('dingtalkClientId').value,
+                        clientSecret: document.getElementById('dingtalkClientSecret').value
+                    },
+                    qqbot: {
+                        enabled: document.getElementById('qqbotEnabled').checked,
+                        appId: document.getElementById('qqbotAppId').value,
+                        appSecret: document.getElementById('qqbotAppSecret').value
+                    },
+                    wecom: {
+                        enabled: document.getElementById('wecomEnabled').checked,
+                        corpId: document.getElementById('wecomCorpId').value,
+                        agentId: document.getElementById('wecomAgentId').value,
+                        secret: document.getElementById('wecomSecret').value
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('配置保存成功', 'success');
+                    updateAiStatus(config);
+                } else {
+                    showToast(data.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存配置失败:', error);
+                showToast('保存配置失败', 'error');
+            }
+        }
+
+        /**
+         * 测试 AI 连接
+         */
+        document.getElementById('testAiBtn').addEventListener('click', async () => {
+            const provider = document.getElementById('aiProvider').value;
+            const apiKey = document.getElementById('aiApiKey').value;
+            const baseUrl = document.getElementById('aiBaseUrl').value;
+            const modelId = document.getElementById('aiModelId').value;
+
+            if (!apiKey || !modelId) {
+                showToast('请先填写 API Key 和模型 ID', 'warning');
+                return;
+            }
+
+            const testBtn = document.getElementById('testAiBtn');
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<span class="loading"></span> 测试中...';
+
+            try {
+                const response = await fetch('/api/test/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider, apiKey, baseUrl, modelId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.message || '连接测试成功', 'success');
+                } else {
+                    showToast(data.error || '连接测试失败', 'error');
+                }
+            } catch (error) {
+                console.error('测试连接失败:', error);
+                showToast('测试连接失败', 'error');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '测试连接';
+            }
+        });
+
+        // ==================== 重启服务 ====================
+
+        document.getElementById('restartBtn').addEventListener('click', async () => {
+            if (!confirm('确定要重启 OpenClaw Gateway 服务吗？重启期间服务将短暂不可用。')) {
+                return;
+            }
+
+            const restartBtn = document.getElementById('restartBtn');
+            restartBtn.disabled = true;
+            restartBtn.innerHTML = '<span class="loading"></span> 重启中...';
+
+            try {
+                const response = await fetch('/api/gateway/restart', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.message || '重启命令已执行', 'success');
+                } else {
+                    showToast(data.error || '重启失败', 'error');
+                }
+            } catch (error) {
+                console.error('重启服务失败:', error);
+                showToast('重启服务失败', 'error');
+            } finally {
+                restartBtn.disabled = false;
+                restartBtn.textContent = '🔄 重启 Gateway 服务';
+            }
+        });
+
+        // ==================== 修改密码 ====================
+
+        const passwordModal = document.getElementById('passwordModal');
+
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            passwordModal.style.display = 'flex';
+        });
+
+        document.getElementById('cancelPasswordBtn').addEventListener('click', () => {
+            passwordModal.style.display = 'none';
+            document.getElementById('changePasswordForm').reset();
+        });
+
+        passwordModal.addEventListener('click', (e) => {
+            if (e.target === passwordModal) {
+                passwordModal.style.display = 'none';
+                document.getElementById('changePasswordForm').reset();
+            }
+        });
+
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+            if (!oldPassword || !newPassword || !confirmNewPassword) {
+                showToast('请填写所有字段', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showToast('新密码长度至少6位', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmNewPassword) {
+                showToast('两次输入的新密码不一致', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/password/change', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ oldPassword, newPassword, confirmPassword: confirmNewPassword })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('密码修改成功', 'success');
+                    passwordModal.style.display = 'none';
+                    document.getElementById('changePasswordForm').reset();
+                } else {
+                    showToast(data.error || '修改失败', 'error');
+                }
+            } catch (error) {
+                console.error('修改密码失败:', error);
+                showToast('修改密码失败', 'error');
+            }
+        });
+
+        // ==================== 退出登录 ====================
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (!confirm('确定要退出登录吗？')) {
+                return;
+            }
+
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                showToast('已退出登录', 'success');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 500);
+            } catch (error) {
+                console.error('退出登录失败:', error);
+                window.location.href = '/login.html';
+            }
+        });
+    </script>
+</body>
+</html>
