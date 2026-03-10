@@ -20,8 +20,9 @@ services:
     image: openclaw-easy:latest
     container_name: openclaw-easy
     ports:
-      - "18780:18780"
+      - "28780:18780"   # 宿主机:28780 -> 容器:18780
     volumes:
+      - ./data:/app/data
       - openclaw-config:/root/.openclaw
     environment:
       - TZ=Asia/Shanghai
@@ -40,10 +41,11 @@ services:
     image: openclaw-easy-integrated:latest
     container_name: openclaw-easy-integrated
     ports:
-      - "18780:18780"   # 配置管理界面
-      - "18789:18789"   # Gateway 端口
-      - "18790:18790"   # Gateway 端口（备用）
+      - "28780:18780"   # 配置管理界面 - 宿主机:28780 -> 容器:18780
+      - "28789:18789"   # Gateway 端口 - 宿主机:28789 -> 容器:18789
+      - "28790:18790"   # Gateway 端口 - 宿主机:28790 -> 容器:18790
     volumes:
+      - ./data:/app/data
       - openclaw-config:/home/node/.openclaw
       - openclaw-workspace:/home/node/.openclaw/workspace
     environment:
