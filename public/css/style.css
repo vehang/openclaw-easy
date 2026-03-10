@@ -1,33 +1,68 @@
 /**
  * OpenClaw Easy - 样式文件
  *
- * 采用简洁现代的设计风格
- * 支持响应式布局
+ * 采用简洁现代的设计风格，遵循 design-system.md 规范
+ * OpenClaw 品牌色 - 红橙色调
  */
 
 /* ==================== CSS 变量 ==================== */
-/* OpenClaw 品牌色 - 龙虾风格 */
 :root {
+    /* 品牌色 - 红橙渐变 */
     --primary-color: #ef4444;
     --primary-hover: #dc2626;
     --primary-light: #fef2f2;
     --accent-color: #f97316;
+    --accent-dark: #ea580c;
+
+    /* 功能色 */
     --success-color: #10b981;
+    --success-dark: #059669;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
+    --danger-dark: #dc2626;
+
+    /* 文字色 */
     --text-primary: #1f2937;
     --text-secondary: #6b7280;
     --text-light: #9ca3af;
+    --text-muted: #d1d5db;
+
+    /* 背景色 */
     --bg-primary: #ffffff;
     --bg-secondary: #fafafa;
     --bg-tertiary: #f5f5f5;
+
+    /* 边框色 */
     --border-color: #e5e5e5;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    --radius-sm: 4px;
+    --border-light: #f3f4f6;
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-primary: 0 2px 4px rgba(239, 68, 68, 0.25), 0 4px 12px rgba(239, 68, 68, 0.15);
+    --shadow-primary-lg: 0 4px 8px rgba(239, 68, 68, 0.3), 0 8px 24px rgba(239, 68, 68, 0.2);
+
+    /* 圆角 */
+    --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* 间距 */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    /* 动画 */
+    --transition-fast: 0.15s;
+    --transition-normal: 0.2s;
+    --transition-slow: 0.3s;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 /* ==================== 基础样式 ==================== */
@@ -42,7 +77,8 @@ html, body {
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
     font-size: 14px;
     line-height: 1.6;
     color: var(--text-primary);
@@ -95,14 +131,15 @@ a:hover {
 }
 
 .logo-icon {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .logo-text {
@@ -130,6 +167,11 @@ a:hover {
     box-shadow: var(--shadow-md);
     margin-bottom: 20px;
     overflow: hidden;
+    transition: box-shadow var(--transition-normal) var(--ease-out);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
 }
 
 .card-header {
@@ -188,7 +230,11 @@ a:hover {
     border-radius: var(--radius-md);
     background: var(--bg-primary);
     color: var(--text-primary);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.form-control:hover {
+    border-color: #d1d5db;
 }
 
 .form-control:focus {
@@ -208,6 +254,11 @@ a:hover {
 
 select.form-control {
     cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    appearance: none;
 }
 
 /* 行内表单组 */
@@ -248,7 +299,7 @@ select.form-control {
     width: 40px;
     height: 40px;
     border-radius: var(--radius-md);
-    background: var(--bg-tertiary);
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--border-light) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -287,7 +338,7 @@ select.form-control {
     right: 0;
     bottom: 0;
     background-color: var(--border-color);
-    transition: 0.3s;
+    transition: var(--transition-slow);
     border-radius: 24px;
 }
 
@@ -299,12 +350,13 @@ select.form-control {
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: 0.3s;
+    transition: var(--transition-slow);
     border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .switch input:checked + .switch-slider {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
 }
 
 .switch input:checked + .switch-slider:before {
@@ -318,10 +370,22 @@ select.form-control {
     background: var(--bg-secondary);
     border-radius: var(--radius-md);
     display: none;
+    animation: slideDown var(--transition-normal) var(--ease-out);
 }
 
 .im-config-panel.active {
     display: block;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ==================== 按钮样式 ==================== */
@@ -336,50 +400,73 @@ select.form-control {
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none !important;
 }
 
+/* 主按钮 - 渐变效果 */
 .btn-primary {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
     color: white;
+    box-shadow: var(--shadow-primary);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary-lg);
 }
 
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.2), 0 2px 8px rgba(239, 68, 68, 0.1);
+}
+
+/* 次要按钮 */
 .btn-secondary {
-    background: var(--bg-tertiary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: var(--border-color);
+    background: var(--bg-tertiary);
+    border-color: #d1d5db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
+/* 成功按钮 - 渐变效果 */
 .btn-success {
-    background: var(--success-color);
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
     color: white;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25), 0 4px 12px rgba(16, 185, 129, 0.15);
 }
 
 .btn-success:hover:not(:disabled) {
-    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3), 0 8px 24px rgba(16, 185, 129, 0.2);
 }
 
+/* 危险按钮 - 渐变效果 */
 .btn-danger {
-    background: var(--danger-color);
+    background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-dark) 100%);
     color: white;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.25), 0 4px 12px rgba(239, 68, 68, 0.15);
 }
 
 .btn-danger:hover:not(:disabled) {
-    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3), 0 8px 24px rgba(239, 68, 68, 0.2);
 }
 
+/* 轮廓按钮 */
 .btn-outline {
     background: transparent;
     border: 1px solid var(--border-color);
@@ -388,16 +475,21 @@ select.form-control {
 
 .btn-outline:hover:not(:disabled) {
     background: var(--bg-tertiary);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
+/* 按钮尺寸 */
 .btn-sm {
     padding: 6px 12px;
     font-size: 13px;
+    border-radius: var(--radius-sm);
 }
 
 .btn-lg {
     padding: 14px 28px;
     font-size: 16px;
+    border-radius: var(--radius-md);
 }
 
 .btn-block {
@@ -414,24 +506,25 @@ select.form-control {
 /* ==================== 消息提示 ==================== */
 .toast-container {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    top: 24px;
+    right: 24px;
     z-index: 1000;
 }
 
 .toast {
-    padding: 14px 20px;
+    padding: 12px 20px;
     border-radius: var(--radius-md);
     margin-bottom: 10px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
     gap: 10px;
-    animation: slideIn 0.3s ease;
+    animation: toastSlideIn 0.3s var(--ease-out);
     max-width: 360px;
+    font-size: 14px;
 }
 
-@keyframes slideIn {
+@keyframes toastSlideIn {
     from {
         transform: translateX(100%);
         opacity: 0;
@@ -443,27 +536,23 @@ select.form-control {
 }
 
 .toast-success {
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    color: #065f46;
+    background: var(--success-color);
+    color: white;
 }
 
 .toast-error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
+    background: var(--danger-color);
+    color: white;
 }
 
 .toast-warning {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
-    color: #92400e;
+    background: var(--warning-color);
+    color: white;
 }
 
 .toast-info {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1e40af;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: white;
 }
 
 /* ==================== 加载状态 ==================== */
@@ -471,9 +560,9 @@ select.form-control {
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid var(--border-color);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
-    border-top-color: var(--primary-color);
+    border-top-color: white;
     animation: spin 0.8s linear infinite;
 }
 
@@ -490,6 +579,7 @@ select.form-control {
     align-items: center;
     justify-content: center;
     padding: 20px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
 }
 
 .login-card {
@@ -503,16 +593,18 @@ select.form-control {
 }
 
 .login-header .logo-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 32px;
-    margin: 0 auto 16px;
+    width: 64px;
+    height: 64px;
+    font-size: 36px;
+    margin: 0 auto 20px;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
 }
 
 .login-header h1 {
     font-size: 24px;
     font-weight: 600;
     margin-bottom: 8px;
+    color: var(--text-primary);
 }
 
 .login-header p {
@@ -551,16 +643,19 @@ select.form-control {
     justify-content: center;
     font-size: 12px;
     font-weight: 600;
+    transition: all var(--transition-normal);
 }
 
 .step.active .step-number {
-    background: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .step.completed .step-number {
-    background: var(--success-color);
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
     color: white;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .step-line {
@@ -581,17 +676,17 @@ select.form-control {
 }
 
 .status-indicator.success {
-    background: #ecfdf5;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
     color: #065f46;
 }
 
 .status-indicator.warning {
-    background: #fffbeb;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
     color: #92400e;
 }
 
 .status-indicator.error {
-    background: #fef2f2;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
     color: #991b1b;
 }
 
@@ -599,6 +694,12 @@ select.form-control {
     width: 8px;
     height: 8px;
     border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 .status-indicator.success .status-dot {
@@ -625,13 +726,28 @@ select.form-control {
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--border-color);
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
 }
 
 .divider-text {
     padding: 0 16px;
     color: var(--text-light);
     font-size: 13px;
+}
+
+/* ==================== 进度条 ==================== */
+.progress-bar {
+    height: 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    border-radius: 4px;
+    transition: width var(--transition-slow) var(--ease-out);
 }
 
 /* ==================== 响应式设计 ==================== */
@@ -664,11 +780,15 @@ select.form-control {
     .header-actions .btn span {
         display: none;
     }
+
+    .logo-text {
+        font-size: 16px;
+    }
 }
 
 /* ==================== 动画效果 ==================== */
 .fade-in {
-    animation: fadeIn 0.3s ease;
+    animation: fadeIn var(--transition-slow) var(--ease-out);
 }
 
 @keyframes fadeIn {
@@ -681,3 +801,63 @@ select.form-control {
         transform: translateY(0);
     }
 }
+
+/* ==================== 密码强度指示器 ==================== */
+.password-requirements {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.password-requirements li {
+    margin: 4px 0;
+    padding-left: 20px;
+    position: relative;
+    list-style: none;
+}
+
+.password-requirements li::before {
+    content: '○';
+    position: absolute;
+    left: 0;
+    color: var(--text-muted);
+    transition: color var(--transition-fast);
+}
+
+.password-requirements li.valid {
+    color: #16a34a;
+}
+
+.password-requirements li.valid::before {
+    content: '●';
+    color: #16a34a;
+}
+
+.password-requirements li.invalid {
+    color: var(--primary-color);
+}
+
+.password-requirements li.invalid::before {
+    content: '○';
+    color: var(--primary-color);
+}
+
+.strength-bar {
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.strength-bar-fill {
+    height: 100%;
+    width: 0;
+    transition: width var(--transition-normal) var(--ease-out), background var(--transition-normal);
+    border-radius: 2px;
+}
+
+.strength-bar-fill.weak { width: 25%; background: #ef4444; }
+.strength-bar-fill.fair { width: 50%; background: #f97316; }
+.strength-bar-fill.good { width: 75%; background: #eab308; }
+.strength-bar-fill.strong { width: 100%; background: #16a34a; }
