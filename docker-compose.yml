@@ -1,0 +1,111 @@
+# OpenClaw Easy - Docker Compose 配置
+# 支持两种部署模式：standalone（独立）和 integrated（整合）
+
+# ==================== 共享配置 ====================
+x-shared-config: &shared-config
+  restart: unless-stopped
+  networks:
+    - openclaw-network
+
+# ==================== 独立部署模式 ====================
+# 仅运行配置管理服务，适用于已有 OpenClaw Gateway 的场景
+
+services:
+  # 独立模式：仅配置管理服务
+  openclaw-easy:
+    <<: *shared-config
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+    image: openclaw-easy:latest
+    container_name: openclaw-easy
+    ports:
+      - "18780:18780"
+    volumes:
+      - openclaw-config:/root/.openclaw
+    environment:
+      - TZ=Asia/Shanghai
+    profiles:
+      - standalone
+
+  # ==================== 整合部署模式 ====================
+  # 同时运行 OpenClaw Gateway 和配置管理服务
+
+  # 整合模式：Gateway + 配置管理
+  openclaw-easy-integrated:
+    <<: *shared-config
+    build:
+      context: .
+      dockerfile: Dockerfile.integrated
+    image: openclaw-easy-integrated:latest
+    container_name: openclaw-easy-integrated
+    ports:
+      - "18780:18780"   # 配置管理界面
+      - "18789:18789"   # Gateway 端口
+      - "18790:18790"   # Gateway 端口（备用）
+    volumes:
+      - openclaw-config:/home/node/.openclaw
+      - openclaw-workspace:/home/node/.openclaw/workspace
+    environment:
+      # 时区设置
+      - TZ=Asia/Shanghai
+
+      # 配置管理服务端口
+      - EASY_PORT=18780
+
+      # Gateway 配置
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-your-gateway-token}
+      - OPENCLAW_GATEWAY_PORT=18789
+      - OPENCLAW_GATEWAY_BIND=0.0.0.0
+      - OPENCLAW_GATEWAY_MODE=local
+      - OPENCLAW_GATEWAY_ALLOWED_ORIGINS=*
+      - OPENCLAW_GATEWAY_ALLOW_INSECURE_AUTH=true
+
+      # AI 模型配置
+      - API_KEY=${API_KEY:-}
+      - BASE_URL=${BASE_URL:-}
+      - API_PROTOCOL=${API_PROTOCOL:-openai-completions}
+      - MODEL_ID=${MODEL_ID:-gpt-4o}
+      - IMAGE_MODEL_ID=${IMAGE_MODEL_ID:-}
+      - CONTEXT_WINDOW=${CONTEXT_WINDOW:-200000}
+      - MAX_TOKENS=${MAX_TOKENS:-8192}
+
+      # 备用模型配置
+      - MODEL2_NAME=${MODEL2_NAME:-model2}
+      - MODEL2_API_KEY=${MODEL2_API_KEY:-}
+      - MODEL2_BASE_URL=${MODEL2_BASE_URL:-}
+      - MODEL2_MODEL_ID=${MODEL2_MODEL_ID:-}
+
+      # IM 渠道配置 - 飞书
+      - FEISHU_APP_ID=${FEISHU_APP_ID:-}
+      - FEISHU_APP_SECRET=${FEISHU_APP_SECRET:-}
+      - FEISHU_BOT_NAME=${FEISHU_BOT_NAME:-OpenClaw Bot}
+
+      # IM 渠道配置 - 钉钉
+      - DINGTALK_CLIENT_ID=${DINGTALK_CLIENT_ID:-}
+      - DINGTALK_CLIENT_SECRET=${DINGTALK_CLIENT_SECRET:-}
+
+      # IM 渠道配置 - QQ机器人
+      - QQBOT_APP_ID=${QQBOT_APP_ID:-}
+      - QQBOT_CLIENT_SECRET=${QQBOT_CLIENT_SECRET:-}
+
+      # IM 渠道配置 - 企业微信
+      - WECOM_TOKEN=${WECOM_TOKEN:-}
+      - WECOM_ENCODING_AES_KEY=${WECOM_ENCODING_AES_KEY:-}
+
+      # 插件配置
+      - OPENCLAW_PLUGINS_ENABLED=${OPENCLAW_PLUGINS_ENABLED:-true}
+    profiles:
+      - integrated
+
+# ==================== 网络配置 ====================
+networks:
+  openclaw-network:
+    driver: bridge
+
+# ==================== 卷配置 ====================
+volumes:
+  openclaw-config:
+    name: openclaw-config
+  openclaw-workspace:
+    name: openclaw-workspace

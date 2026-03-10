@@ -1,0 +1,42 @@
+# OpenClaw Easy 整合版 Dockerfile
+# 基于 openclaw-docker-cn-im 镜像，添加配置管理服务
+
+FROM justlovemaki/openclaw-docker-cn-im:latest
+
+# 切换到 root 用户进行安装
+USER root
+
+# 设置工作目录
+WORKDIR /app/easy
+
+# 复制 package.json 并安装依赖
+COPY package*.json ./
+RUN npm ci --only=production
+
+# 复制应用代码
+COPY server.js ./
+COPY public ./public
+
+# 确保配置目录存在并设置权限
+RUN mkdir -p /home/node/.openclaw && \
+    chown -R node:node /home/node/.openclaw /app/easy
+
+# 暴露配置管理服务端口（Gateway 端口 18789/18790 已在基础镜像中暴露）
+EXPOSE 18780
+
+# 切换回 node 用户
+USER node
+ENV HOME=/home/node
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:18780/api/status || exit 1
+
+# 复制整合启动脚本
+COPY start-integrated.sh /app/easy/start-integrated.sh
+USER root
+RUN chmod +x /app/easy/start-integrated.sh
+USER node
+
+# 使用整合启动脚本
+ENTRYPOINT ["/app/easy/start-integrated.sh"]
