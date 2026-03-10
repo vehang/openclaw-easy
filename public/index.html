@@ -6,78 +6,74 @@
     <title>OpenClaw Easy 🦞 - 配置管理</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* 步骤指示器 */
-        .steps-container {
+        /* 精致步骤导航 - 顶部细条 */
+        .steps-nav {
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 24px 0;
+            gap: 0;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.03) 0%, rgba(249, 115, 22, 0.03) 100%);
+            border-radius: var(--radius-lg);
+            padding: 12px 20px;
             margin-bottom: 24px;
+            border: 1px solid rgba(239, 68, 68, 0.1);
         }
         .step-item {
             display: flex;
-            flex-direction: column;
             align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
             cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
         }
-        .step-circle {
-            width: 48px;
-            height: 48px;
+        .step-item:hover {
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .step-number {
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 12px;
             font-weight: 600;
             background: var(--bg-tertiary);
             color: var(--text-light);
-            border: 2px solid var(--border-color);
             transition: all var(--transition-normal);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
         }
-        .step-item.active .step-circle {
+        .step-item.active .step-number {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
             color: white;
-            border-color: transparent;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
-        .step-item.completed .step-circle {
-            background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+        .step-item.completed .step-number {
+            background: var(--success-color);
             color: white;
-            border-color: transparent;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
-        .step-label {
-            margin-top: 8px;
+        .step-text {
             font-size: 13px;
             font-weight: 500;
-            color: var(--text-light);
+            color: var(--text-secondary);
             transition: color var(--transition-normal);
         }
-        .step-item.active .step-label {
+        .step-item.active .step-text {
             color: var(--primary-color);
         }
-        .step-item.completed .step-label {
+        .step-item.completed .step-text {
             color: var(--success-color);
         }
-        .step-connector {
-            width: 80px;
-            height: 3px;
-            background: var(--border-color);
-            margin: 0 16px;
-            margin-bottom: 28px;
-            border-radius: 2px;
-            transition: background var(--transition-normal);
-        }
-        .step-connector.completed {
-            background: linear-gradient(90deg, var(--success-color), var(--success-color));
+        .step-arrow {
+            color: var(--border-color);
+            font-size: 12px;
+            margin: 0 4px;
         }
 
         /* 步骤内容 */
         .step-content {
             display: none;
-            animation: fadeInStep var(--transition-slow) var(--ease-out);
+            animation: fadeInStep 0.3s ease-out;
         }
         .step-content.active {
             display: block;
@@ -85,66 +81,72 @@
         @keyframes fadeInStep {
             from {
                 opacity: 0;
-                transform: translateX(20px);
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateY(0);
             }
         }
 
-        /* 配置状态进度条 */
-        .progress-bar {
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            height: 8px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-            border-radius: 8px;
-            transition: width 0.3s ease;
-        }
-        .config-summary {
+        /* 配置状态概览 - 紧凑版 */
+        .status-overview {
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 16px;
-            background: var(--bg-secondary);
-            border-radius: var(--radius-md);
-            margin-top: 12px;
+            gap: 24px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
         }
-        .config-summary-item {
+        .status-progress {
+            flex: 1;
+        }
+        .status-progress-bar {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .status-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        .status-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .status-label span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .status-label strong {
+            font-size: 14px;
+            color: var(--primary-color);
+        }
+        .status-items {
+            display: flex;
+            gap: 16px;
+        }
+        .status-item {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 13px;
+            font-size: 12px;
+            color: var(--text-secondary);
         }
-        .config-summary-item .dot {
-            width: 8px;
-            height: 8px;
+        .status-item .dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
         }
-        .config-summary-item .dot.success { background: var(--success-color); }
-        .config-summary-item .dot.warning { background: var(--warning-color); }
-        .config-summary-item .dot.error { background: var(--danger-color); }
-
-        /* 渠道状态指示 */
-        .channel-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: auto;
-            font-size: 12px;
-        }
-        .channel-status.complete {
-            color: var(--success-color);
-        }
-        .channel-status.incomplete {
-            color: var(--warning-color);
-        }
+        .status-item .dot.success { background: var(--success-color); }
+        .status-item .dot.warning { background: var(--warning-color); }
 
         /* 必填标记 */
         .required-mark {
@@ -170,8 +172,9 @@
         .step-navigation {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-top: 24px;
-            padding-top: 24px;
+            padding-top: 20px;
             border-top: 1px solid var(--border-color);
         }
         .step-navigation-left {
@@ -183,20 +186,20 @@
             gap: 12px;
         }
 
-        /* IM 渠道标签页 */
+        /* IM 渠道标签页 - 精致版 */
         .im-tabs {
             display: flex;
-            gap: 4px;
+            gap: 2px;
             margin-bottom: 20px;
             background: var(--bg-secondary);
             padding: 4px;
-            border-radius: var(--radius-md);
+            border-radius: var(--radius-lg);
         }
         .im-tab {
             flex: 1;
-            padding: 10px 16px;
+            padding: 10px 12px;
             text-align: center;
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius-md);
             cursor: pointer;
             font-size: 13px;
             font-weight: 500;
@@ -204,29 +207,51 @@
             transition: all var(--transition-normal);
             border: none;
             background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
         .im-tab:hover {
             color: var(--text-primary);
-            background: var(--bg-tertiary);
+            background: rgba(239, 68, 68, 0.05);
         }
         .im-tab.active {
-            background: var(--bg-primary);
-            color: var(--primary-color);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
         }
-        .im-tab.completed {
+        .im-tab.completed:not(.active) {
             color: var(--success-color);
         }
         .im-tab-icon {
-            font-size: 16px;
-            margin-right: 4px;
+            font-size: 14px;
         }
         .im-tab-content {
             display: none;
         }
         .im-tab-content.active {
             display: block;
-            animation: fadeIn var(--transition-normal);
+            animation: fadeIn 0.2s ease;
+        }
+
+        /* 渠道状态指示 */
+        .channel-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: auto;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+        }
+        .channel-status.complete {
+            color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        .channel-status.incomplete {
+            color: var(--text-light);
+            background: var(--bg-tertiary);
         }
     </style>
 </head>
@@ -253,49 +278,43 @@
         <!-- 主内容区 -->
         <main class="main-content">
             <div class="container">
-                <!-- 步骤指示器 -->
-                <div class="card fade-in" style="margin-bottom: 24px;">
-                    <div class="card-body" style="padding: 16px;">
-                        <div class="steps-container">
-                            <div class="step-item active" data-step="1" onclick="goToStep(1)">
-                                <div class="step-circle">1</div>
-                                <span class="step-label">AI 模型</span>
-                            </div>
-                            <div class="step-connector" id="connector1"></div>
-                            <div class="step-item" data-step="2" onclick="goToStep(2)">
-                                <div class="step-circle">2</div>
-                                <span class="step-label">IM 渠道</span>
-                            </div>
-                            <div class="step-connector" id="connector2"></div>
-                            <div class="step-item" data-step="3" onclick="goToStep(3)">
-                                <div class="step-circle">3</div>
-                                <span class="step-label">Gateway</span>
-                            </div>
-                        </div>
+                <!-- 精致步骤导航 -->
+                <div class="steps-nav fade-in">
+                    <div class="step-item active" data-step="1" onclick="goToStep(1)">
+                        <div class="step-number">1</div>
+                        <span class="step-text">AI 模型</span>
+                    </div>
+                    <span class="step-arrow">→</span>
+                    <div class="step-item" data-step="2" onclick="goToStep(2)">
+                        <div class="step-number">2</div>
+                        <span class="step-text">IM 渠道</span>
+                    </div>
+                    <span class="step-arrow">→</span>
+                    <div class="step-item" data-step="3" onclick="goToStep(3)">
+                        <div class="step-number">3</div>
+                        <span class="step-text">Gateway</span>
                     </div>
                 </div>
 
                 <!-- 配置状态概览 -->
-                <div class="card fade-in" id="statusCard" style="margin-bottom: 24px;">
-                    <div class="card-header">
-                        <h2 class="card-title">
-                            <span>📊</span> 配置状态
-                        </h2>
-                        <span id="configPercentage">0%</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
+                <div class="status-overview fade-in" id="statusOverview">
+                    <div class="status-progress">
+                        <div class="status-label">
+                            <span>配置进度</span>
+                            <strong id="configPercentage">0%</strong>
                         </div>
-                        <div class="config-summary">
-                            <div class="config-summary-item" id="aiStatusItem">
-                                <span class="dot warning"></span>
-                                <span>AI 模型: <strong>未配置</strong></span>
-                            </div>
-                            <div class="config-summary-item" id="channelsStatusItem">
-                                <span class="dot warning"></span>
-                                <span>IM 渠道: <strong>0 个已启用</strong></span>
-                            </div>
+                        <div class="status-progress-bar">
+                            <div class="status-progress-fill" id="progressBarFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="status-items">
+                        <div class="status-item" id="aiStatusItem">
+                            <span class="dot warning"></span>
+                            <span>AI: 未配置</span>
+                        </div>
+                        <div class="status-item" id="channelsStatusItem">
+                            <span class="dot warning"></span>
+                            <span>IM: 0 个</span>
                         </div>
                     </div>
                 </div>
@@ -839,8 +858,8 @@
 
         function updateStepUI() {
             // 更新步骤指示器
-            document.querySelectorAll('.step-item').forEach((item, index) => {
-                const stepNum = index + 1;
+            document.querySelectorAll('.step-item').forEach((item) => {
+                const stepNum = parseInt(item.dataset.step);
                 item.classList.remove('active', 'completed');
                 if (stepNum === currentStep) {
                     item.classList.add('active');
@@ -848,10 +867,6 @@
                     item.classList.add('completed');
                 }
             });
-
-            // 更新连接线
-            document.getElementById('connector1').classList.toggle('completed', currentStep > 1 || isStep1Completed());
-            document.getElementById('connector2').classList.toggle('completed', currentStep > 2);
 
             // 更新步骤内容
             for (let i = 1; i <= totalSteps; i++) {
@@ -958,10 +973,10 @@
             const aiText = aiStatusItem.querySelector('span:last-child');
             if (status.ai.configured) {
                 aiDot.className = 'dot success';
-                aiText.innerHTML = 'AI 模型: <strong>已配置</strong>';
+                aiText.textContent = 'AI: 已配置';
             } else {
                 aiDot.className = 'dot warning';
-                aiText.innerHTML = 'AI 模型: <strong>未配置</strong>';
+                aiText.textContent = 'AI: 未配置';
             }
 
             // 更新 AI 配置卡片状态
@@ -982,10 +997,10 @@
 
             if (enabledCount > 0) {
                 channelsDot.className = 'dot success';
-                channelsText.innerHTML = `IM 渠道: <strong>${enabledCount} 个已启用</strong>`;
+                channelsText.textContent = `IM: ${enabledCount} 个`;
             } else {
                 channelsDot.className = 'dot warning';
-                channelsText.innerHTML = 'IM 渠道: <strong>未启用</strong>';
+                channelsText.textContent = 'IM: 0 个';
             }
 
             // 更新各渠道状态
@@ -1002,7 +1017,7 @@
                                 if (tab) tab.classList.add('completed');
                             } else {
                                 statusEl.className = 'channel-status incomplete';
-                                statusEl.textContent = '配置不完整';
+                                statusEl.textContent = '不完整';
                             }
                         } else {
                             statusEl.className = 'channel-status incomplete';
