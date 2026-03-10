@@ -17,26 +17,22 @@ RUN npm ci --only=production
 COPY server.js ./
 COPY public ./public
 
-# 确保配置目录存在并设置权限
-RUN mkdir -p /home/node/.openclaw && \
-    chown -R node:node /home/node/.openclaw /app/easy
+# 确保配置目录存在
+RUN mkdir -p /home/node/.openclaw
+
+# 复制整合启动脚本并设置权限
+COPY start-integrated.sh /app/easy/start-integrated.sh
+RUN chmod +x /app/easy/start-integrated.sh
 
 # 暴露配置管理服务端口（Gateway 端口 18789/18790 已在基础镜像中暴露）
 EXPOSE 18780
-
-# 切换回 node 用户
-USER node
-ENV HOME=/home/node
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:18780/api/status || exit 1
 
-# 复制整合启动脚本
-COPY start-integrated.sh /app/easy/start-integrated.sh
-USER root
-RUN chmod +x /app/easy/start-integrated.sh
-USER node
+# 设置环境变量
+ENV HOME=/home/node
 
-# 使用整合启动脚本
+# 使用整合启动脚本（以 root 运行，内部会处理权限并切换用户）
 ENTRYPOINT ["/app/easy/start-integrated.sh"]

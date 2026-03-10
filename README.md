@@ -34,6 +34,11 @@ npm start
 # 构建镜像
 docker build -f Dockerfile.standalone -t openclaw-easy .
 
+# 创建配置目录并设置权限
+mkdir -p ~/.openclaw
+# 如果使用非 root 用户运行，需要设置权限
+# sudo chown -R 1000:1000 ~/.openclaw
+
 # 运行容器
 docker run -d \
   --name openclaw-easy \
@@ -41,6 +46,15 @@ docker run -d \
   -v ~/.openclaw:/root/.openclaw \
   openclaw-easy
 ```
+
+> **⚠️ 权限说明**：如果遇到 `Permission denied` 错误，请在宿主机执行：
+> ```bash
+> # 独立模式（容器以 root 运行）
+> chmod 777 ~/.openclaw
+>
+> # 或者使用 :z 标志（SELinux 系统）
+> docker run ... -v ~/.openclaw:/root/.openclaw:z ...
+> ```
 
 ### 方式三：Docker Compose
 
@@ -51,8 +65,22 @@ docker-compose --profile standalone up -d
 
 **整合模式（Gateway + 配置管理）：**
 ```bash
+# 创建配置目录并设置权限
+mkdir -p ./data/openclaw-config
+sudo chown -R 1000:1000 ./data/openclaw-config
+
+# 启动服务
 docker-compose --profile integrated up -d
 ```
+
+> **⚠️ 整合模式权限说明**：
+> - 整合模式容器内使用 `node` 用户（UID 1000）运行
+> - 挂载目录必须对 UID 1000 可写
+> - 启动脚本会自动检测并尝试修复权限（需要容器以 root 启动）
+> - 如果权限修复失败，请手动执行：
+>   ```bash
+>   sudo chown -R 1000:1000 ./data/openclaw-config
+>   ```
 
 ## 访问地址
 
