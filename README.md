@@ -79,7 +79,7 @@ docker-compose --profile integrated up -d
 | 飞书 | App ID, App Secret |
 | 钉钉 | Client ID, Client Secret |
 | QQ机器人 | App ID, Client Secret |
-| 企业微信 | Token, Encoding AES Key, Agent ID |
+| 企业微信 | Token, Encoding AES Key |
 
 ### Gateway 配置
 
@@ -95,18 +95,28 @@ docker-compose --profile integrated up -d
 
 ```json
 {
+  "meta": {
+    "lastTouchedVersion": "2026.3.8"
+  },
   "models": {
     "mode": "merge",
     "providers": {
       "default": {
-        "api": {
-          "baseURL": "https://api.openai.com/v1",
-          "apiKey": "sk-xxx"
-        },
+        "baseUrl": "https://api.openai.com/v1",
+        "apiKey": "sk-xxx",
+        "api": "openai-completions",
         "models": [
           {
             "id": "gpt-4o",
             "name": "gpt-4o",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
             "contextWindow": 200000,
             "maxTokens": 8192
           }
@@ -117,37 +127,127 @@ docker-compose --profile integrated up -d
   "agents": {
     "defaults": {
       "model": { "primary": "default/gpt-4o" },
-      "imageModel": { "primary": "default/gpt-4o" }
+      "imageModel": { "primary": "default/gpt-4o" },
+      "compaction": { "mode": "safeguard" },
+      "sandbox": { "mode": "off" }
     }
   },
   "channels": {
     "feishu": {
       "enabled": true,
+      "dmPolicy": "open",
+      "groupPolicy": "open",
+      "allowFrom": ["*"],
+      "streaming": true,
+      "footer": { "elapsed": true, "status": true },
+      "requireMention": true,
       "accounts": {
-        "main": {
-          "appId": "xxx",
-          "appSecret": "xxx"
+        "default": {
+          "appId": "cli_xxx",
+          "appSecret": "xxx",
+          "botName": "OpenClaw Bot"
         }
       }
     },
+    "dingtalk": {
+      "enabled": true,
+      "clientId": "xxx",
+      "clientSecret": "xxx",
+      "robotCode": "xxx",
+      "dmPolicy": "open",
+      "groupPolicy": "open",
+      "messageType": "markdown",
+      "allowFrom": ["*"]
+    },
+    "qqbot": {
+      "enabled": true,
+      "appId": "xxx",
+      "clientSecret": "xxx",
+      "dmPolicy": "open",
+      "groupPolicy": "open",
+      "allowFrom": ["*"]
+    },
     "wecom": {
       "enabled": true,
+      "dmPolicy": "open",
+      "groupPolicy": "open",
+      "allowFrom": ["*"],
       "default": {
         "token": "xxx",
         "encodingAesKey": "xxx"
+      },
+      "commands": {
+        "enabled": true,
+        "allowlist": ["/new", "/status", "/help", "/compact"]
       }
     }
   },
   "gateway": {
     "port": 18789,
     "bind": "0.0.0.0",
+    "mode": "local",
     "auth": {
       "mode": "token",
       "token": "your-token"
     }
+  },
+  "tools": {
+    "profile": "full",
+    "sessions": { "visibility": "all" },
+    "fs": { "workspaceOnly": true }
+  },
+  "plugins": {
+    "enabled": true,
+    "entries": {},
+    "installs": {}
   }
 }
 ```
+
+## 配置字段说明
+
+### models.providers 配置
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| baseUrl | string | API 端点地址 |
+| apiKey | string | API 密钥 |
+| api | string | API 协议类型（默认 openai-completions） |
+| models | array | 模型列表 |
+
+### models.providers.models 配置
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | string | 模型 ID |
+| name | string | 模型名称 |
+| reasoning | boolean | 是否支持推理 |
+| input | array | 输入类型（text, image） |
+| contextWindow | number | 上下文窗口大小 |
+| maxTokens | number | 最大输出 Token 数 |
+
+### channels.feishu 配置
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| enabled | boolean | 是否启用 |
+| dmPolicy | string | 私聊策略（open） |
+| groupPolicy | string | 群聊策略（open） |
+| allowFrom | array | 允许的来源 |
+| streaming | boolean | 是否启用流式输出 |
+| accounts.default.appId | string | 飞书应用 App ID |
+| accounts.default.appSecret | string | 飞书应用 App Secret |
+| accounts.default.botName | string | 机器人名称 |
+
+### channels.wecom 配置
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| enabled | boolean | 是否启用 |
+| default.token | string | 企业微信 Token |
+| default.encodingAesKey | string | Encoding AES Key |
+| commands.enabled | boolean | 是否启用命令 |
+| commands.allowlist | array | 允许的命令列表 |
 
 ## API 接口
 

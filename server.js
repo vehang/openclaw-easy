@@ -131,24 +131,10 @@ function getDefaultConfig() {
         },
         "models": {
             "mode": "merge",
-            "providers": {
-                "default": {
-                    "api": {
-                        "baseURL": "",
-                        "apiKey": ""
-                    },
-                    "models": []
-                }
-            }
+            "providers": {}
         },
         "agents": {
             "defaults": {
-                "model": {
-                    "primary": ""
-                },
-                "imageModel": {
-                    "primary": ""
-                },
                 "compaction": {
                     "mode": "safeguard"
                 },
@@ -175,35 +161,7 @@ function getDefaultConfig() {
             "native": "auto",
             "nativeSkills": "auto"
         },
-        "channels": {
-            "feishu": {
-                "enabled": false,
-                "accounts": {
-                    "main": {
-                        "appId": "",
-                        "appSecret": "",
-                        "botName": "OpenClaw Bot"
-                    }
-                }
-            },
-            "dingtalk": {
-                "enabled": false,
-                "clientId": "",
-                "clientSecret": ""
-            },
-            "qqbot": {
-                "enabled": false,
-                "appId": "",
-                "clientSecret": ""
-            },
-            "wecom": {
-                "enabled": false,
-                "default": {
-                    "token": "",
-                    "encodingAesKey": ""
-                }
-            }
-        },
+        "channels": {},
         "plugins": {
             "enabled": true,
             "entries": {},
@@ -273,12 +231,12 @@ function configToFormFormat(config) {
     const defaultModel = (defaultProvider.models || [])[0] || {};
 
     const channels = config.channels || {};
+    const gateway = config.gateway || {};
 
     return {
         ai: {
-            provider: 'default',
-            apiKey: (defaultProvider.api || {}).apiKey || '',
-            baseUrl: (defaultProvider.api || {}).baseURL || '',
+            baseUrl: defaultProvider.baseUrl || '',
+            apiKey: defaultProvider.apiKey || '',
             modelId: defaultModel.id || '',
             contextWindow: defaultModel.contextWindow || 200000,
             maxTokens: defaultModel.maxTokens || 8192
@@ -286,9 +244,9 @@ function configToFormFormat(config) {
         im: {
             feishu: {
                 enabled: channels.feishu?.enabled || false,
-                appId: (channels.feishu?.accounts?.main || {}).appId || '',
-                appSecret: (channels.feishu?.accounts?.main || {}).appSecret || '',
-                botName: (channels.feishu?.accounts?.main || {}).botName || 'OpenClaw Bot'
+                appId: (channels.feishu?.accounts?.default || {}).appId || '',
+                appSecret: (channels.feishu?.accounts?.default || {}).appSecret || '',
+                botName: (channels.feishu?.accounts?.default || {}).botName || 'OpenClaw Bot'
             },
             dingtalk: {
                 enabled: channels.dingtalk?.enabled || false,
@@ -302,16 +260,14 @@ function configToFormFormat(config) {
             },
             wecom: {
                 enabled: channels.wecom?.enabled || false,
-                corpId: channels.wecom?.corpId || '',
-                agentId: (channels.wecom?.default?.agent || {}).agentId || '',
-                token: channels.wecom?.default?.token || '',
-                encodingAesKey: channels.wecom?.default?.encodingAesKey || ''
+                token: (channels.wecom?.default || {}).token || '',
+                encodingAesKey: (channels.wecom?.default || {}).encodingAesKey || ''
             }
         },
         gateway: {
-            port: config.gateway?.port || 18789,
-            bind: config.gateway?.bind || '0.0.0.0',
-            token: (config.gateway?.auth || {}).token || ''
+            port: gateway.port || 18789,
+            bind: gateway.bind || '0.0.0.0',
+            token: (gateway.auth || {}).token || ''
         }
     };
 }
@@ -325,58 +281,107 @@ function formToConfig(formConfig) {
 
     const { ai, im, gateway } = formConfig;
 
-    // 构建 models 配置
-    const modelConfig = {
-        id: ai.modelId || '',
-        name: ai.modelId || '',
-        contextWindow: ai.contextWindow || 200000,
-        maxTokens: ai.maxTokens || 8192,
-        reasoning: false,
-        input: ['text', 'image'],
-        cost: {
-            input: 0,
-            output: 0,
-            cacheRead: 0,
-            cacheWrite: 0
-        }
-    };
+    // 构建 models.providers.default 配置
+    const defaultProvider = {};
+    if (ai.baseUrl) defaultProvider.baseUrl = ai.baseUrl;
+    if (ai.apiKey) defaultProvider.apiKey = ai.apiKey;
+    defaultProvider.api = 'openai-completions';
+
+    if (ai.modelId) {
+        defaultProvider.models = [{
+            id: ai.modelId,
+            name: ai.modelId,
+            reasoning: false,
+            input: ['text', 'image'],
+            cost: {
+                input: 0,
+                output: 0,
+                cacheRead: 0,
+                cacheWrite: 0
+            },
+            contextWindow: ai.contextWindow || 200000,
+            maxTokens: ai.maxTokens || 8192
+        }];
+    } else {
+        defaultProvider.models = [];
+    }
 
     // 构建 channels 配置
-    const channels = {
-        feishu: {
-            enabled: im.feishu.enabled,
+    const channels = { ...existingConfig.channels };
+
+    // 飞书配置
+    if (im.feishu.enabled) {
+        channels.feishu = {
+            enabled: true,
+            dmPolicy: 'open',
+            groupPolicy: 'open',
+            allowFrom: ['*'],
+            streaming: true,
+            footer: {
+                elapsed: true,
+                status: true
+            },
+            requireMention: true,
             accounts: {
-                main: {
+                default: {
                     appId: im.feishu.appId || '',
                     appSecret: im.feishu.appSecret || '',
                     botName: im.feishu.botName || 'OpenClaw Bot'
                 }
             }
-        },
-        dingtalk: {
-            enabled: im.dingtalk.enabled,
+        };
+    } else if (channels.feishu) {
+        channels.feishu.enabled = false;
+    }
+
+    // 钉钉配置
+    if (im.dingtalk.enabled) {
+        channels.dingtalk = {
+            enabled: true,
             clientId: im.dingtalk.clientId || '',
-            clientSecret: im.dingtalk.clientSecret || ''
-        },
-        qqbot: {
-            enabled: im.qqbot.enabled,
+            clientSecret: im.dingtalk.clientSecret || '',
+            robotCode: im.dingtalk.clientId || '',
+            dmPolicy: 'open',
+            groupPolicy: 'open',
+            messageType: 'markdown',
+            allowFrom: ['*']
+        };
+    } else if (channels.dingtalk) {
+        channels.dingtalk.enabled = false;
+    }
+
+    // QQ机器人配置
+    if (im.qqbot.enabled) {
+        channels.qqbot = {
+            enabled: true,
             appId: im.qqbot.appId || '',
-            clientSecret: im.qqbot.clientSecret || ''
-        },
-        wecom: {
-            enabled: im.wecom.enabled,
+            clientSecret: im.qqbot.clientSecret || '',
+            dmPolicy: 'open',
+            groupPolicy: 'open',
+            allowFrom: ['*']
+        };
+    } else if (channels.qqbot) {
+        channels.qqbot.enabled = false;
+    }
+
+    // 企业微信配置
+    if (im.wecom.enabled) {
+        channels.wecom = {
+            enabled: true,
+            dmPolicy: 'open',
+            groupPolicy: 'open',
+            allowFrom: ['*'],
             default: {
                 token: im.wecom.token || '',
                 encodingAesKey: im.wecom.encodingAesKey || ''
+            },
+            commands: {
+                enabled: true,
+                allowlist: ['/new', '/status', '/help', '/compact']
             }
-        }
-    };
-
-    // 如果有企业微信的 agentId，添加 agent 配置
-    if (im.wecom.agentId) {
-        channels.wecom.default.agent = {
-            agentId: im.wecom.agentId
         };
+    } else if (channels.wecom) {
+        channels.wecom.enabled = false;
     }
 
     // 构建 gateway 配置
@@ -398,13 +403,7 @@ function formToConfig(formConfig) {
             mode: 'merge',
             providers: {
                 ...existingConfig.models?.providers,
-                default: {
-                    api: {
-                        baseURL: ai.baseUrl || '',
-                        apiKey: ai.apiKey || ''
-                    },
-                    models: ai.modelId ? [modelConfig] : []
-                }
+                default: defaultProvider
             }
         },
         agents: {
@@ -712,7 +711,7 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
  */
 app.post('/api/test/ai', authMiddleware, async (req, res) => {
     try {
-        const { provider, apiKey, baseUrl, modelId } = req.body;
+        const { apiKey, baseUrl, modelId } = req.body;
 
         // 这里可以实现实际的连接测试
         // 目前只做基本的参数验证
