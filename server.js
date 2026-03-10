@@ -898,7 +898,7 @@ app.post('/api/config/validate', authMiddleware, (req, res) => {
  * 保存配置
  * POST /api/config
  */
-app.post('/api/config', authMiddleware, (req, res) => {
+app.post('/api/config', authMiddleware, async (req, res) => {
     try {
         const formConfig = req.body;
 
@@ -925,7 +925,21 @@ app.post('/api/config', authMiddleware, (req, res) => {
         const openclawConfig = formToConfig(formConfig);
         saveConfig(openclawConfig);
 
-        res.json({ success: true, message: '配置保存成功' });
+        // 自动重启 Gateway 服务
+        let restartResult = null;
+        try {
+            restartResult = await restartGateway();
+        } catch (restartError) {
+            console.error('自动重启失败:', restartError);
+            // 重启失败不影响配置保存成功的响应
+            restartResult = { success: false, message: restartError.message };
+        }
+
+        res.json({
+            success: true,
+            message: '配置保存成功',
+            restart: restartResult
+        });
     } catch (error) {
         console.error('保存配置失败:', error);
         res.status(500).json({ error: '保存配置失败' });
