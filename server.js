@@ -5,7 +5,7 @@
  * 1. 首次访问设置管理密码
  * 2. 配置 AI 模型（Provider、API Key、Base URL、模型ID）
  * 3. 配置 IM 渠道（飞书、钉钉、QQ机器人、企业微信）
- * 4. 保存配置到 ~/.openclaw/openclaw.json
+ * 4. 保存配置到 ~/.openclaw/openclaw.json（OpenClaw 标准格式）
  * 5. 支持重启 OpenClaw Gateway 服务
  * 6. 后续访问需要密码验证
  */
@@ -114,33 +114,316 @@ function validateSession(token) {
 }
 
 /**
+ * 获取默认配置结构（OpenClaw 标准格式）
+ */
+function getDefaultConfig() {
+    return {
+        "meta": {
+            "lastTouchedVersion": "2026.3.8"
+        },
+        "update": {
+            "checkOnStart": false
+        },
+        "browser": {
+            "headless": true,
+            "noSandbox": true,
+            "defaultProfile": "openclaw"
+        },
+        "models": {
+            "mode": "merge",
+            "providers": {
+                "default": {
+                    "api": {
+                        "baseURL": "",
+                        "apiKey": ""
+                    },
+                    "models": []
+                }
+            }
+        },
+        "agents": {
+            "defaults": {
+                "model": {
+                    "primary": ""
+                },
+                "imageModel": {
+                    "primary": ""
+                },
+                "compaction": {
+                    "mode": "safeguard"
+                },
+                "sandbox": {
+                    "mode": "off"
+                },
+                "elevatedDefault": "full",
+                "maxConcurrent": 4
+            }
+        },
+        "tools": {
+            "profile": "full",
+            "sessions": {
+                "visibility": "all"
+            },
+            "fs": {
+                "workspaceOnly": true
+            }
+        },
+        "messages": {
+            "ackReactionScope": "group-mentions"
+        },
+        "commands": {
+            "native": "auto",
+            "nativeSkills": "auto"
+        },
+        "channels": {
+            "feishu": {
+                "enabled": false,
+                "accounts": {
+                    "main": {
+                        "appId": "",
+                        "appSecret": "",
+                        "botName": "OpenClaw Bot"
+                    }
+                }
+            },
+            "dingtalk": {
+                "enabled": false,
+                "clientId": "",
+                "clientSecret": ""
+            },
+            "qqbot": {
+                "enabled": false,
+                "appId": "",
+                "clientSecret": ""
+            },
+            "wecom": {
+                "enabled": false,
+                "default": {
+                    "token": "",
+                    "encodingAesKey": ""
+                }
+            }
+        },
+        "plugins": {
+            "enabled": true,
+            "entries": {},
+            "installs": {}
+        },
+        "gateway": {
+            "port": 18789,
+            "bind": "0.0.0.0",
+            "mode": "local",
+            "auth": {
+                "mode": "token",
+                "token": ""
+            }
+        }
+    };
+}
+
+/**
+ * 深度合并对象
+ */
+function deepMerge(target, source) {
+    const result = { ...target };
+    for (const key in source) {
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+            if (target[key] && typeof target[key] === 'object') {
+                result[key] = deepMerge(target[key], source[key]);
+            } else {
+                result[key] = source[key];
+            }
+        } else {
+            result[key] = source[key];
+        }
+    }
+    return result;
+}
+
+/**
  * 读取配置文件
  */
 function readConfig() {
     ensureConfigDir();
+
+    // 如果配置文件不存在，返回默认配置
     if (!fs.existsSync(CONFIG_FILE)) {
-        return {
-            ai: {
-                provider: 'openai',
-                apiKey: '',
-                baseUrl: '',
-                modelId: ''
-            },
-            im: {
-                feishu: { enabled: false, appId: '', appSecret: '' },
-                dingtalk: { enabled: false, clientId: '', clientSecret: '' },
-                qqbot: { enabled: false, appId: '', appSecret: '' },
-                wecom: { enabled: false, corpId: '', agentId: '', secret: '' }
-            }
-        };
+        return getDefaultConfig();
     }
+
     try {
         const content = fs.readFileSync(CONFIG_FILE, 'utf8');
-        return JSON.parse(content);
+        const config = JSON.parse(content);
+
+        // 与默认配置合并，确保所有字段都存在
+        return deepMerge(getDefaultConfig(), config);
     } catch (e) {
         console.error('读取配置文件失败:', e);
-        return null;
+        return getDefaultConfig();
     }
+}
+
+/**
+ * 将 OpenClaw 配置转换为前端表单格式
+ */
+function configToFormFormat(config) {
+    const models = config.models || {};
+    const providers = models.providers || {};
+    const defaultProvider = providers.default || {};
+    const defaultModel = (defaultProvider.models || [])[0] || {};
+
+    const channels = config.channels || {};
+
+    return {
+        ai: {
+            provider: 'default',
+            apiKey: (defaultProvider.api || {}).apiKey || '',
+            baseUrl: (defaultProvider.api || {}).baseURL || '',
+            modelId: defaultModel.id || '',
+            contextWindow: defaultModel.contextWindow || 200000,
+            maxTokens: defaultModel.maxTokens || 8192
+        },
+        im: {
+            feishu: {
+                enabled: channels.feishu?.enabled || false,
+                appId: (channels.feishu?.accounts?.main || {}).appId || '',
+                appSecret: (channels.feishu?.accounts?.main || {}).appSecret || '',
+                botName: (channels.feishu?.accounts?.main || {}).botName || 'OpenClaw Bot'
+            },
+            dingtalk: {
+                enabled: channels.dingtalk?.enabled || false,
+                clientId: channels.dingtalk?.clientId || '',
+                clientSecret: channels.dingtalk?.clientSecret || ''
+            },
+            qqbot: {
+                enabled: channels.qqbot?.enabled || false,
+                appId: channels.qqbot?.appId || '',
+                clientSecret: channels.qqbot?.clientSecret || ''
+            },
+            wecom: {
+                enabled: channels.wecom?.enabled || false,
+                corpId: channels.wecom?.corpId || '',
+                agentId: (channels.wecom?.default?.agent || {}).agentId || '',
+                token: channels.wecom?.default?.token || '',
+                encodingAesKey: channels.wecom?.default?.encodingAesKey || ''
+            }
+        },
+        gateway: {
+            port: config.gateway?.port || 18789,
+            bind: config.gateway?.bind || '0.0.0.0',
+            token: (config.gateway?.auth || {}).token || ''
+        }
+    };
+}
+
+/**
+ * 将前端表单格式转换为 OpenClaw 配置
+ */
+function formToConfig(formConfig) {
+    // 读取现有配置作为基础
+    const existingConfig = readConfig();
+
+    const { ai, im, gateway } = formConfig;
+
+    // 构建 models 配置
+    const modelConfig = {
+        id: ai.modelId || '',
+        name: ai.modelId || '',
+        contextWindow: ai.contextWindow || 200000,
+        maxTokens: ai.maxTokens || 8192,
+        reasoning: false,
+        input: ['text', 'image'],
+        cost: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0
+        }
+    };
+
+    // 构建 channels 配置
+    const channels = {
+        feishu: {
+            enabled: im.feishu.enabled,
+            accounts: {
+                main: {
+                    appId: im.feishu.appId || '',
+                    appSecret: im.feishu.appSecret || '',
+                    botName: im.feishu.botName || 'OpenClaw Bot'
+                }
+            }
+        },
+        dingtalk: {
+            enabled: im.dingtalk.enabled,
+            clientId: im.dingtalk.clientId || '',
+            clientSecret: im.dingtalk.clientSecret || ''
+        },
+        qqbot: {
+            enabled: im.qqbot.enabled,
+            appId: im.qqbot.appId || '',
+            clientSecret: im.qqbot.clientSecret || ''
+        },
+        wecom: {
+            enabled: im.wecom.enabled,
+            default: {
+                token: im.wecom.token || '',
+                encodingAesKey: im.wecom.encodingAesKey || ''
+            }
+        }
+    };
+
+    // 如果有企业微信的 agentId，添加 agent 配置
+    if (im.wecom.agentId) {
+        channels.wecom.default.agent = {
+            agentId: im.wecom.agentId
+        };
+    }
+
+    // 构建 gateway 配置
+    const gatewayConfig = {
+        port: gateway.port || 18789,
+        bind: gateway.bind || '0.0.0.0',
+        mode: 'local',
+        auth: {
+            mode: 'token',
+            token: gateway.token || ''
+        }
+    };
+
+    // 合并配置
+    const newConfig = {
+        ...existingConfig,
+        models: {
+            ...existingConfig.models,
+            mode: 'merge',
+            providers: {
+                ...existingConfig.models?.providers,
+                default: {
+                    api: {
+                        baseURL: ai.baseUrl || '',
+                        apiKey: ai.apiKey || ''
+                    },
+                    models: ai.modelId ? [modelConfig] : []
+                }
+            }
+        },
+        agents: {
+            ...existingConfig.agents,
+            defaults: {
+                ...existingConfig.agents?.defaults,
+                model: {
+                    primary: ai.modelId ? `default/${ai.modelId}` : ''
+                },
+                imageModel: {
+                    primary: ai.modelId ? `default/${ai.modelId}` : ''
+                }
+            }
+        },
+        channels,
+        gateway: gatewayConfig
+    };
+
+    return newConfig;
 }
 
 /**
@@ -357,15 +640,27 @@ app.post('/api/password/change', authMiddleware, async (req, res) => {
 });
 
 /**
- * 获取配置
+ * 获取配置（前端表单格式）
  * GET /api/config
  */
 app.get('/api/config', authMiddleware, (req, res) => {
     try {
         const config = readConfig();
-        if (!config) {
-            return res.status(500).json({ error: '读取配置失败' });
-        }
+        const formConfig = configToFormFormat(config);
+        res.json(formConfig);
+    } catch (error) {
+        console.error('获取配置失败:', error);
+        res.status(500).json({ error: '获取配置失败' });
+    }
+});
+
+/**
+ * 获取原始配置（OpenClaw 格式）
+ * GET /api/config/raw
+ */
+app.get('/api/config/raw', authMiddleware, (req, res) => {
+    try {
+        const config = readConfig();
         res.json(config);
     } catch (error) {
         console.error('获取配置失败:', error);
@@ -379,15 +674,16 @@ app.get('/api/config', authMiddleware, (req, res) => {
  */
 app.post('/api/config', authMiddleware, (req, res) => {
     try {
-        const config = req.body;
+        const formConfig = req.body;
 
         // 验证配置结构
-        if (!config || !config.ai || !config.im) {
+        if (!formConfig || !formConfig.ai) {
             return res.status(400).json({ error: '配置格式不正确' });
         }
 
-        // 保存配置
-        saveConfig(config);
+        // 转换为 OpenClaw 格式并保存
+        const openclawConfig = formToConfig(formConfig);
+        saveConfig(openclawConfig);
 
         res.json({ success: true, message: '配置保存成功' });
     } catch (error) {

@@ -49,52 +49,8 @@ services:
     environment:
       # 时区设置
       - TZ=Asia/Shanghai
-
       # 配置管理服务端口
       - EASY_PORT=18780
-
-      # Gateway 配置
-      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-your-gateway-token}
-      - OPENCLAW_GATEWAY_PORT=18789
-      - OPENCLAW_GATEWAY_BIND=0.0.0.0
-      - OPENCLAW_GATEWAY_MODE=local
-      - OPENCLAW_GATEWAY_ALLOWED_ORIGINS=*
-      - OPENCLAW_GATEWAY_ALLOW_INSECURE_AUTH=true
-
-      # AI 模型配置
-      - API_KEY=${API_KEY:-}
-      - BASE_URL=${BASE_URL:-}
-      - API_PROTOCOL=${API_PROTOCOL:-openai-completions}
-      - MODEL_ID=${MODEL_ID:-gpt-4o}
-      - IMAGE_MODEL_ID=${IMAGE_MODEL_ID:-}
-      - CONTEXT_WINDOW=${CONTEXT_WINDOW:-200000}
-      - MAX_TOKENS=${MAX_TOKENS:-8192}
-
-      # 备用模型配置
-      - MODEL2_NAME=${MODEL2_NAME:-model2}
-      - MODEL2_API_KEY=${MODEL2_API_KEY:-}
-      - MODEL2_BASE_URL=${MODEL2_BASE_URL:-}
-      - MODEL2_MODEL_ID=${MODEL2_MODEL_ID:-}
-
-      # IM 渠道配置 - 飞书
-      - FEISHU_APP_ID=${FEISHU_APP_ID:-}
-      - FEISHU_APP_SECRET=${FEISHU_APP_SECRET:-}
-      - FEISHU_BOT_NAME=${FEISHU_BOT_NAME:-OpenClaw Bot}
-
-      # IM 渠道配置 - 钉钉
-      - DINGTALK_CLIENT_ID=${DINGTALK_CLIENT_ID:-}
-      - DINGTALK_CLIENT_SECRET=${DINGTALK_CLIENT_SECRET:-}
-
-      # IM 渠道配置 - QQ机器人
-      - QQBOT_APP_ID=${QQBOT_APP_ID:-}
-      - QQBOT_CLIENT_SECRET=${QQBOT_CLIENT_SECRET:-}
-
-      # IM 渠道配置 - 企业微信
-      - WECOM_TOKEN=${WECOM_TOKEN:-}
-      - WECOM_ENCODING_AES_KEY=${WECOM_ENCODING_AES_KEY:-}
-
-      # 插件配置
-      - OPENCLAW_PLUGINS_ENABLED=${OPENCLAW_PLUGINS_ENABLED:-true}
     profiles:
       - integrated
 

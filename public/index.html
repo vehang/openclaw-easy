@@ -35,9 +35,9 @@
                         <h2 class="card-title">
                             <span>🤖</span> AI 模型配置
                         </h2>
-                        <div class="status-indicator success" id="aiStatus">
+                        <div class="status-indicator warning" id="aiStatus">
                             <span class="status-dot"></span>
-                            <span>已配置</span>
+                            <span>未配置</span>
                         </div>
                     </div>
                     <div class="card-body">
@@ -45,19 +45,11 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label class="form-label">
-                                        Provider <span class="required">*</span>
+                                        Base URL <span class="required">*</span>
                                     </label>
-                                    <select class="form-control" id="aiProvider" required>
-                                        <option value="openai">OpenAI</option>
-                                        <option value="anthropic">Anthropic (Claude)</option>
-                                        <option value="azure">Azure OpenAI</option>
-                                        <option value="deepseek">DeepSeek</option>
-                                        <option value="moonshot">Moonshot (Kimi)</option>
-                                        <option value="zhipu">智谱 AI</option>
-                                        <option value="baidu">百度文心</option>
-                                        <option value="alibaba">阿里通义</option>
-                                        <option value="custom">自定义</option>
-                                    </select>
+                                    <input type="text" class="form-control" id="aiBaseUrl"
+                                           placeholder="https://api.openai.com/v1" required>
+                                    <p class="form-hint">API 端点地址</p>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">
@@ -75,13 +67,6 @@
                                 <input type="password" class="form-control" id="aiApiKey"
                                        placeholder="请输入 API Key" required>
                                 <p class="form-hint">API Key 将安全存储在本地配置文件中</p>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Base URL</label>
-                                <input type="text" class="form-control" id="aiBaseUrl"
-                                       placeholder="可选，用于自定义 API 端点">
-                                <p class="form-hint">如使用代理或私有部署，请填写完整地址</p>
                             </div>
 
                             <div class="btn-group">
@@ -179,9 +164,9 @@
                                        placeholder="请输入 QQ 机器人 App ID">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">App Secret</label>
-                                <input type="password" class="form-control" id="qqbotAppSecret"
-                                       placeholder="请输入 QQ 机器人 App Secret">
+                                <label class="form-label">Client Secret</label>
+                                <input type="password" class="form-control" id="qqbotClientSecret"
+                                       placeholder="请输入 QQ 机器人 Client Secret">
                             </div>
                         </div>
 
@@ -201,19 +186,19 @@
                         </div>
                         <div class="im-config-panel" id="wecomConfig">
                             <div class="form-group">
-                                <label class="form-label">企业 ID (Corp ID)</label>
-                                <input type="text" class="form-control" id="wecomCorpId"
-                                       placeholder="请输入企业 ID">
+                                <label class="form-label">Token</label>
+                                <input type="text" class="form-control" id="wecomToken"
+                                       placeholder="请输入企业微信 Token">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Agent ID</label>
+                                <label class="form-label">Encoding AES Key</label>
+                                <input type="text" class="form-control" id="wecomEncodingAesKey"
+                                       placeholder="请输入 Encoding AES Key">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Agent ID（可选）</label>
                                 <input type="text" class="form-control" id="wecomAgentId"
                                        placeholder="请输入应用 Agent ID">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Secret</label>
-                                <input type="password" class="form-control" id="wecomSecret"
-                                       placeholder="请输入应用 Secret">
                             </div>
                         </div>
 
@@ -222,6 +207,44 @@
                                 保存 IM 配置
                             </button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Gateway 配置 -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            <span>🌐</span> Gateway 配置
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="gatewayConfigForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">端口</label>
+                                    <input type="number" class="form-control" id="gatewayPort"
+                                           placeholder="18789" value="18789">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">绑定地址</label>
+                                    <input type="text" class="form-control" id="gatewayBind"
+                                           placeholder="0.0.0.0" value="0.0.0.0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Gateway Token</label>
+                                <input type="password" class="form-control" id="gatewayToken"
+                                       placeholder="用于 Gateway 认证的 Token">
+                                <p class="form-hint">设置后，客户端连接 Gateway 时需要提供此 Token</p>
+                            </div>
+
+                            <div class="btn-group">
+                                <button type="submit" class="btn btn-primary">
+                                    保存 Gateway 配置
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
@@ -331,7 +354,6 @@
         function populateConfig(config) {
             // AI 配置
             if (config.ai) {
-                document.getElementById('aiProvider').value = config.ai.provider || 'openai';
                 document.getElementById('aiApiKey').value = config.ai.apiKey || '';
                 document.getElementById('aiBaseUrl').value = config.ai.baseUrl || '';
                 document.getElementById('aiModelId').value = config.ai.modelId || '';
@@ -363,7 +385,7 @@
                 if (config.im.qqbot) {
                     document.getElementById('qqbotEnabled').checked = config.im.qqbot.enabled;
                     document.getElementById('qqbotAppId').value = config.im.qqbot.appId || '';
-                    document.getElementById('qqbotAppSecret').value = config.im.qqbot.appSecret || '';
+                    document.getElementById('qqbotClientSecret').value = config.im.qqbot.clientSecret || '';
                     if (config.im.qqbot.enabled) {
                         document.getElementById('qqbotConfig').classList.add('active');
                     }
@@ -372,13 +394,20 @@
                 // 企业微信
                 if (config.im.wecom) {
                     document.getElementById('wecomEnabled').checked = config.im.wecom.enabled;
-                    document.getElementById('wecomCorpId').value = config.im.wecom.corpId || '';
+                    document.getElementById('wecomToken').value = config.im.wecom.token || '';
+                    document.getElementById('wecomEncodingAesKey').value = config.im.wecom.encodingAesKey || '';
                     document.getElementById('wecomAgentId').value = config.im.wecom.agentId || '';
-                    document.getElementById('wecomSecret').value = config.im.wecom.secret || '';
                     if (config.im.wecom.enabled) {
                         document.getElementById('wecomConfig').classList.add('active');
                     }
                 }
+            }
+
+            // Gateway 配置
+            if (config.gateway) {
+                document.getElementById('gatewayPort').value = config.gateway.port || 18789;
+                document.getElementById('gatewayBind').value = config.gateway.bind || '0.0.0.0';
+                document.getElementById('gatewayToken').value = config.gateway.token || '';
             }
         }
 
@@ -412,6 +441,50 @@
             }
         }
 
+        // ==================== 获取当前配置 ====================
+
+        function getCurrentConfig() {
+            return {
+                ai: {
+                    provider: 'default',
+                    apiKey: document.getElementById('aiApiKey').value,
+                    baseUrl: document.getElementById('aiBaseUrl').value,
+                    modelId: document.getElementById('aiModelId').value,
+                    contextWindow: 200000,
+                    maxTokens: 8192
+                },
+                im: {
+                    feishu: {
+                        enabled: document.getElementById('feishuEnabled').checked,
+                        appId: document.getElementById('feishuAppId').value,
+                        appSecret: document.getElementById('feishuAppSecret').value,
+                        botName: 'OpenClaw Bot'
+                    },
+                    dingtalk: {
+                        enabled: document.getElementById('dingtalkEnabled').checked,
+                        clientId: document.getElementById('dingtalkClientId').value,
+                        clientSecret: document.getElementById('dingtalkClientSecret').value
+                    },
+                    qqbot: {
+                        enabled: document.getElementById('qqbotEnabled').checked,
+                        appId: document.getElementById('qqbotAppId').value,
+                        clientSecret: document.getElementById('qqbotClientSecret').value
+                    },
+                    wecom: {
+                        enabled: document.getElementById('wecomEnabled').checked,
+                        token: document.getElementById('wecomToken').value,
+                        encodingAesKey: document.getElementById('wecomEncodingAesKey').value,
+                        agentId: document.getElementById('wecomAgentId').value
+                    }
+                },
+                gateway: {
+                    port: parseInt(document.getElementById('gatewayPort').value) || 18789,
+                    bind: document.getElementById('gatewayBind').value || '0.0.0.0',
+                    token: document.getElementById('gatewayToken').value
+                }
+            };
+        }
+
         // ==================== 表单提交 ====================
 
         /**
@@ -430,40 +503,18 @@
         });
 
         /**
+         * Gateway 配置保存
+         */
+        document.getElementById('gatewayConfigForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveAllConfig();
+        });
+
+        /**
          * 保存所有配置
          */
         async function saveAllConfig() {
-            const config = {
-                ai: {
-                    provider: document.getElementById('aiProvider').value,
-                    apiKey: document.getElementById('aiApiKey').value,
-                    baseUrl: document.getElementById('aiBaseUrl').value,
-                    modelId: document.getElementById('aiModelId').value
-                },
-                im: {
-                    feishu: {
-                        enabled: document.getElementById('feishuEnabled').checked,
-                        appId: document.getElementById('feishuAppId').value,
-                        appSecret: document.getElementById('feishuAppSecret').value
-                    },
-                    dingtalk: {
-                        enabled: document.getElementById('dingtalkEnabled').checked,
-                        clientId: document.getElementById('dingtalkClientId').value,
-                        clientSecret: document.getElementById('dingtalkClientSecret').value
-                    },
-                    qqbot: {
-                        enabled: document.getElementById('qqbotEnabled').checked,
-                        appId: document.getElementById('qqbotAppId').value,
-                        appSecret: document.getElementById('qqbotAppSecret').value
-                    },
-                    wecom: {
-                        enabled: document.getElementById('wecomEnabled').checked,
-                        corpId: document.getElementById('wecomCorpId').value,
-                        agentId: document.getElementById('wecomAgentId').value,
-                        secret: document.getElementById('wecomSecret').value
-                    }
-                }
-            };
+            const config = getCurrentConfig();
 
             try {
                 const response = await fetch('/api/config', {
@@ -490,7 +541,6 @@
          * 测试 AI 连接
          */
         document.getElementById('testAiBtn').addEventListener('click', async () => {
-            const provider = document.getElementById('aiProvider').value;
             const apiKey = document.getElementById('aiApiKey').value;
             const baseUrl = document.getElementById('aiBaseUrl').value;
             const modelId = document.getElementById('aiModelId').value;
@@ -508,7 +558,7 @@
                 const response = await fetch('/api/test/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ provider, apiKey, baseUrl, modelId })
+                    body: JSON.stringify({ provider: 'default', apiKey, baseUrl, modelId })
                 });
 
                 const data = await response.json();
