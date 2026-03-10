@@ -704,25 +704,25 @@
         const totalSteps = 3;
 
         // 渠道必填字段定义
-        // 预设提供商配置
+        // 预设提供商配置 - 更新于 2026年3月
         const PROVIDER_PRESETS = {
             openai: {
                 name: 'OpenAI',
                 baseUrl: 'https://api.openai.com/v1',
                 baseUrlHint: '',
-                models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo']
+                models: ['gpt-4.1', 'gpt-4.1-mini', 'gpt-4o', 'o3-mini', 'o1']
             },
             azure: {
                 name: 'Azure OpenAI',
                 baseUrl: '',
                 baseUrlHint: '格式: https://{资源名}.openai.azure.com/openai/deployments/{部署名}',
-                models: ['gpt-4', 'gpt-4o', 'gpt-35-turbo']
+                models: ['gpt-4.1', 'gpt-4o', 'gpt-35-turbo']
             },
             anthropic: {
                 name: 'Anthropic (Claude)',
                 baseUrl: 'https://api.anthropic.com/v1',
                 baseUrlHint: '',
-                models: ['claude-sonnet-4-6-20250514', 'claude-opus-4-6-20250514', 'claude-3-5-sonnet-20241022']
+                models: ['claude-opus-4-6-20250514', 'claude-sonnet-4-6-20250514', 'claude-3-7-sonnet-20250219']
             },
             deepseek: {
                 name: 'DeepSeek',
@@ -734,19 +734,19 @@
                 name: '智谱 AI',
                 baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
                 baseUrlHint: '',
-                models: ['glm-4-plus', 'glm-4-air', 'glm-4-flash']
+                models: ['glm-4-plus', 'glm-4-air', 'glm-4-flash', 'glm-4-flashx']
             },
             aliyun: {
                 name: '阿里云 (通义千问)',
                 baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
                 baseUrlHint: '',
-                models: ['qwen-turbo', 'qwen-plus', 'qwen-max']
+                models: ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen-coder-plus']
             },
             tencent: {
                 name: '腾讯云 (混元)',
                 baseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
                 baseUrlHint: '',
-                models: ['hunyuan-lite', 'hunyuan-standard', 'hunyuan-pro']
+                models: ['hunyuan-pro', 'hunyuan-standard', 'hunyuan-lite', 'hunyuan-turbos']
             },
             moonshot: {
                 name: 'Moonshot (Kimi)',
@@ -758,7 +758,7 @@
                 name: '百度 (文心一言)',
                 baseUrl: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat',
                 baseUrlHint: '',
-                models: ['ernie-4.0-8k', 'ernie-3.5-8k']
+                models: ['ernie-4.5-21b-a3b', 'ernie-4.0-8k', 'ernie-3.5-8k']
             }
         };
 
