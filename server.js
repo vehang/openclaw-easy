@@ -113,6 +113,35 @@ async function verifyPassword(password) {
 }
 
 /**
+ * 验证密码强度
+ * 要求：至少8位，包含大小写字母和数字
+ */
+function validatePasswordStrength(password) {
+    const errors = [];
+
+    if (!password || password.length < 8) {
+        errors.push('密码长度至少8位');
+    }
+
+    if (password && !/[a-z]/.test(password)) {
+        errors.push('密码必须包含小写字母');
+    }
+
+    if (password && !/[A-Z]/.test(password)) {
+        errors.push('密码必须包含大写字母');
+    }
+
+    if (password && !/[0-9]/.test(password)) {
+        errors.push('密码必须包含数字');
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors
+    };
+}
+
+/**
  * 生成 Session Token
  */
 function generateSessionToken() {
@@ -701,9 +730,10 @@ app.post('/api/setup/password', async (req, res) => {
 
         const { password, confirmPassword } = req.body;
 
-        // 验证密码
-        if (!password || password.length < 6) {
-            return res.status(400).json({ error: '密码长度至少6位' });
+        // 验证密码强度
+        const strengthValidation = validatePasswordStrength(password);
+        if (!strengthValidation.valid) {
+            return res.status(400).json({ error: strengthValidation.errors.join('，') });
         }
 
         if (password !== confirmPassword) {
@@ -791,9 +821,10 @@ app.post('/api/password/change', authMiddleware, async (req, res) => {
             return res.status(401).json({ error: '原密码错误' });
         }
 
-        // 验证新密码
-        if (!newPassword || newPassword.length < 6) {
-            return res.status(400).json({ error: '新密码长度至少6位' });
+        // 验证新密码强度
+        const strengthValidation = validatePasswordStrength(newPassword);
+        if (!strengthValidation.valid) {
+            return res.status(400).json({ error: '新' + strengthValidation.errors.join('，') });
         }
 
         if (newPassword !== confirmPassword) {

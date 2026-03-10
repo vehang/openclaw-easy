@@ -427,7 +427,16 @@
                     <div class="form-group">
                         <label class="form-label">新密码</label>
                         <input type="password" class="form-control" id="newPassword"
-                               placeholder="请输入新密码（至少6位）" required>
+                               placeholder="请输入新密码" required>
+                        <div class="strength-bar" style="height: 4px; background: var(--border-color); border-radius: 2px; margin-top: 8px; overflow: hidden;">
+                            <div class="strength-bar-fill" id="changeStrengthBar" style="height: 100%; width: 0; transition: width 0.3s, background 0.3s; border-radius: 2px;"></div>
+                        </div>
+                        <ul class="password-requirements" id="changePasswordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); padding-left: 0; list-style: none;">
+                            <li id="change-req-length" style="margin: 4px 0; padding-left: 20px; position: relative;">至少 8 个字符</li>
+                            <li id="change-req-lower" style="margin: 4px 0; padding-left: 20px; position: relative;">包含小写字母 (a-z)</li>
+                            <li id="change-req-upper" style="margin: 4px 0; padding-left: 20px; position: relative;">包含大写字母 (A-Z)</li>
+                            <li id="change-req-number" style="margin: 4px 0; padding-left: 20px; position: relative;">包含数字 (0-9)</li>
+                        </ul>
                     </div>
                     <div class="form-group">
                         <label class="form-label">确认新密码</label>
@@ -1027,8 +1036,11 @@
                 return;
             }
 
-            if (newPassword.length < 6) {
-                showToast('新密码长度至少6位', 'error');
+            // 验证新密码强度
+            const checks = checkNewPasswordStrength(newPassword);
+            const allValid = Object.values(checks).every(Boolean);
+            if (!allValid) {
+                showToast('新密码不满足强度要求', 'error');
                 return;
             }
 
@@ -1050,6 +1062,8 @@
                     showToast('密码修改成功', 'success');
                     passwordModal.style.display = 'none';
                     document.getElementById('changePasswordForm').reset();
+                    // 重置密码强度指示器
+                    resetChangePasswordStrength();
                 } else {
                     showToast(data.error || '修改失败', 'error');
                 }
@@ -1057,6 +1071,57 @@
                 console.error('修改密码失败:', error);
                 showToast('修改密码失败', 'error');
             }
+        });
+
+        // 密码强度检测函数（修改密码弹窗）
+        function checkNewPasswordStrength(password) {
+            const checks = {
+                length: password.length >= 8,
+                lower: /[a-z]/.test(password),
+                upper: /[A-Z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            // 更新要求列表状态
+            const lengthEl = document.getElementById('change-req-length');
+            const lowerEl = document.getElementById('change-req-lower');
+            const upperEl = document.getElementById('change-req-upper');
+            const numberEl = document.getElementById('change-req-number');
+
+            const updateReq = (el, valid) => {
+                el.style.color = password.length === 0 ? '' : (valid ? '#16a34a' : 'var(--primary-color)');
+                el.style.listStyle = 'none';
+                el.style.paddingLeft = '20px';
+                el.style.position = 'relative';
+            };
+
+            updateReq(lengthEl, checks.length);
+            updateReq(lowerEl, checks.lower);
+            updateReq(upperEl, checks.upper);
+            updateReq(numberEl, checks.number);
+
+            // 计算强度
+            const score = Object.values(checks).filter(Boolean).length;
+            const strengthBar = document.getElementById('changeStrengthBar');
+
+            strengthBar.style.width = password.length === 0 ? '0' : (score * 25) + '%';
+            strengthBar.style.background = score === 0 ? '' : (score === 1 ? '#ef4444' : (score === 2 ? '#f97316' : (score === 3 ? '#eab308' : '#16a34a')));
+
+            return checks;
+        }
+
+        function resetChangePasswordStrength() {
+            const strengthBar = document.getElementById('changeStrengthBar');
+            strengthBar.style.width = '0';
+            ['length', 'lower', 'upper', 'number'].forEach(type => {
+                const el = document.getElementById('change-req-' + type);
+                el.style.color = '';
+            });
+        }
+
+        // 监听新密码输入
+        document.getElementById('newPassword').addEventListener('input', (e) => {
+            checkNewPasswordStrength(e.target.value);
         });
 
         // ==================== 退出登录 ====================
