@@ -31,6 +31,38 @@ const PASSWORD_FILE = path.join(OPENCLAW_DIR, '.passwd');
 // Session 存储（内存中）
 const sessions = new Map();
 
+// ==================== 渠道必填字段定义 ====================
+const CHANNEL_REQUIRED_FIELDS = {
+    feishu: {
+        name: '飞书',
+        fields: [
+            { key: 'appId', label: 'App ID' },
+            { key: 'appSecret', label: 'App Secret' }
+        ]
+    },
+    dingtalk: {
+        name: '钉钉',
+        fields: [
+            { key: 'clientId', label: 'Client ID' },
+            { key: 'clientSecret', label: 'Client Secret' }
+        ]
+    },
+    qqbot: {
+        name: 'QQ机器人',
+        fields: [
+            { key: 'appId', label: 'App ID' },
+            { key: 'clientSecret', label: 'Client Secret' }
+        ]
+    },
+    wecom: {
+        name: '企业微信',
+        fields: [
+            { key: 'token', label: 'Token' },
+            { key: 'encodingAesKey', label: 'Encoding AES Key' }
+        ]
+    }
+};
+
 // ==================== Express 应用初始化 ====================
 const app = express();
 
@@ -219,6 +251,146 @@ function readConfig() {
         console.error('读取配置文件失败:', e);
         return getDefaultConfig();
     }
+}
+
+/**
+ * 验证 AI 配置
+ */
+function validateAiConfig(ai) {
+    const errors = [];
+
+    if (!ai) {
+        errors.push('AI 配置不能为空');
+        return { valid: false, errors };
+    }
+
+    if (!ai.baseUrl || ai.baseUrl.trim() === '') {
+        errors.push('Base URL 不能为空');
+    }
+
+    if (!ai.apiKey || ai.apiKey.trim() === '') {
+        errors.push('API Key 不能为空');
+    }
+
+    if (!ai.modelId || ai.modelId.trim() === '') {
+        errors.push('模型 ID 不能为空');
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors
+    };
+}
+
+/**
+ * 验证单个渠道配置
+ */
+function validateChannelConfig(channelId, channelConfig) {
+    const errors = [];
+    const channelDef = CHANNEL_REQUIRED_FIELDS[channelId];
+
+    if (!channelDef) {
+        return { valid: true, errors: [] };
+    }
+
+    for (const field of channelDef.fields) {
+        const value = channelConfig[field.key];
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+            errors.push(`${channelDef.name}: ${field.label} 不能为空`);
+        }
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+        channel: channelDef.name
+    };
+}
+
+/**
+ * 验证所有启用的渠道配置
+ */
+function validateAllChannels(im) {
+    const results = {};
+    const allErrors = [];
+    let enabledCount = 0;
+
+    for (const [channelId, channelDef] of Object.entries(CHANNEL_REQUIRED_FIELDS)) {
+        const channelConfig = im[channelId] || {};
+        const enabled = channelConfig.enabled;
+
+        results[channelId] = {
+            enabled,
+            valid: true,
+            errors: []
+        };
+
+        if (enabled) {
+            enabledCount++;
+            const validation = validateChannelConfig(channelId, channelConfig);
+            results[channelId] = {
+                enabled: true,
+                valid: validation.valid,
+                errors: validation.errors
+            };
+            if (!validation.valid) {
+                allErrors.push(...validation.errors);
+            }
+        }
+    }
+
+    return {
+        results,
+        allErrors,
+        enabledCount,
+        hasEnabledChannels: enabledCount > 0
+    };
+}
+
+/**
+ * 获取配置状态
+ */
+function getConfigStatus(config) {
+    const formConfig = configToFormFormat(config);
+
+    // AI 配置状态
+    const aiValidation = validateAiConfig(formConfig.ai);
+
+    // 渠道配置状态
+    const channelsValidation = validateAllChannels(formConfig.im);
+
+    // 计算完成百分比
+    let completedItems = 0;
+    let totalItems = 1; // AI 配置
+
+    if (aiValidation.valid) {
+        completedItems++;
+    }
+
+    // 添加启用的渠道到计数
+    for (const [channelId, result] of Object.entries(channelsValidation.results)) {
+        if (result.enabled) {
+            totalItems++;
+            if (result.valid) {
+                completedItems++;
+            }
+        }
+    }
+
+    const percentage = Math.round((completedItems / totalItems) * 100);
+
+    return {
+        ai: {
+            configured: aiValidation.valid,
+            errors: aiValidation.errors
+        },
+        channels: channelsValidation.results,
+        hasEnabledChannels: channelsValidation.hasEnabledChannels,
+        enabledChannelsCount: channelsValidation.enabledCount,
+        percentage,
+        isComplete: aiValidation.valid && (channelsValidation.hasEnabledChannels ? channelsValidation.allErrors.length === 0 : true),
+        allErrors: [...aiValidation.errors, ...channelsValidation.allErrors]
+    };
 }
 
 /**
@@ -668,6 +840,61 @@ app.get('/api/config/raw', authMiddleware, (req, res) => {
 });
 
 /**
+ * 获取配置状态
+ * GET /api/config/status
+ */
+app.get('/api/config/status', authMiddleware, (req, res) => {
+    try {
+        const config = readConfig();
+        const status = getConfigStatus(config);
+        res.json(status);
+    } catch (error) {
+        console.error('获取配置状态失败:', error);
+        res.status(500).json({ error: '获取配置状态失败' });
+    }
+});
+
+/**
+ * 验证配置
+ * POST /api/config/validate
+ */
+app.post('/api/config/validate', authMiddleware, (req, res) => {
+    try {
+        const formConfig = req.body;
+
+        if (!formConfig) {
+            return res.status(400).json({ valid: false, errors: ['配置不能为空'] });
+        }
+
+        const errors = [];
+
+        // 验证 AI 配置
+        const aiValidation = validateAiConfig(formConfig.ai);
+        if (!aiValidation.valid) {
+            errors.push(...aiValidation.errors);
+        }
+
+        // 验证渠道配置
+        if (formConfig.im) {
+            const channelsValidation = validateAllChannels(formConfig.im);
+            if (!channelsValidation.hasEnabledChannels) {
+                // 不强制要求启用渠道，但给出提示
+                // errors.push('请至少启用一个 IM 渠道');
+            }
+            errors.push(...channelsValidation.allErrors);
+        }
+
+        res.json({
+            valid: errors.length === 0,
+            errors
+        });
+    } catch (error) {
+        console.error('验证配置失败:', error);
+        res.status(500).json({ valid: false, errors: ['验证配置失败'] });
+    }
+});
+
+/**
  * 保存配置
  * POST /api/config
  */
@@ -678,6 +905,20 @@ app.post('/api/config', authMiddleware, (req, res) => {
         // 验证配置结构
         if (!formConfig || !formConfig.ai) {
             return res.status(400).json({ error: '配置格式不正确' });
+        }
+
+        // 验证配置
+        const aiValidation = validateAiConfig(formConfig.ai);
+        if (!aiValidation.valid) {
+            return res.status(400).json({ error: aiValidation.errors.join('; ') });
+        }
+
+        // 验证启用的渠道
+        if (formConfig.im) {
+            const channelsValidation = validateAllChannels(formConfig.im);
+            if (channelsValidation.allErrors.length > 0) {
+                return res.status(400).json({ error: channelsValidation.allErrors.join('; ') });
+            }
         }
 
         // 转换为 OpenClaw 格式并保存
