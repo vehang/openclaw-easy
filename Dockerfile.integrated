@@ -1,7 +1,7 @@
 # OpenClaw Easy 整合版 Dockerfile
 # 基于 openclaw-docker-cn-im 镜像，添加配置管理服务
 
-FROM justlovemaki/openclaw-docker-cn-im:latest
+FROM justlikemaki/openclaw-docker-cn-im:latest
 
 # 切换到 root 用户进行安装
 USER root
