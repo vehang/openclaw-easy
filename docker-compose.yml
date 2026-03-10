@@ -22,8 +22,7 @@ services:
     ports:
       - "28780:18780"   # 宿主机:28780 -> 容器:18780
     volumes:
-      - ./data:/app/data
-      - openclaw-config:/root/.openclaw
+      - ./data/openclaw-config:/root/.openclaw
     environment:
       - TZ=Asia/Shanghai
     profiles:
@@ -45,9 +44,8 @@ services:
       - "28789:18789"   # Gateway 端口 - 宿主机:28789 -> 容器:18789
       - "28790:18790"   # Gateway 端口 - 宿主机:28790 -> 容器:18790
     volumes:
-      - ./data:/app/data
-      - openclaw-config:/home/node/.openclaw
-      - openclaw-workspace:/home/node/.openclaw/workspace
+      - ./data/openclaw-config:/home/node/.openclaw
+      - ./data/openclaw-workspace:/home/node/.openclaw/workspace
     environment:
       # 时区设置
       - TZ=Asia/Shanghai
@@ -60,10 +58,3 @@ services:
 networks:
   openclaw-network:
     driver: bridge
-
-# ==================== 卷配置 ====================
-volumes:
-  openclaw-config:
-    name: openclaw-config
-  openclaw-workspace:
-    name: openclaw-workspace
