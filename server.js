@@ -735,30 +735,30 @@ async function restartGateway() {
     const { exec } = require('child_process');
 
     return new Promise((resolve, reject) => {
-        // 检测可用的服务管理工具
-        const availableCommands = [];
+        // 检测可用的重启方式
+        const restartMethods = [];
 
-        // 优先级 1: supervisorctl（Docker 容器环境）
+        // 优先级 1: 通过 kill 发送信号（supervisord 会自动重启）
+        // 适用于 Docker 容器环境
+        restartMethods.push({
+            name: 'kill-supervisor',
+            description: '发送信号给 Gateway 进程（supervisord 自动重启）',
+            cmd: 'pkill -f "openclaw gateway run"',
+            manual: 'pkill -f "openclaw gateway run"'
+        });
+
+        // 优先级 2: supervisorctl（如果 supervisord 正在运行）
         if (isCommandAvailable('supervisorctl')) {
-            availableCommands.push({
+            restartMethods.push({
                 name: 'supervisorctl',
                 cmd: 'supervisorctl restart openclaw-gateway',
                 manual: 'supervisorctl restart openclaw-gateway'
             });
         }
 
-        // 优先级 2: openclaw 命令（直接管理）
-        if (isCommandAvailable('openclaw')) {
-            availableCommands.push({
-                name: 'openclaw',
-                cmd: 'openclaw gateway restart',
-                manual: 'openclaw gateway restart'
-            });
-        }
-
         // 优先级 3: systemctl（系统服务）
         if (isCommandAvailable('systemctl')) {
-            availableCommands.push({
+            restartMethods.push({
                 name: 'systemctl',
                 cmd: 'systemctl restart openclaw-gateway',
                 manual: 'sudo systemctl restart openclaw-gateway'
@@ -767,7 +767,7 @@ async function restartGateway() {
 
         // 优先级 4: pm2（进程管理器）
         if (isCommandAvailable('pm2')) {
-            availableCommands.push({
+            restartMethods.push({
                 name: 'pm2',
                 cmd: 'pm2 restart openclaw-gateway',
                 manual: 'pm2 restart openclaw-gateway'
@@ -776,55 +776,36 @@ async function restartGateway() {
 
         // 优先级 5: service（系统服务）
         if (isCommandAvailable('service')) {
-            availableCommands.push({
+            restartMethods.push({
                 name: 'service',
                 cmd: 'service openclaw-gateway restart',
                 manual: 'sudo service openclaw-gateway restart'
             });
         }
 
-        // 如果没有可用的服务管理工具
-        if (availableCommands.length === 0) {
-            const manualCommands = [
-                '# 未检测到可用的服务管理工具，请手动重启 OpenClaw Gateway：',
-                '',
-                '# 方法1: 如果在 Docker 容器中（推荐）',
-                'supervisorctl restart openclaw-gateway',
-                '',
-                '# 方法2: 使用 openclaw 命令',
-                'openclaw gateway restart',
-                '',
-                '# 方法3: 如果使用 systemctl',
-                'sudo systemctl restart openclaw-gateway',
-                '',
-                '# 方法4: 如果使用 pm2',
-                'pm2 restart openclaw-gateway',
-                '',
-                '# 方法5: 如果使用 service',
-                'sudo service openclaw-gateway restart',
-                '',
-                '# 方法6: 手动重启进程',
-                '# 1. 查找进程: ps aux | grep openclaw',
-                '# 2. 停止进程: kill <进程ID>',
-                '# 3. 启动服务: openclaw gateway start'
-            ].join('\n');
-
-            return reject(new Error(`未检测到可用的服务管理工具\n\n${manualCommands}`));
-        }
-
-        // 尝试执行可用的重启命令
+        // 尝试执行可用的重启方法
         let lastError = null;
         let successCount = 0;
 
         const tryRestart = (index) => {
-            if (index >= availableCommands.length) {
+            if (index >= restartMethods.length) {
                 if (successCount > 0) {
                     resolve({ success: true, message: '重启命令已执行' });
                 } else {
-                    // 所有命令都失败了，提供手动重启指南
+                    // 所有方法都失败了，提供手动重启指南
                     const manualCommands = [
-                        '# 自动重启失败，请手动执行以下命令：',
-                        ...availableCommands.map(cmd => `# 使用 ${cmd.name}: ${cmd.manual}`)
+                        '# 自动重启失败，请手动执行以下操作：',
+                        '',
+                        '# 方法1: 重启整个容器（最简单）',
+                        'docker restart openclaw-easy',
+                        '',
+                        '# 方法2: 在容器内手动重启',
+                        'docker exec -it openclaw-easy bash',
+                        'pkill -f "openclaw gateway run"',
+                        '# supervisord 会自动重启 Gateway',
+                        '',
+                        '# 方法3: 重启 supervisord 服务',
+                        'docker exec -it openclaw-easy supervisorctl restart openclaw-gateway'
                     ].join('\n');
 
                     reject(new Error(`无法自动重启服务\n\n${manualCommands}\n\n最后错误: ${lastError || '未知错误'}`));
@@ -832,10 +813,12 @@ async function restartGateway() {
                 return;
             }
 
-            const { cmd } = availableCommands[index];
+            const { name, cmd, description } = restartMethods[index];
+            console.log(`尝试重启方式 [${index + 1}/${restartMethods.length}]: ${name} - ${description}`);
+
             exec(cmd, (error, stdout, stderr) => {
                 if (error) {
-                    // 命令执行失败，尝试下一个
+                    console.log(`❌ ${name} 失败: ${error.message}`);
                     lastError = error.message;
                     tryRestart(index + 1);
                 } else {
