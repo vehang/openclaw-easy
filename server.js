@@ -738,6 +738,25 @@ async function restartGateway() {
         // 检测可用的服务管理工具
         const availableCommands = [];
 
+        // 优先级 1: supervisorctl（Docker 容器环境）
+        if (isCommandAvailable('supervisorctl')) {
+            availableCommands.push({
+                name: 'supervisorctl',
+                cmd: 'supervisorctl restart openclaw-gateway',
+                manual: 'supervisorctl restart openclaw-gateway'
+            });
+        }
+
+        // 优先级 2: openclaw 命令（直接管理）
+        if (isCommandAvailable('openclaw')) {
+            availableCommands.push({
+                name: 'openclaw',
+                cmd: 'openclaw gateway restart',
+                manual: 'openclaw gateway restart'
+            });
+        }
+
+        // 优先级 3: systemctl（系统服务）
         if (isCommandAvailable('systemctl')) {
             availableCommands.push({
                 name: 'systemctl',
@@ -746,14 +765,7 @@ async function restartGateway() {
             });
         }
 
-        if (isCommandAvailable('service')) {
-            availableCommands.push({
-                name: 'service',
-                cmd: 'service openclaw-gateway restart',
-                manual: 'sudo service openclaw-gateway restart'
-            });
-        }
-
+        // 优先级 4: pm2（进程管理器）
         if (isCommandAvailable('pm2')) {
             availableCommands.push({
                 name: 'pm2',
@@ -762,21 +774,37 @@ async function restartGateway() {
             });
         }
 
+        // 优先级 5: service（系统服务）
+        if (isCommandAvailable('service')) {
+            availableCommands.push({
+                name: 'service',
+                cmd: 'service openclaw-gateway restart',
+                manual: 'sudo service openclaw-gateway restart'
+            });
+        }
+
         // 如果没有可用的服务管理工具
         if (availableCommands.length === 0) {
             const manualCommands = [
                 '# 未检测到可用的服务管理工具，请手动重启 OpenClaw Gateway：',
-                '# 方法1: 如果使用 systemctl',
+                '',
+                '# 方法1: 如果在 Docker 容器中（推荐）',
+                'supervisorctl restart openclaw-gateway',
+                '',
+                '# 方法2: 使用 openclaw 命令',
+                'openclaw gateway restart',
+                '',
+                '# 方法3: 如果使用 systemctl',
                 'sudo systemctl restart openclaw-gateway',
                 '',
-                '# 方法2: 如果使用 pm2',
+                '# 方法4: 如果使用 pm2',
                 'pm2 restart openclaw-gateway',
                 '',
-                '# 方法3: 如果使用 service',
+                '# 方法5: 如果使用 service',
                 'sudo service openclaw-gateway restart',
                 '',
-                '# 方法4: 手动重启进程',
-                '# 1. 查找进程: ps aux | grep openclaw-gateway',
+                '# 方法6: 手动重启进程',
+                '# 1. 查找进程: ps aux | grep openclaw',
                 '# 2. 停止进程: kill <进程ID>',
                 '# 3. 启动服务: openclaw gateway start'
             ].join('\n');
