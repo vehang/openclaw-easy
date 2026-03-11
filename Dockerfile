@@ -29,6 +29,9 @@ RUN chmod +x /usr/local/bin/init-fixed.sh
 # 复制 supervisord 配置
 COPY supervisord.conf /etc/supervisor/conf.d/openclaw.conf
 
+# 清除基础镜像的 ENTRYPOINT，使用我们自己的启动方式
+ENTRYPOINT []
+
 # 暴露端口
 # 18780: Web 配置界面
 # 18789: OpenClaw Gateway API
