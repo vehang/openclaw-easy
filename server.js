@@ -738,7 +738,17 @@ async function restartGateway() {
         // 检测可用的重启方式
         const restartMethods = [];
 
-        // 优先级 1: 通过 kill 发送信号（supervisord 会自动重启）
+        // 优先级 1: openclaw gateway restart（用户优先要求）
+        if (isCommandAvailable('openclaw')) {
+            restartMethods.push({
+                name: 'openclaw',
+                description: '使用 openclaw 命令重启',
+                cmd: 'openclaw gateway restart',
+                manual: 'openclaw gateway restart'
+            });
+        }
+
+        // 优先级 2: 通过 kill 发送信号（supervisord 会自动重启）
         // 适用于 Docker 容器环境
         restartMethods.push({
             name: 'kill-supervisor',
@@ -747,7 +757,7 @@ async function restartGateway() {
             manual: 'pkill -f "openclaw gateway run"'
         });
 
-        // 优先级 2: supervisorctl（如果 supervisord 正在运行）
+        // 优先级 3: supervisorctl（如果 supervisord 正在运行）
         if (isCommandAvailable('supervisorctl')) {
             restartMethods.push({
                 name: 'supervisorctl',
@@ -756,7 +766,7 @@ async function restartGateway() {
             });
         }
 
-        // 优先级 3: systemctl（系统服务）
+        // 优先级 4: systemctl（系统服务）
         if (isCommandAvailable('systemctl')) {
             restartMethods.push({
                 name: 'systemctl',
@@ -765,7 +775,7 @@ async function restartGateway() {
             });
         }
 
-        // 优先级 4: pm2（进程管理器）
+        // 优先级 5: pm2（进程管理器）
         if (isCommandAvailable('pm2')) {
             restartMethods.push({
                 name: 'pm2',
@@ -774,7 +784,7 @@ async function restartGateway() {
             });
         }
 
-        // 优先级 5: service（系统服务）
+        // 优先级 6: service（系统服务）
         if (isCommandAvailable('service')) {
             restartMethods.push({
                 name: 'service',
@@ -796,15 +806,18 @@ async function restartGateway() {
                     const manualCommands = [
                         '# 自动重启失败，请手动执行以下操作：',
                         '',
-                        '# 方法1: 重启整个容器（最简单）',
+                        '# 方法1: 使用 openclaw 命令',
+                        'openclaw gateway restart',
+                        '',
+                        '# 方法2: 重启整个容器（最简单）',
                         'docker restart openclaw-easy',
                         '',
-                        '# 方法2: 在容器内手动重启',
+                        '# 方法3: 在容器内手动重启',
                         'docker exec -it openclaw-easy bash',
                         'pkill -f "openclaw gateway run"',
                         '# supervisord 会自动重启 Gateway',
                         '',
-                        '# 方法3: 重启 supervisord 服务',
+                        '# 方法4: 重启 supervisord 服务',
                         'docker exec -it openclaw-easy supervisorctl restart openclaw-gateway'
                     ].join('\n');
 
