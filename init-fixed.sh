@@ -418,16 +418,28 @@ def sync():
             print(msg)
         
         # --- 1.5 确保必填字段存在（防止配置验证失败）---
+        # 强制检查并修复必填字段，无论配置文件来源如何
         default_provider = ensure_path(config, ['models', 'providers', 'default'])
-        if 'baseUrl' not in default_provider or not default_provider.get('baseUrl'):
+        
+        # 检查 baseUrl
+        base_url_value = default_provider.get('baseUrl')
+        if not base_url_value or not isinstance(base_url_value, str) or not base_url_value.strip():
             default_provider['baseUrl'] = 'https://api.openai.com/v1'
-            print('⚠️ 已添加默认 baseUrl（可通过 Web 界面修改）')
-        if 'apiKey' not in default_provider or not default_provider.get('apiKey'):
+            print('⚠️ 已添加/修复默认 baseUrl（可通过 Web 界面修改）')
+        
+        # 检查 apiKey
+        api_key_value = default_provider.get('apiKey')
+        if not api_key_value or not isinstance(api_key_value, str) or not api_key_value.strip():
             default_provider['apiKey'] = 'placeholder-configure-via-web-ui'
-            print('⚠️ 已添加占位符 apiKey（请通过 Web 界面修改）')
-        if 'api' not in default_provider or not default_provider.get('api'):
+            print('⚠️ 已添加/修复占位符 apiKey（请通过 Web 界面修改）')
+        
+        # 检查 api
+        api_value = default_provider.get('api')
+        if not api_value or not isinstance(api_value, str) or not api_value.strip():
             default_provider['api'] = 'openai-completions'
-            print('⚠️ 已添加默认 api 协议')
+            print('⚠️ 已添加/修复默认 api 协议')
+        
+        print(f'✅ 配置验证完成: baseUrl={default_provider.get(\"baseUrl\")}, apiKey={default_provider.get(\"apiKey\")[:20]}..., api={default_provider.get(\"api\")}')
 
         # --- 2. Agent 与工具配置同步（兼容 OpenClaw 3.2） ---
         ensure_path(config, ['agents', 'defaults', 'sandbox'])['mode'] = 'off'
