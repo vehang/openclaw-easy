@@ -308,6 +308,27 @@ def sync():
                 curr = curr[k]
             return curr
 
+        # --- 0.1 强制确保必填字段（最优先）---
+        # 无论配置文件来源如何，都确保必填字段存在且有效
+        default_provider = ensure_path(config, ['models', 'providers', 'default'])
+        
+        # 强制设置 baseUrl（如果缺失或无效）
+        if not default_provider.get('baseUrl') or not isinstance(default_provider.get('baseUrl'), str):
+            default_provider['baseUrl'] = 'https://api.openai.com/v1'
+            print('⚠️ [优先级1] 设置默认 baseUrl: https://api.openai.com/v1')
+        
+        # 强制设置 apiKey（如果缺失或无效）
+        if not default_provider.get('apiKey') or not isinstance(default_provider.get('apiKey'), str):
+            default_provider['apiKey'] = 'placeholder-configure-via-web-ui'
+            print('⚠️ [优先级1] 设置占位符 apiKey')
+        
+        # 强制设置 api（如果缺失或无效）
+        if not default_provider.get('api') or not isinstance(default_provider.get('api'), str):
+            default_provider['api'] = 'openai-completions'
+            print('⚠️ [优先级1] 设置默认 api: openai-completions')
+        
+        print(f'✅ [优先级1] 配置验证通过: baseUrl={default_provider.get("baseUrl")}, apiKey={default_provider.get("apiKey")[:20]}...')
+
         # --- 0. 飞书旧版本格式迁移 ---
         feishu_raw = config.get('channels', {}).get('feishu', {})
         if 'appId' in feishu_raw and 'accounts' not in feishu_raw:
@@ -417,30 +438,6 @@ def sync():
             if p2_active: msg += f', 已启用备用提供商: {p2_name}'
             print(msg)
         
-        # --- 1.5 确保必填字段存在（防止配置验证失败）---
-        # 强制检查并修复必填字段，无论配置文件来源如何
-        default_provider = ensure_path(config, ['models', 'providers', 'default'])
-        
-        # 检查 baseUrl
-        base_url_value = default_provider.get('baseUrl')
-        if not base_url_value or not isinstance(base_url_value, str) or not base_url_value.strip():
-            default_provider['baseUrl'] = 'https://api.openai.com/v1'
-            print('⚠️ 已添加/修复默认 baseUrl（可通过 Web 界面修改）')
-        
-        # 检查 apiKey
-        api_key_value = default_provider.get('apiKey')
-        if not api_key_value or not isinstance(api_key_value, str) or not api_key_value.strip():
-            default_provider['apiKey'] = 'placeholder-configure-via-web-ui'
-            print('⚠️ 已添加/修复占位符 apiKey（请通过 Web 界面修改）')
-        
-        # 检查 api
-        api_value = default_provider.get('api')
-        if not api_value or not isinstance(api_value, str) or not api_value.strip():
-            default_provider['api'] = 'openai-completions'
-            print('⚠️ 已添加/修复默认 api 协议')
-        
-        print(f'✅ 配置验证完成: baseUrl={default_provider.get(\"baseUrl\")}, apiKey={default_provider.get(\"apiKey\")[:20]}..., api={default_provider.get(\"api\")}')
-
         # --- 2. Agent 与工具配置同步（兼容 OpenClaw 3.2） ---
         ensure_path(config, ['agents', 'defaults', 'sandbox'])['mode'] = 'off'
         tools = ensure_path(config, ['tools'])
