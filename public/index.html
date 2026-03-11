@@ -1006,6 +1006,174 @@
             wecom: ['token', 'encodingAesKey']
         };
 
+        // ==================== 实时进度跟踪 ====================
+
+        /**
+         * 计算配置完成进度
+         */
+        function calculateProgress() {
+            let totalFields = 3; // AI 必填字段: baseUrl, apiKey, modelId
+            let filledFields = 0;
+
+            // 检查 AI 配置必填字段
+            const aiBaseUrl = document.getElementById('aiBaseUrl').value.trim();
+            const aiApiKey = document.getElementById('aiApiKey').value.trim();
+            const aiModelId = document.getElementById('aiModelId').value.trim();
+
+            if (aiBaseUrl) filledFields++;
+            if (aiApiKey) filledFields++;
+            if (aiModelId) filledFields++;
+
+            // 检查启用的 IM 渠道
+            const channels = ['feishu', 'dingtalk', 'qqbot', 'wecom'];
+            channels.forEach(channel => {
+                const enabled = document.getElementById(`${channel}Enabled`).checked;
+                if (enabled) {
+                    const fields = CHANNEL_REQUIRED_FIELDS[channel] || [];
+                    fields.forEach(field => {
+                        totalFields++;
+                        const fieldId = `${channel}${field.charAt(0).toUpperCase() + field.slice(1)}`;
+                        const input = document.getElementById(fieldId);
+                        if (input && input.value.trim()) {
+                            filledFields++;
+                        }
+                    });
+                }
+            });
+
+            const percentage = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
+            updateProgressUI(percentage, filledFields, totalFields);
+
+            return percentage;
+        }
+
+        /**
+         * 更新进度条 UI
+         */
+        function updateProgressUI(percentage, filledFields, totalFields) {
+            const progressFill = document.getElementById('progressBarFill');
+            const progressText = document.getElementById('configPercentage');
+
+            // 更新进度条
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `${percentage}%`;
+
+            // 根据进度改变颜色
+            if (percentage === 100) {
+                progressFill.style.background = 'linear-gradient(90deg, #10b981, #059669)'; // 绿色渐变
+            } else if (percentage >= 50) {
+                progressFill.style.background = 'linear-gradient(90deg, var(--primary-color), var(--accent-color))'; // 品牌色
+            } else {
+                progressFill.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)'; // 黄色渐变
+            }
+
+            // 更新状态项
+            updateStatusItems(filledFields, totalFields);
+        }
+
+        /**
+         * 更新状态项显示
+         */
+        function updateStatusItems(filledFields, totalFields) {
+            // AI 状态
+            const aiStatusItem = document.getElementById('aiStatusItem');
+            const aiDot = aiStatusItem.querySelector('.dot');
+            const aiText = aiStatusItem.querySelector('span:last-child');
+
+            const aiBaseUrl = document.getElementById('aiBaseUrl').value.trim();
+            const aiApiKey = document.getElementById('aiApiKey').value.trim();
+            const aiModelId = document.getElementById('aiModelId').value.trim();
+            const aiComplete = aiBaseUrl && aiApiKey && aiModelId;
+
+            if (aiComplete) {
+                aiDot.className = 'dot success';
+                aiText.textContent = 'AI: 已配置';
+            } else {
+                aiDot.className = 'dot warning';
+                aiText.textContent = 'AI: 未配置';
+            }
+
+            // AI 配置卡片状态
+            const aiConfigStatus = document.getElementById('aiConfigStatus');
+            if (aiComplete) {
+                aiConfigStatus.className = 'status-indicator success';
+                aiConfigStatus.innerHTML = '<span class="status-dot"></span><span>已配置</span>';
+            } else {
+                aiConfigStatus.className = 'status-indicator warning';
+                aiConfigStatus.innerHTML = '<span class="status-dot"></span><span>未配置</span>';
+            }
+
+            // IM 渠道状态
+            const channelsStatusItem = document.getElementById('channelsStatusItem');
+            const channelsDot = channelsStatusItem.querySelector('.dot');
+            const channelsText = channelsStatusItem.querySelector('span:last-child');
+
+            const channels = ['feishu', 'dingtalk', 'qqbot', 'wecom'];
+            let enabledCount = 0;
+            let completeCount = 0;
+
+            channels.forEach(channel => {
+                const enabled = document.getElementById(`${channel}Enabled`).checked;
+                if (enabled) {
+                    enabledCount++;
+                    const fields = CHANNEL_REQUIRED_FIELDS[channel] || [];
+                    let allFilled = true;
+                    fields.forEach(field => {
+                        const fieldId = `${channel}${field.charAt(0).toUpperCase() + field.slice(1)}`;
+                        const input = document.getElementById(fieldId);
+                        if (!input || !input.value.trim()) {
+                            allFilled = false;
+                        }
+                    });
+                    if (allFilled) completeCount++;
+                }
+            });
+
+            if (enabledCount > 0 && completeCount === enabledCount) {
+                channelsDot.className = 'dot success';
+                channelsText.textContent = `IM: ${enabledCount} 个`;
+            } else if (enabledCount > 0) {
+                channelsDot.className = 'dot warning';
+                channelsText.textContent = `IM: ${completeCount}/${enabledCount} 个`;
+            } else {
+                channelsDot.className = 'dot warning';
+                channelsText.textContent = 'IM: 0 个';
+            }
+        }
+
+        /**
+         * 设置进度跟踪监听器
+         */
+        function setupProgressTracking() {
+            // 监听 AI 配置字段
+            ['aiBaseUrl', 'aiApiKey', 'aiModelId'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', calculateProgress);
+                }
+            });
+
+            // 监听 IM 渠道字段
+            const channels = ['feishu', 'dingtalk', 'qqbot', 'wecom'];
+            channels.forEach(channel => {
+                // 监听启用开关
+                const enabledCheckbox = document.getElementById(`${channel}Enabled`);
+                if (enabledCheckbox) {
+                    enabledCheckbox.addEventListener('change', calculateProgress);
+                }
+
+                // 监听必填字段
+                const fields = CHANNEL_REQUIRED_FIELDS[channel] || [];
+                fields.forEach(field => {
+                    const fieldId = `${channel}${field.charAt(0).toUpperCase() + field.slice(1)}`;
+                    const input = document.getElementById(fieldId);
+                    if (input) {
+                        input.addEventListener('input', calculateProgress);
+                    }
+                });
+            });
+        }
+
         // ==================== 步骤导航 ====================
 
         function goToStep(step) {
@@ -1088,7 +1256,16 @@
 
         // 页面加载时获取配置
         document.addEventListener('DOMContentLoaded', async () => {
+            // 设置进度跟踪监听器
+            setupProgressTracking();
+
+            // 加载配置
             await loadConfig();
+
+            // 计算初始进度
+            calculateProgress();
+
+            // 加载配置状态（用于更新各渠道状态）
             await loadConfigStatus();
         });
 
@@ -1135,46 +1312,8 @@
          * 更新配置状态 UI
          */
         function updateConfigStatusUI(status) {
-            // 更新进度条
-            const percentage = status.percentage || 0;
-            document.getElementById('configPercentage').textContent = percentage + '%';
-            document.getElementById('progressBarFill').style.width = percentage + '%';
-
-            // 更新 AI 状态
-            const aiStatusItem = document.getElementById('aiStatusItem');
-            const aiDot = aiStatusItem.querySelector('.dot');
-            const aiText = aiStatusItem.querySelector('span:last-child');
-            if (status.ai.configured) {
-                aiDot.className = 'dot success';
-                aiText.textContent = 'AI: 已配置';
-            } else {
-                aiDot.className = 'dot warning';
-                aiText.textContent = 'AI: 未配置';
-            }
-
-            // 更新 AI 配置卡片状态
-            const aiConfigStatus = document.getElementById('aiConfigStatus');
-            if (status.ai.configured) {
-                aiConfigStatus.className = 'status-indicator success';
-                aiConfigStatus.innerHTML = '<span class="status-dot"></span><span>已配置</span>';
-            } else {
-                aiConfigStatus.className = 'status-indicator warning';
-                aiConfigStatus.innerHTML = '<span class="status-dot"></span><span>未配置</span>';
-            }
-
-            // 更新渠道状态
-            const channelsStatusItem = document.getElementById('channelsStatusItem');
-            const channelsDot = channelsStatusItem.querySelector('.dot');
-            const channelsText = channelsStatusItem.querySelector('span:last-child');
-            const enabledCount = status.enabledChannelsCount || 0;
-
-            if (enabledCount > 0) {
-                channelsDot.className = 'dot success';
-                channelsText.textContent = `IM: ${enabledCount} 个`;
-            } else {
-                channelsDot.className = 'dot warning';
-                channelsText.textContent = 'IM: 0 个';
-            }
+            // 使用前端实时计算的进度，而不是服务器返回的进度
+            calculateProgress();
 
             // 更新各渠道状态
             if (status.channels) {
@@ -1286,6 +1425,9 @@
 
             // 更新状态
             updateChannelStatusUI(platform);
+
+            // 重新计算进度（启用/禁用渠道会影响总字段数）
+            calculateProgress();
         }
 
         /**
@@ -1552,8 +1694,9 @@
                     } else {
                         showToast('配置保存成功', 'success');
                     }
-                    // 刷新配置状态
+                    // 刷新配置状态并更新进度
                     await loadConfigStatus();
+                    calculateProgress();
                 } else {
                     showToast(data.error || '保存失败', 'error');
                 }
