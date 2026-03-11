@@ -22,6 +22,9 @@ WORKDIR /app/openclaw-easy
 # 安装 openclaw-easy 依赖
 RUN npm install --production
 
+# 设置默认工作目录为用户主目录
+WORKDIR /home/node
+
 # 复制修复后的启动脚本
 COPY init-fixed.sh /usr/local/bin/init-fixed.sh
 RUN chmod +x /usr/local/bin/init-fixed.sh

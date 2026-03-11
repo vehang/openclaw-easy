@@ -1,60 +1,16 @@
-# OpenClaw Easy - Docker Compose 配置
-# 支持两种部署模式：standalone（独立）和 integrated（整合）
-
-# ==================== 共享配置 ====================
-x-shared-config: &shared-config
-  restart: unless-stopped
-  networks:
-    - openclaw-network
-
-# ==================== 独立部署模式 ====================
-# 仅运行配置管理服务，适用于已有 OpenClaw Gateway 的场景
+version: '3.8'
 
 services:
-  # 独立模式：仅配置管理服务
   openclaw-easy:
-    <<: *shared-config
-    build:
-      context: .
-      dockerfile: Dockerfile.standalone
+    build: .
     image: openclaw-easy:latest
     container_name: openclaw-easy
+    restart: unless-stopped
     ports:
-      - "28780:18780"   # 宿主机:28780 -> 容器:18780
+      - "18780:18780"
+      - "18789:18789"
+      - "18790:18790"
     volumes:
-      - ./data/openclaw-config:/root/.openclaw
+      - ./openclaw-data:/home/node/.openclaw
     environment:
       - TZ=Asia/Shanghai
-    profiles:
-      - standalone
-
-  # ==================== 整合部署模式 ====================
-  # 同时运行 OpenClaw Gateway 和配置管理服务
-
-  # 整合模式：Gateway + 配置管理
-  openclaw-easy-integrated:
-    <<: *shared-config
-    build:
-      context: .
-      dockerfile: Dockerfile.integrated
-    image: openclaw-easy-integrated:latest
-    container_name: openclaw-easy-integrated
-    ports:
-      - "28780:18780"   # 配置管理界面 - 宿主机:28780 -> 容器:18780
-      - "28789:18789"   # Gateway 端口 - 宿主机:28789 -> 容器:18789
-      - "28790:18790"   # Gateway 端口 - 宿主机:28790 -> 容器:18790
-    volumes:
-      - ./data/openclaw-config:/home/node/.openclaw
-      - ./data/openclaw-workspace:/home/node/.openclaw/workspace
-    environment:
-      # 时区设置
-      - TZ=Asia/Shanghai
-      # 配置管理服务端口
-      - EASY_PORT=18780
-    profiles:
-      - integrated
-
-# ==================== 网络配置 ====================
-networks:
-  openclaw-network:
-    driver: bridge

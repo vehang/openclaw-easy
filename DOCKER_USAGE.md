@@ -53,15 +53,11 @@ docker build -t openclaw-easy:latest .
 ### 2. 运行容器
 
 ```bash
-docker run -d \
-  --name openclaw-easy \
-  --restart unless-stopped \
-  -p 18780:18780 \
-  -p 18789:18789 \
-  -p 18790:18790 \
-  -v openclaw-data:/home/node/.openclaw \
-  -e TZ=Asia/Shanghai \
-  openclaw-easy:latest
+# 使用 docker compose
+docker compose up -d
+
+# 或者使用 docker-compose
+docker-compose up -d
 ```
 
 ### 3. 访问服务
@@ -137,8 +133,12 @@ docker exec -it openclaw-easy bash
 
 ## 📝 配置文件位置
 
-容器内配置文件路径：
-- **OpenClaw 配置**：`/home/node/.openclaw/openclaw.json`
+数据存储在本地目录：
+- **本地数据目录**：`./openclaw-data/`
+- **OpenClaw 配置**：`./openclaw-data/openclaw.json`
+- **容器内路径**：`/home/node/.openclaw`
+
+日志文件位置（容器内）：
 - **Gateway 日志**：`/var/log/supervisor/gateway.log`
 - **Web 日志**：`/var/log/supervisor/easy.log`
 
