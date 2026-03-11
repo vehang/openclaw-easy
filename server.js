@@ -228,7 +228,8 @@ function getDefaultConfig() {
         "browser": {
             "headless": true,
             "noSandbox": true,
-            "defaultProfile": "openclaw"
+            "defaultProfile": "openclaw",
+            "executablePath": "/usr/bin/chromium"
         },
         "models": {
             "mode": "merge",
@@ -236,14 +237,26 @@ function getDefaultConfig() {
         },
         "agents": {
             "defaults": {
+                "model": {
+                    "primary": "default/glm-5"
+                },
+                "imageModel": {
+                    "primary": "default/glm-5"
+                },
+                "workspace": "/home/node/.openclaw/workspace",
                 "compaction": {
-                    "mode": "safeguard"
+                    "mode": "safeguard",
+                    "reserveTokensFloor": 20000
                 },
                 "sandbox": {
                     "mode": "off"
                 },
                 "elevatedDefault": "full",
-                "maxConcurrent": 4
+                "timeoutSeconds": 300,
+                "maxConcurrent": 4,
+                "subagents": {
+                    "maxConcurrent": 8
+                }
             }
         },
         "tools": {
@@ -256,13 +269,33 @@ function getDefaultConfig() {
             }
         },
         "messages": {
-            "ackReactionScope": "group-mentions"
+            "ackReactionScope": "group-mentions",
+            "tts": {
+                "edge": {
+                    "voice": "zh-CN-XiaoxiaoNeural"
+                }
+            }
         },
         "commands": {
             "native": "auto",
-            "nativeSkills": "auto"
+            "nativeSkills": "auto",
+            "restart": true,
+            "ownerDisplay": "raw"
         },
         "channels": {},
+        "memory": {
+            "backend": "qmd",
+            "qmd": {
+                "command": "/usr/local/bin/qmd",
+                "paths": [
+                    {
+                        "path": "/home/node/.openclaw/workspace",
+                        "name": "workspace",
+                        "pattern": "**/*.md"
+                    }
+                ]
+            }
+        },
         "plugins": {
             "enabled": true,
             "entries": {},
@@ -270,8 +303,16 @@ function getDefaultConfig() {
         },
         "gateway": {
             "port": 18789,
-            "bind": "0.0.0.0",
+            "bind": "lan",
             "mode": "local",
+            "controlUi": {
+                "allowedOrigins": [
+                    "http://localhost:18789",
+                    "http://127.0.0.1:18789"
+                ],
+                "allowInsecureAuth": true,
+                "dangerouslyDisableDeviceAuth": false
+            },
             "auth": {
                 "mode": "token",
                 "token": ""
@@ -520,7 +561,7 @@ function formToConfig(formConfig) {
     // 读取现有配置作为基础
     const existingConfig = readConfig();
 
-    const { ai, im, gateway } = formConfig;
+    const { ai, im, gateway = {} } = formConfig;
 
     // 构建 models.providers.default 配置
     const defaultProvider = {};
@@ -551,7 +592,7 @@ function formToConfig(formConfig) {
     const channels = { ...existingConfig.channels };
 
     // 飞书配置
-    if (im.feishu.enabled) {
+    if (im.feishu && im.feishu.enabled) {
         channels.feishu = {
             enabled: true,
             dmPolicy: 'open',
@@ -576,7 +617,7 @@ function formToConfig(formConfig) {
     }
 
     // 钉钉配置
-    if (im.dingtalk.enabled) {
+    if (im.dingtalk && im.dingtalk.enabled) {
         channels.dingtalk = {
             enabled: true,
             clientId: im.dingtalk.clientId || '',
@@ -592,7 +633,7 @@ function formToConfig(formConfig) {
     }
 
     // QQ机器人配置
-    if (im.qqbot.enabled) {
+    if (im.qqbot && im.qqbot.enabled) {
         channels.qqbot = {
             enabled: true,
             appId: im.qqbot.appId || '',
@@ -606,7 +647,7 @@ function formToConfig(formConfig) {
     }
 
     // 企业微信配置
-    if (im.wecom.enabled) {
+    if (im.wecom && im.wecom.enabled) {
         channels.wecom = {
             enabled: true,
             dmPolicy: 'open',
