@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenClaw Easy 🦞 - 配置管理</title>
+    <title>OpenClaw Easy - 配置管理</title>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <style>
         /* 精致步骤导航 - 顶部细条 */
         .steps-nav {
@@ -253,6 +254,56 @@
             color: var(--text-light);
             background: var(--bg-tertiary);
         }
+
+        /* 手机端响应式设计 */
+        @media (max-width: 768px) {
+            .steps-nav {
+                flex-direction: column;
+                gap: 8px;
+                padding: 16px;
+            }
+            .step-item {
+                width: 100%;
+                justify-content: center;
+            }
+            .step-arrow {
+                transform: rotate(90deg);
+                margin: 4px 0;
+            }
+            .status-overview {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .status-items {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .im-tabs {
+                flex-wrap: wrap;
+            }
+            .im-tab {
+                min-width: calc(50% - 4px);
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .step-navigation {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .step-navigation-left,
+            .step-navigation-right {
+                width: 100%;
+            }
+            .step-navigation-left button,
+            .step-navigation-right button {
+                width: 100%;
+            }
+            .header-actions {
+                flex-wrap: wrap;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -261,7 +312,7 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <div class="logo-icon">🦞</div>
+                    <div class="logo-icon"><span class="iconify" data-icon="mdi:lobster" style="font-size: 28px;"></span></div>
                     <span class="logo-text">OpenClaw Easy</span>
                 </div>
                 <div class="header-actions">
@@ -324,7 +375,7 @@
                     <div class="card fade-in">
                         <div class="card-header">
                             <h2 class="card-title">
-                                <span>🤖</span> AI 模型配置
+                                <span class="iconify" data-icon="mdi:robot" style="font-size: 24px; color: var(--primary-color);"></span> AI 模型配置
                             </h2>
                             <span id="aiConfigStatus" class="status-indicator warning">
                                 <span class="status-dot"></span>
@@ -409,23 +460,23 @@
                     <div class="card fade-in">
                         <div class="card-header">
                             <h2 class="card-title">
-                                <span>💬</span> IM 渠道配置
+                                <span class="iconify" data-icon="mdi:chat" style="font-size: 24px; color: var(--primary-color);"></span> IM 渠道配置
                             </h2>
                         </div>
                         <div class="card-body">
                             <!-- IM 渠道标签页 -->
                             <div class="im-tabs">
                                 <button class="im-tab active" data-tab="feishu" onclick="switchImTab('feishu')">
-                                    <span class="im-tab-icon">📘</span>飞书
+                                    <span class="im-tab-icon"><span class="iconify" data-icon="mdi:feather"></span></span>飞书
                                 </button>
                                 <button class="im-tab" data-tab="dingtalk" onclick="switchImTab('dingtalk')">
-                                    <span class="im-tab-icon">📙</span>钉钉
+                                    <span class="im-tab-icon"><span class="iconify" data-icon="mdi:bell-ring"></span></span>钉钉
                                 </button>
                                 <button class="im-tab" data-tab="qqbot" onclick="switchImTab('qqbot')">
-                                    <span class="im-tab-icon">🐧</span>QQ
+                                    <span class="im-tab-icon"><span class="iconify" data-icon="mdi:penguin"></span></span>QQ
                                 </button>
                                 <button class="im-tab" data-tab="wecom" onclick="switchImTab('wecom')">
-                                    <span class="im-tab-icon">💬</span>企微
+                                    <span class="im-tab-icon"><span class="iconify" data-icon="mdi:wechat"></span></span>企微
                                 </button>
                             </div>
 
@@ -582,7 +633,7 @@
                     <div class="card fade-in">
                         <div class="card-header">
                             <h2 class="card-title">
-                                <span>🌐</span> Gateway 配置
+                                <span class="iconify" data-icon="mdi:network" style="font-size: 24px; color: var(--primary-color);"></span> Gateway 配置
                             </h2>
                         </div>
                         <div class="card-body">
@@ -606,7 +657,7 @@
                                         <input type="password" class="form-control" id="gatewayToken"
                                                placeholder="用于 Gateway 认证的 Token" style="flex: 1;">
                                         <button type="button" class="btn btn-secondary" id="generateTokenBtn" title="生成随机 Token">
-                                            🎲 生成
+                                            <span class="iconify" data-icon="mdi:dice-multiple"></span> 生成
                                         </button>
                                     </div>
                                     <p class="form-hint">设置后，客户端连接 Gateway 时需要提供此 Token</p>
@@ -632,7 +683,7 @@
                     <div class="card fade-in" style="margin-top: 20px;">
                         <div class="card-header">
                             <h2 class="card-title">
-                                <span>⚙️</span> 系统操作
+                                <span class="iconify" data-icon="mdi:cog" style="font-size: 24px; color: var(--primary-color);"></span> 系统操作
                             </h2>
                         </div>
                         <div class="card-body">
@@ -640,7 +691,7 @@
                                 重启 OpenClaw Gateway 服务将使配置生效。重启期间服务将短暂不可用。
                             </p>
                             <button class="btn btn-warning" id="restartBtn">
-                                🔄 重启 Gateway 服务
+                                <span class="iconify" data-icon="mdi:refresh"></span> 重启 Gateway 服务
                             </button>
                         </div>
                     </div>
@@ -1370,7 +1421,9 @@
                         if (data.restart.success) {
                             showToast('配置已保存，Gateway 服务正在重启...', 'success');
                         } else {
-                            showToast('配置已保存，但重启失败: ' + (data.restart.message || '未知错误'), 'warning');
+                            // 显示详细的重启失败信息和手动命令
+                            const errorMsg = data.restart.message || '未知错误';
+                            showRestartError(errorMsg);
                         }
                     } else {
                         showToast('配置保存成功', 'success');
@@ -1384,6 +1437,53 @@
                 console.error('保存配置失败:', error);
                 showToast('保存配置失败', 'error');
             }
+        }
+
+        /**
+         * 显示重启失败的详细错误信息
+         */
+        function showRestartError(message) {
+            // 创建一个更友好的错误提示框
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                max-width: 600px;
+                max-height: 80vh;
+                overflow-y: auto;
+                z-index: 2000;
+            `;
+
+            errorDiv.innerHTML = `
+                <h3 style="margin: 0 0 16px; color: var(--warning-color); font-size: 18px;">⚠️ 配置已保存，但重启失败</h3>
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: var(--text-primary);">${message}</div>
+                <button class="btn btn-primary" onclick="this.parentElement.remove()" style="width: 100%;">我知道了</button>
+            `;
+
+            // 添加背景遮罩
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 1999;
+            `;
+            overlay.onclick = () => {
+                overlay.remove();
+                errorDiv.remove();
+            };
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(errorDiv);
         }
 
         /**

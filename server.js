@@ -71,6 +71,46 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// HTML 文件访问控制（必须在静态文件服务之前）
+app.use((req, res, next) => {
+    // 只拦截 HTML 文件和根路径
+    const isHtmlRequest = req.path.endsWith('.html') || req.path === '/' || req.path === '';
+    
+    if (!isHtmlRequest) {
+        return next(); // 非HTML请求，继续到静态文件服务
+    }
+    
+    // 允许访问 setup.html
+    if (req.path === '/setup.html') {
+        return next();
+    }
+    
+    // 密码未设置，强制跳转到设置页面
+    if (!isPasswordSet()) {
+        if (req.path.startsWith('/api/')) {
+            return res.status(403).json({ error: '请先设置管理密码', needSetup: true });
+        }
+        return res.redirect('/setup.html');
+    }
+    
+    // 允许访问 login.html
+    if (req.path === '/login.html') {
+        return next();
+    }
+    
+    // 检查 Session
+    const token = req.cookies.session_token;
+    if (validateSession(token)) {
+        return next(); // 已登录，继续
+    }
+    
+    // 未登录，重定向到登录页
+    if (req.path.startsWith('/api/')) {
+        return res.status(401).json({ error: '未授权访问' });
+    }
+    res.redirect('/login.html');
+});
+
 // 静态文件服务
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -635,36 +675,98 @@ function saveConfig(config) {
 }
 
 /**
+ * 检测命令是否可用
+ */
+function isCommandAvailable(command) {
+    const { execSync } = require('child_process');
+    try {
+        execSync(`which ${command}`, { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * 重启 OpenClaw Gateway 服务
  */
 async function restartGateway() {
     const { exec } = require('child_process');
 
     return new Promise((resolve, reject) => {
-        // 尝试多种重启方式
-        const commands = [
-            'systemctl restart openclaw-gateway',
-            'service openclaw-gateway restart',
-            'pm2 restart openclaw-gateway'
-        ];
+        // 检测可用的服务管理工具
+        const availableCommands = [];
 
+        if (isCommandAvailable('systemctl')) {
+            availableCommands.push({
+                name: 'systemctl',
+                cmd: 'systemctl restart openclaw-gateway',
+                manual: 'sudo systemctl restart openclaw-gateway'
+            });
+        }
+
+        if (isCommandAvailable('service')) {
+            availableCommands.push({
+                name: 'service',
+                cmd: 'service openclaw-gateway restart',
+                manual: 'sudo service openclaw-gateway restart'
+            });
+        }
+
+        if (isCommandAvailable('pm2')) {
+            availableCommands.push({
+                name: 'pm2',
+                cmd: 'pm2 restart openclaw-gateway',
+                manual: 'pm2 restart openclaw-gateway'
+            });
+        }
+
+        // 如果没有可用的服务管理工具
+        if (availableCommands.length === 0) {
+            const manualCommands = [
+                '# 未检测到可用的服务管理工具，请手动重启 OpenClaw Gateway：',
+                '# 方法1: 如果使用 systemctl',
+                'sudo systemctl restart openclaw-gateway',
+                '',
+                '# 方法2: 如果使用 pm2',
+                'pm2 restart openclaw-gateway',
+                '',
+                '# 方法3: 如果使用 service',
+                'sudo service openclaw-gateway restart',
+                '',
+                '# 方法4: 手动重启进程',
+                '# 1. 查找进程: ps aux | grep openclaw-gateway',
+                '# 2. 停止进程: kill <进程ID>',
+                '# 3. 启动服务: openclaw gateway start'
+            ].join('\n');
+
+            return reject(new Error(`未检测到可用的服务管理工具\n\n${manualCommands}`));
+        }
+
+        // 尝试执行可用的重启命令
         let lastError = null;
         let successCount = 0;
 
-        // 尝试执行重启命令
         const tryRestart = (index) => {
-            if (index >= commands.length) {
+            if (index >= availableCommands.length) {
                 if (successCount > 0) {
                     resolve({ success: true, message: '重启命令已执行' });
                 } else {
-                    reject(new Error('无法重启服务，请手动重启。最后错误: ' + (lastError || '未知错误')));
+                    // 所有命令都失败了，提供手动重启指南
+                    const manualCommands = [
+                        '# 自动重启失败，请手动执行以下命令：',
+                        ...availableCommands.map(cmd => `# 使用 ${cmd.name}: ${cmd.manual}`)
+                    ].join('\n');
+
+                    reject(new Error(`无法自动重启服务\n\n${manualCommands}\n\n最后错误: ${lastError || '未知错误'}`));
                 }
                 return;
             }
 
-            exec(commands[index], (error, stdout, stderr) => {
+            const { cmd } = availableCommands[index];
+            exec(cmd, (error, stdout, stderr) => {
                 if (error) {
-                    // 命令不存在或执行失败，尝试下一个
+                    // 命令执行失败，尝试下一个
                     lastError = error.message;
                     tryRestart(index + 1);
                 } else {
@@ -684,9 +786,21 @@ async function restartGateway() {
  * 认证检查中间件
  */
 function authMiddleware(req, res, next) {
-    // 如果密码未设置，允许访问设置密码页面
+    // 如果密码未设置，强制跳转到设置页面
     if (!isPasswordSet()) {
-        return next();
+        // 允许访问 setup 相关的路由
+        if (req.path === '/setup.html' ||
+            req.path === '/api/setup/password' ||
+            req.path === '/api/status' ||
+            req.path.startsWith('/css/') ||
+            req.path.startsWith('/js/')) {
+            return next();
+        }
+        // 其他路由重定向到 setup.html
+        if (req.path.startsWith('/api/')) {
+            return res.status(403).json({ error: '请先设置管理密码', needSetup: true });
+        }
+        return res.redirect('/setup.html');
     }
 
     // 检查 Session
