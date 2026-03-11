@@ -416,6 +416,18 @@ def sync():
             if imid != mid: msg += f', 图片模型={get_full_mid(imid)}'
             if p2_active: msg += f', 已启用备用提供商: {p2_name}'
             print(msg)
+        
+        # --- 1.5 确保必填字段存在（防止配置验证失败）---
+        default_provider = ensure_path(config, ['models', 'providers', 'default'])
+        if 'baseUrl' not in default_provider or not default_provider.get('baseUrl'):
+            default_provider['baseUrl'] = 'https://api.openai.com/v1'
+            print('⚠️ 已添加默认 baseUrl（可通过 Web 界面修改）')
+        if 'apiKey' not in default_provider or not default_provider.get('apiKey'):
+            default_provider['apiKey'] = 'placeholder-configure-via-web-ui'
+            print('⚠️ 已添加占位符 apiKey（请通过 Web 界面修改）')
+        if 'api' not in default_provider or not default_provider.get('api'):
+            default_provider['api'] = 'openai-completions'
+            print('⚠️ 已添加默认 api 协议')
 
         # --- 2. Agent 与工具配置同步（兼容 OpenClaw 3.2） ---
         ensure_path(config, ['agents', 'defaults', 'sandbox'])['mode'] = 'off'
