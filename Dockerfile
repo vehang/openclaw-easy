@@ -32,6 +32,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/openclaw.conf
 # 清除基础镜像的 ENTRYPOINT，使用我们自己的启动方式
 ENTRYPOINT []
 
+# 禁用环境变量同步，避免覆盖 Web 界面配置
+ENV SYNC_MODEL_CONFIG=false
+
 # 暴露端口
 # 18780: Web 配置界面
 # 18789: OpenClaw Gateway API
