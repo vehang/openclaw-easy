@@ -1061,6 +1061,11 @@
             const progressFill = document.getElementById('progressBarFill');
             const progressText = document.getElementById('configPercentage');
 
+            // 如果配置已保存，强制显示100%
+            if (configSaved) {
+                percentage = 100;
+            }
+
             // 更新进度条
             progressFill.style.width = `${percentage}%`;
             progressText.textContent = `${percentage}%`;
