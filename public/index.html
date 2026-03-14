@@ -1341,7 +1341,32 @@
                 document.getElementById('aiApiKey').value = config.ai.apiKey || '';
                 document.getElementById('aiModelId').value = config.ai.modelId || '';
                 document.getElementById('aiModelName').value = config.ai.modelName || '';
-                
+
+                // 根据 baseUrl 回填供应商选择
+                const savedBaseUrl = config.ai.baseUrl || '';
+                let matchedProvider = null;
+                for (const [providerId, preset] of Object.entries(PROVIDER_PRESETS)) {
+                    if (preset.baseUrl && savedBaseUrl === preset.baseUrl) {
+                        matchedProvider = providerId;
+                        break;
+                    }
+                }
+                if (matchedProvider) {
+                    document.getElementById('aiProvider').value = matchedProvider;
+                    // 触发供应商选择，填充模型列表
+                    selectProvider();
+                    // 回填模型选择
+                    const modelId = config.ai.modelId || '';
+                    if (modelId) {
+                        const modelSelect = document.getElementById('aiModelSelect');
+                        // 检查模型是否在预设列表中
+                        const preset = PROVIDER_PRESETS[matchedProvider];
+                        if (preset && preset.models.includes(modelId)) {
+                            modelSelect.value = modelId;
+                        }
+                    }
+                }
+
                 // 如果有已保存的AI配置，标记为已保存
                 if (config.ai.baseUrl && config.ai.apiKey && config.ai.modelId) {
                     configSaved = true;
@@ -1808,14 +1833,94 @@
 
         // ==================== 重启服务 ====================
 
-        document.getElementById('restartBtn').addEventListener('click', async () => {
-            if (!confirm('确定要重启 OpenClaw Gateway 服务吗？重启期间服务将短暂不可用。')) {
-                return;
-            }
+        /**
+         * 显示重启确认弹窗
+         */
+        function showRestartConfirm() {
+            // 创建遮罩层
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 1999;
+            `;
 
+            // 创建弹窗
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                max-width: 480px;
+                width: 90%;
+                z-index: 2000;
+            `;
+
+            modal.innerHTML = `
+                <h3 style="margin: 0 0 16px; color: var(--text-primary); font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <span class="iconify" data-icon="mdi:refresh" style="color: var(--warning-color);"></span>
+                    重启 Gateway 服务
+                </h3>
+                <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                    <p style="margin: 0 0 12px; color: #c2410c; font-weight: 500; font-size: 14px;">
+                        ⚠️ 重要提示
+                    </p>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+                        <li>重启期间服务将短暂不可用，请稍候片刻</li>
+                        <li>如果重启后消息未回复，可尝试手动重启服务或重启机器</li>
+                        <li>命令：<code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">systemctl restart openclaw-gateway</code></li>
+                    </ul>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
+                    确定要重启 OpenClaw Gateway 服务吗？
+                </p>
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="btn btn-secondary" id="cancelRestartBtn">取消</button>
+                    <button class="btn btn-warning" id="confirmRestartBtn">
+                        <span class="iconify" data-icon="mdi:refresh"></span> 确认重启
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+
+            // 关闭弹窗函数
+            const closeModal = () => {
+                overlay.remove();
+                modal.remove();
+            };
+
+            // 取消按钮
+            document.getElementById('cancelRestartBtn').addEventListener('click', closeModal);
+            overlay.addEventListener('click', closeModal);
+
+            // 确认按钮
+            document.getElementById('confirmRestartBtn').addEventListener('click', async () => {
+                closeModal();
+                await doRestart();
+            });
+        }
+
+        /**
+         * 执行重启操作
+         */
+        async function doRestart() {
             const restartBtn = document.getElementById('restartBtn');
             restartBtn.disabled = true;
             restartBtn.innerHTML = '<span class="loading"></span> 重启中...';
+
+            // 显示等待提示
+            showToast('正在重启服务，请稍候...', 'info');
 
             try {
                 const response = await fetch('/api/gateway/restart', {
@@ -1834,9 +1939,11 @@
                 showToast('重启服务失败', 'error');
             } finally {
                 restartBtn.disabled = false;
-                restartBtn.textContent = '🔄 重启 Gateway 服务';
+                restartBtn.innerHTML = '<span class="iconify" data-icon="mdi:refresh"></span> 重启 Gateway 服务';
             }
-        });
+        }
+
+        document.getElementById('restartBtn').addEventListener('click', showRestartConfirm);
 
         // ==================== 修改密码 ====================
 
