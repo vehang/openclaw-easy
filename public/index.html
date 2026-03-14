@@ -1672,7 +1672,10 @@
                 if (response.ok) {
                     // 标记配置已保存（步骤3完成）
                     configSaved = true;
-                    
+
+                    // 立即更新进度到100%（不等待 loadConfigStatus）
+                    calculateProgress();
+
                     // 显示重启状态
                     if (data.restart) {
                         if (data.restart.success) {
@@ -1685,9 +1688,8 @@
                     } else {
                         showToast('配置保存成功', 'success');
                     }
-                    // 刷新配置状态并更新进度到100%
+                    // 刷新配置状态
                     await loadConfigStatus();
-                    calculateProgress();
                 } else {
                     showToast(data.error || '保存失败', 'error');
                 }
