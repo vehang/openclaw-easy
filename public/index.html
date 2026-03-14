@@ -811,12 +811,16 @@
                         <div class="strength-bar" style="height: 4px; background: var(--border-color); border-radius: 2px; margin-top: 8px; overflow: hidden;">
                             <div class="strength-bar-fill" id="changeStrengthBar" style="height: 100%; width: 0; transition: width 0.3s, background 0.3s; border-radius: 2px;"></div>
                         </div>
-                        <ul class="password-requirements" id="changePasswordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary); padding-left: 0; list-style: none;">
-                            <li id="change-req-length" style="margin: 4px 0; padding-left: 20px; position: relative;">至少 8 个字符</li>
-                            <li id="change-req-lower" style="margin: 4px 0; padding-left: 20px; position: relative;">包含小写字母 (a-z)</li>
-                            <li id="change-req-upper" style="margin: 4px 0; padding-left: 20px; position: relative;">包含大写字母 (A-Z)</li>
-                            <li id="change-req-number" style="margin: 4px 0; padding-left: 20px; position: relative;">包含数字 (0-9)</li>
-                        </ul>
+                        <div id="changePasswordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                            <div style="display: flex; gap: 16px;">
+                                <span id="change-req-length" style="flex: 1;">至少 8 个字符</span>
+                                <span id="change-req-lower" style="flex: 1;">包含小写字母 (a-z)</span>
+                            </div>
+                            <div style="display: flex; gap: 16px; margin-top: 4px;">
+                                <span id="change-req-upper" style="flex: 1;">包含大写字母 (A-Z)</span>
+                                <span id="change-req-number" style="flex: 1;">包含数字 (0-9)</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">确认新密码</label>
@@ -1895,8 +1899,7 @@
                     </p>
                     <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
                         <li>重启期间服务将短暂不可用，请稍候片刻</li>
-                        <li>如果重启后消息未回复，可尝试手动重启服务或重启机器</li>
-                        <li>命令：<code style="background: var(--bg-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 12px;">systemctl restart openclaw-gateway</code></li>
+                        <li style="color: #dc2626;">如果重启后消息未回复，可尝试手动重启服务或重启机器</li>
                     </ul>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
@@ -2050,9 +2053,6 @@
 
             const updateReq = (el, valid) => {
                 el.style.color = password.length === 0 ? '' : (valid ? '#16a34a' : 'var(--primary-color)');
-                el.style.listStyle = 'none';
-                el.style.paddingLeft = '20px';
-                el.style.position = 'relative';
             };
 
             updateReq(lengthEl, checks.length);

@@ -78,12 +78,16 @@
                             <div class="strength-bar">
                                 <div class="strength-bar-fill" id="strengthBar"></div>
                             </div>
-                            <ul class="password-requirements" id="passwordRequirements">
-                                <li id="req-length">至少 8 个字符</li>
-                                <li id="req-lower">包含小写字母 (a-z)</li>
-                                <li id="req-upper">包含大写字母 (A-Z)</li>
-                                <li id="req-number">包含数字 (0-9)</li>
-                            </ul>
+                            <div id="passwordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                                <div style="display: flex; gap: 16px;">
+                                    <span id="req-length" style="flex: 1;">至少 8 个字符</span>
+                                    <span id="req-lower" style="flex: 1;">包含小写字母 (a-z)</span>
+                                </div>
+                                <div style="display: flex; gap: 16px; margin-top: 4px;">
+                                    <span id="req-upper" style="flex: 1;">包含大写字母 (A-Z)</span>
+                                    <span id="req-number" style="flex: 1;">包含数字 (0-9)</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -124,10 +128,14 @@
             };
 
             // 更新要求列表状态
-            document.getElementById('req-length').className = checks.length ? 'valid' : (password.length > 0 ? 'invalid' : '');
-            document.getElementById('req-lower').className = checks.lower ? 'valid' : (password.length > 0 ? 'invalid' : '');
-            document.getElementById('req-upper').className = checks.upper ? 'valid' : (password.length > 0 ? 'invalid' : '');
-            document.getElementById('req-number').className = checks.number ? 'valid' : (password.length > 0 ? 'invalid' : '');
+            const updateReq = (id, valid) => {
+                const el = document.getElementById(id);
+                el.style.color = password.length === 0 ? '' : (valid ? '#16a34a' : '#ef4444');
+            };
+            updateReq('req-length', checks.length);
+            updateReq('req-lower', checks.lower);
+            updateReq('req-upper', checks.upper);
+            updateReq('req-number', checks.number);
 
             // 计算强度
             const score = Object.values(checks).filter(Boolean).length;
