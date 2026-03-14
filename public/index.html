@@ -362,7 +362,7 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <div class="logo-icon"><span class="iconify" data-icon="mdi:lobster" style="font-size: 28px;"></span></div>
+                    <div class="logo-icon"><span class="iconify" data-icon="noto:lobster" style="font-size: 20px;"></span></div>
                     <span class="logo-text">OpenClaw Easy</span>
                 </div>
                 <div class="header-actions">
@@ -776,9 +776,11 @@
                             <p style="color: var(--text-secondary); margin-bottom: 16px;">
                                 重启 OpenClaw Gateway 服务将使配置生效。重启期间服务将短暂不可用。
                             </p>
-                            <button class="btn btn-warning" id="restartBtn">
-                                <span class="iconify" data-icon="mdi:refresh"></span> 重启 Gateway 服务
-                            </button>
+                            <div style="display: flex; justify-content: flex-end;">
+                                <button class="btn btn-warning" id="restartBtn">
+                                    <span class="iconify" data-icon="mdi:refresh"></span> 重启 Gateway 服务
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -821,7 +823,7 @@
                         <input type="password" class="form-control" id="confirmNewPassword"
                                placeholder="请再次输入新密码" required>
                     </div>
-                    <div class="btn-group">
+                    <div class="btn-group" style="justify-content: flex-end;">
                         <button type="button" class="btn btn-secondary" id="cancelPasswordBtn">取消</button>
                         <button type="submit" class="btn btn-primary">确认修改</button>
                     </div>
@@ -1005,11 +1007,14 @@
 
         // ==================== 实时进度跟踪 ====================
 
+        // 配置是否已保存（用于步骤3完成状态）
+        let configSaved = false;
+
         /**
          * 计算配置完成进度（按步骤计算）
          * 步骤1（AI配置）完成：33%
          * 步骤2（至少一个IM渠道配置完成）：67%
-         * 全部完成：100%
+         * 步骤3（保存配置）完成：100%
          */
         function calculateProgress() {
             let completedSteps = 0;
@@ -1039,9 +1044,9 @@
             });
             if (step2Complete) completedSteps++;
 
-            // 步骤3：保存配置（暂不检查，由保存操作触发）
-            // 如果 AI 和 IM 都配置了，就显示 67%，保存后变成 100%
-            
+            // 检查步骤3：配置已保存
+            if (configSaved) completedSteps++;
+
             // 计算百分比
             const percentage = Math.round((completedSteps / totalSteps) * 100);
             updateProgressUI(percentage, step1Complete, step2Complete);
@@ -1331,6 +1336,11 @@
                 document.getElementById('aiApiKey').value = config.ai.apiKey || '';
                 document.getElementById('aiModelId').value = config.ai.modelId || '';
                 document.getElementById('aiModelName').value = config.ai.modelName || '';
+                
+                // 如果有已保存的AI配置，标记为已保存
+                if (config.ai.baseUrl && config.ai.apiKey && config.ai.modelId) {
+                    configSaved = true;
+                }
             }
 
             // IM 配置
@@ -1660,6 +1670,9 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // 标记配置已保存（步骤3完成）
+                    configSaved = true;
+                    
                     // 显示重启状态
                     if (data.restart) {
                         if (data.restart.success) {
@@ -1672,7 +1685,7 @@
                     } else {
                         showToast('配置保存成功', 'success');
                     }
-                    // 刷新配置状态并更新进度
+                    // 刷新配置状态并更新进度到100%
                     await loadConfigStatus();
                     calculateProgress();
                 } else {
