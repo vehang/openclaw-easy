@@ -945,8 +945,9 @@
 
         /**
          * 选择预设提供商
+         * @param {boolean} shouldSetBaseUrl - 是否覆盖 baseUrl（默认 true，回填时传 false）
          */
-        function selectProvider() {
+        function selectProvider(shouldSetBaseUrl = true) {
             const providerId = document.getElementById('aiProvider').value;
             const baseUrlInput = document.getElementById('aiBaseUrl');
             const modelSelect = document.getElementById('aiModelSelect');
@@ -958,7 +959,11 @@
 
             if (providerId && PROVIDER_PRESETS[providerId]) {
                 const preset = PROVIDER_PRESETS[providerId];
-                baseUrlInput.value = preset.baseUrl;
+
+                // 只在用户主动选择时覆盖 baseUrl
+                if (shouldSetBaseUrl) {
+                    baseUrlInput.value = preset.baseUrl;
+                }
 
                 // 显示 Base URL 提示（Azure 特殊处理）
                 if (preset.baseUrlHint) {
@@ -978,7 +983,9 @@
                     modelSelect.appendChild(option);
                 });
             } else {
-                baseUrlInput.value = '';
+                if (shouldSetBaseUrl) {
+                    baseUrlInput.value = '';
+                }
                 hintEl.textContent = 'API 端点地址，可手动修改';
                 hintEl.style.color = '';
                 modelIdInput.placeholder = '例如: gpt-4o';
@@ -1342,28 +1349,39 @@
                 document.getElementById('aiModelId').value = config.ai.modelId || '';
                 document.getElementById('aiModelName').value = config.ai.modelName || '';
 
-                // 根据 baseUrl 回填供应商选择
+                // 回填供应商选择（优先使用保存的 provider）
+                const savedProvider = config.ai.provider || '';
                 const savedBaseUrl = config.ai.baseUrl || '';
+                const savedModelId = config.ai.modelId || '';
+
+                // 1. 先尝试用保存的 provider 匹配预设
                 let matchedProvider = null;
-                for (const [providerId, preset] of Object.entries(PROVIDER_PRESETS)) {
-                    if (preset.baseUrl && savedBaseUrl === preset.baseUrl) {
-                        matchedProvider = providerId;
-                        break;
+                if (savedProvider && PROVIDER_PRESETS[savedProvider]) {
+                    matchedProvider = savedProvider;
+                }
+
+                // 2. 如果没有保存的 provider，尝试用 baseUrl 匹配（兼容旧数据）
+                if (!matchedProvider && savedBaseUrl) {
+                    for (const [providerId, preset] of Object.entries(PROVIDER_PRESETS)) {
+                        if (preset.baseUrl && savedBaseUrl === preset.baseUrl) {
+                            matchedProvider = providerId;
+                            break;
+                        }
                     }
                 }
+
+                // 3. 如果匹配成功，填充下拉框
                 if (matchedProvider) {
                     document.getElementById('aiProvider').value = matchedProvider;
-                    // 触发供应商选择，填充模型列表
-                    selectProvider();
+                    // 触发供应商选择，填充模型列表（但不清空 baseUrl）
+                    selectProvider(false);
+                    // 恢复保存的 baseUrl（防止被预设覆盖）
+                    document.getElementById('aiBaseUrl').value = savedBaseUrl;
                     // 回填模型选择
-                    const modelId = config.ai.modelId || '';
-                    if (modelId) {
-                        const modelSelect = document.getElementById('aiModelSelect');
-                        // 检查模型是否在预设列表中
-                        const preset = PROVIDER_PRESETS[matchedProvider];
-                        if (preset && preset.models.includes(modelId)) {
-                            modelSelect.value = modelId;
-                        }
+                    const modelSelect = document.getElementById('aiModelSelect');
+                    const preset = PROVIDER_PRESETS[matchedProvider];
+                    if (preset && preset.models.includes(savedModelId)) {
+                        modelSelect.value = savedModelId;
                     }
                 }
 
@@ -1530,6 +1548,7 @@
         function getCurrentConfig() {
             return {
                 ai: {
+                    provider: document.getElementById('aiProvider').value.trim(),
                     baseUrl: document.getElementById('aiBaseUrl').value.trim(),
                     apiKey: document.getElementById('aiApiKey').value.trim(),
                     modelId: document.getElementById('aiModelId').value.trim(),
