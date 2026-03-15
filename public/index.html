@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenClaw Easy - 配置管理</title>
+    <title>OpenClaw 耘想Easy版 - 配置管理</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <style>
@@ -361,10 +361,10 @@
         <!-- 头部导航 -->
         <header class="header">
             <div class="header-content">
-                <div class="logo">
+                <a href="https://www.tilldream.com/" target="_blank" class="logo" style="text-decoration: none; cursor: pointer;">
                     <div class="logo-icon"><span class="iconify" data-icon="noto:lobster" style="font-size: 20px;"></span></div>
-                    <span class="logo-text">OpenClaw Easy</span>
-                </div>
+                    <span class="logo-text">OpenClaw 耘想Easy版</span>
+                </a>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" id="changePasswordBtn">
                         <span>修改密码</span>
@@ -550,6 +550,9 @@
                                     <div class="channel-status incomplete" id="feishuStatus">
                                         未配置
                                     </div>
+                                    <a href="https://api.yun.tilldream.com/api/user/app/redirect/byFeature?featureKey=openclaw_feishu_help" target="_blank" class="btn btn-outline btn-sm" style="margin-right: 8px; text-decoration: none;">
+                                        <span class="iconify" data-icon="mdi:book-open-page-variant"></span> 配置教程
+                                    </a>
                                     <label class="switch">
                                         <input type="checkbox" id="feishuEnabled" onchange="toggleImConfig('feishu')">
                                         <span class="switch-slider"></span>
@@ -588,6 +591,9 @@
                                     <div class="channel-status incomplete" id="dingtalkStatus">
                                         未配置
                                     </div>
+                                    <a href="https://api.yun.tilldream.com/api/user/app/redirect/byFeature?featureKey=openclaw_dingding_help" target="_blank" class="btn btn-outline btn-sm" style="margin-right: 8px; text-decoration: none;">
+                                        <span class="iconify" data-icon="mdi:book-open-page-variant"></span> 配置教程
+                                    </a>
                                     <label class="switch">
                                         <input type="checkbox" id="dingtalkEnabled" onchange="toggleImConfig('dingtalk')">
                                         <span class="switch-slider"></span>
@@ -626,6 +632,9 @@
                                     <div class="channel-status incomplete" id="qqbotStatus">
                                         未配置
                                     </div>
+                                    <a href="https://api.yun.tilldream.com/api/user/app/redirect/byFeature?featureKey=openclaw_qq_help" target="_blank" class="btn btn-outline btn-sm" style="margin-right: 8px; text-decoration: none;">
+                                        <span class="iconify" data-icon="mdi:book-open-page-variant"></span> 配置教程
+                                    </a>
                                     <label class="switch">
                                         <input type="checkbox" id="qqbotEnabled" onchange="toggleImConfig('qqbot')">
                                         <span class="switch-slider"></span>
@@ -664,6 +673,9 @@
                                     <div class="channel-status incomplete" id="wecomStatus">
                                         未配置
                                     </div>
+                                    <a href="https://api.yun.tilldream.com/api/user/app/redirect/byFeature?featureKey=openclaw_qw_help" target="_blank" class="btn btn-outline btn-sm" style="margin-right: 8px; text-decoration: none;">
+                                        <span class="iconify" data-icon="mdi:book-open-page-variant"></span> 配置教程
+                                    </a>
                                     <label class="switch">
                                         <input type="checkbox" id="wecomEnabled" onchange="toggleImConfig('wecom')">
                                         <span class="switch-slider"></span>
