@@ -2131,10 +2131,6 @@
         // ==================== 退出登录 ====================
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            if (!confirm('确定要退出登录吗？')) {
-                return;
-            }
-
             try {
                 await fetch('/api/logout', { method: 'POST' });
                 showToast('已退出登录', 'success');
