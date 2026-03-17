@@ -255,6 +255,11 @@
             background: var(--bg-tertiary);
         }
 
+        /* 按钮图标 - 桌面端默认隐藏 */
+        .btn-icon {
+            display: none;
+        }
+
         /* 手机端响应式设计 */
         @media (max-width: 768px) {
             .steps-nav {
@@ -315,6 +320,17 @@
             }
             .header-actions {
                 flex-wrap: wrap;
+                gap: 8px;
+            }
+            .header-actions .btn {
+                padding: 6px 10px;
+                min-width: auto;
+            }
+            .header-actions .btn-icon {
+                display: inline-block;
+            }
+            .header-actions .btn-text {
+                display: none;
             }
         }
 
@@ -381,10 +397,12 @@
                 </a>
                 <div class="header-actions">
                     <button class="btn btn-outline btn-sm" id="changePasswordBtn">
-                        <span>修改密码</span>
+                        <span class="iconify btn-icon" data-icon="mdi:key-outline" style="font-size: 16px;"></span>
+                        <span class="btn-text">修改密码</span>
                     </button>
                     <button class="btn btn-secondary btn-sm" id="logoutBtn">
-                        <span>退出</span>
+                        <span class="iconify btn-icon" data-icon="mdi:logout" style="font-size: 16px;"></span>
+                        <span class="btn-text">退出</span>
                     </button>
                 </div>
             </div>
