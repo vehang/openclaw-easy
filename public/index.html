@@ -258,17 +258,31 @@
         /* 手机端响应式设计 */
         @media (max-width: 768px) {
             .steps-nav {
-                flex-direction: column;
-                gap: 8px;
-                padding: 16px;
+                gap: 4px;
+                padding: 10px 12px;
             }
             .step-item {
-                width: 100%;
+                flex: 1;
+                padding: 6px 8px;
+                gap: 6px;
                 justify-content: center;
+                min-width: 0;
+            }
+            .step-text {
+                font-size: 12px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .step-number {
+                width: 20px;
+                height: 20px;
+                font-size: 11px;
+                flex-shrink: 0;
             }
             .step-arrow {
-                transform: rotate(90deg);
-                margin: 4px 0;
+                margin: 0 2px;
+                font-size: 10px;
             }
             .status-overview {
                 flex-direction: column;
