@@ -4,10 +4,11 @@
  * 功能：
  * 1. 首次访问设置管理密码
  * 2. 配置 AI 模型（Provider、API Key、Base URL、模型ID）
- * 3. 配置 IM 渠道（飞书、钉钉、QQ机器人、企业微信）
+ * 3. 配置 IM 渠道（飞书、钉钉、QQ机器人、企业微信、网易云信）
  * 4. 保存配置到 ~/.openclaw/openclaw.json（OpenClaw 标准格式）
  * 5. 支持重启 OpenClaw Gateway 服务
  * 6. 后续访问需要密码验证
+ * 7. 支持 API 方式配置（简化接口）
  */
 
 const express = require('express');
@@ -59,6 +60,13 @@ const CHANNEL_REQUIRED_FIELDS = {
         fields: [
             { key: 'token', label: 'Token' },
             { key: 'encodingAesKey', label: 'Encoding AES Key' }
+        ]
+    },
+    nim: {
+        name: '网易云信',
+        fields: [
+            { key: 'appId', label: 'App ID' },
+            { key: 'appSecret', label: 'App Secret' }
         ]
     }
 };
@@ -544,6 +552,11 @@ function configToFormFormat(config) {
                 enabled: channels.wecom?.enabled || false,
                 token: (channels.wecom?.default || {}).token || '',
                 encodingAesKey: (channels.wecom?.default || {}).encodingAesKey || ''
+            },
+            nim: {
+                enabled: channels.nim?.enabled || false,
+                appId: channels.nim?.appId || '',
+                appSecret: channels.nim?.appSecret || ''
             }
         },
         gateway: {
@@ -664,6 +677,17 @@ function formToConfig(formConfig) {
         };
     } else if (channels.wecom) {
         channels.wecom.enabled = false;
+    }
+
+    // 网易云信配置
+    if (im.nim && im.nim.enabled) {
+        channels.nim = {
+            enabled: true,
+            appId: im.nim.appId || '',
+            appSecret: im.nim.appSecret || ''
+        };
+    } else if (channels.nim) {
+        channels.nim.enabled = false;
     }
 
     // 构建 gateway 配置
@@ -1153,6 +1177,138 @@ app.post('/api/config', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error('保存配置失败:', error);
         res.status(500).json({ error: '保存配置失败' });
+    }
+});
+
+/**
+ * 简化配置接口 - 通过 JSON 参数设置配置
+ * POST /api/config/simple
+ * 
+ * 请求参数：
+ * - nickName: 昵称（可选）
+ * - apiUrl: API 地址（必填）
+ * - apiKey: API Key（必填）
+ * - modelName: 模型名称（必填）
+ * - appId: App ID（二选一）
+ * - appSecret: App Secret（与 appId 配合使用）
+ * - authToken: Auth Token（二选一）
+ */
+app.post('/api/config/simple', async (req, res) => {
+    try {
+        const { nickName, apiUrl, apiKey, modelName, appId, appSecret, authToken } = req.body;
+
+        // 验证必填参数
+        const errors = [];
+        
+        if (!apiUrl || apiUrl.trim() === '') {
+            errors.push('apiUrl 不能为空');
+        }
+        
+        if (!apiKey || apiKey.trim() === '') {
+            errors.push('apiKey 不能为空');
+        }
+        
+        if (!modelName || modelName.trim() === '') {
+            errors.push('modelName 不能为空');
+        }
+
+        // 验证 NIM 认证方式：appId + appSecret 或 authToken 二选一
+        const hasAppCredentials = appId && appSecret;
+        const hasAuthToken = authToken && authToken.trim() !== '';
+		
+        if (errors.length > 0) {
+            return res.json({ code: 1002, msg: errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
+        }
+
+        // 读取现有配置
+        const existingConfig = readConfig();
+
+        // 构建 AI 配置
+        const defaultProvider = {
+            baseUrl: apiUrl.trim(),
+            apiKey: apiKey.trim(),
+            api: 'openai-completions',
+            models: [{
+                id: modelName.trim(),
+                name: modelName.trim(),
+                reasoning: false,
+                input: ['text', 'image'],
+                cost: {
+                    input: 0,
+                    output: 0,
+                    cacheRead: 0,
+                    cacheWrite: 0
+                },
+                contextWindow: 200000,
+                maxTokens: 8192
+            }]
+        };
+
+        // 构建 NIM 配置
+        const channels = { ...existingConfig.channels };
+        
+        if (hasAppCredentials || hasAuthToken) {
+            channels.nim = {
+                enabled: true,
+                nickName: nickName ? nickName.trim() : undefined
+            };
+            
+            if (hasAuthToken) {
+                channels.nim.authToken = authToken.trim();
+            }
+            
+            if (hasAppCredentials) {
+                channels.nim.appId = appId.trim();
+                channels.nim.appSecret = appSecret.trim();
+            }
+        }
+
+        // 合并配置
+        const newConfig = {
+            ...existingConfig,
+            models: {
+                ...existingConfig.models,
+                mode: 'merge',
+                providers: {
+                    ...existingConfig.models?.providers,
+                    default: defaultProvider
+                }
+            },
+            agents: {
+                ...existingConfig.agents,
+                defaults: {
+                    ...existingConfig.agents?.defaults,
+                    model: {
+                        primary: `default/${modelName.trim()}`
+                    },
+                    imageModel: {
+                        primary: `default/${modelName.trim()}`
+                    }
+                }
+            },
+            channels
+        };
+
+        // 保存配置
+        saveConfig(newConfig);
+
+        // 重启 Gateway
+        let restartResult = null;
+        try {
+            restartResult = await restartGateway();
+        } catch (restartError) {
+            console.error('自动重启失败:', restartError);
+            restartResult = { success: false, message: restartError.message };
+        }
+
+        res.json({
+            code: 0,
+            msg: '成功',
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    } catch (error) {
+        console.error('简化配置保存失败:', error);
+        res.json({ code: 1000, msg: '配置保存失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
