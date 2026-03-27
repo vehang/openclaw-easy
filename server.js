@@ -1263,6 +1263,18 @@ app.post('/api/config/simple', async (req, res) => {
             }
         }
 
+        // 构建插件配置 - 确保 nim 插件被正确注册
+        const plugins = { ...existingConfig.plugins };
+        plugins.enabled = true;
+        plugins.entries = plugins.entries || {};
+        plugins.entries.nim = { enabled: true };
+        
+        // 确保 nim 在 allow 列表中
+        plugins.allow = plugins.allow || [];
+        if (!plugins.allow.includes('nim')) {
+            plugins.allow.push('nim');
+        }
+
         // 合并配置
         const newConfig = {
             ...existingConfig,
@@ -1286,7 +1298,8 @@ app.post('/api/config/simple', async (req, res) => {
                     }
                 }
             },
-            channels
+            channels,
+            plugins
         };
 
         // 保存配置
