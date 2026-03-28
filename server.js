@@ -1274,6 +1274,14 @@ app.post('/api/config/simple', async (req, res) => {
         if (!plugins.allow.includes('nim')) {
             plugins.allow.push('nim');
         }
+        
+        // 设置插件加载路径（关键！确保 OpenClaw 能找到插件）
+        plugins.load = plugins.load || {};
+        plugins.load.paths = plugins.load.paths || [];
+        const nimPluginPath = '/home/node/.openclaw/extensions/openclaw-nim-yx-auth';
+        if (!plugins.load.paths.includes(nimPluginPath)) {
+            plugins.load.paths.push(nimPluginPath);
+        }
 
         // 合并配置
         const newConfig = {
