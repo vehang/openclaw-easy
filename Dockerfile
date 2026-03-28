@@ -5,7 +5,7 @@ FROM justlikemaki/openclaw-docker-cn-im:latest
 
 LABEL maintainer="OpenClaw Easy"
 LABEL description="OpenClaw with Web Configuration Interface - 耘想定制版"
-LABEL version="1.2.2"
+LABEL version="1.2.3"
 
 # 安装 supervisord 和 git
 RUN apt-get update && \
@@ -17,30 +17,29 @@ RUN mkdir -p /var/log/supervisor
 
 # ========== NIM YX Auth 插件安装 ==========
 
-# 1. 创建插件目录并设置权限（空目录，很快）
-RUN mkdir -p /home/node/.openclaw/extensions && \
-    chown -R node:node /home/node/.openclaw
+# 1. 以 node 用户身份创建目录（install -d 创建目录并设置所有者，不用 chown）
+RUN install -o node -g node -d /home/node/.openclaw/extensions/openclaw-nim-yx-auth
 
-# 2. 切换到 node 用户（后续命令以 node 身份执行，文件自动属于 node）
+# 2. 切换到 node 用户
 USER node
 
-# 3. 从 GitHub 克隆插件源码
+# 3. 设置工作目录
+WORKDIR /home/node/.openclaw/extensions/openclaw-nim-yx-auth
+
+# 4. 从 GitHub 克隆插件源码（以 node 身份执行）
 RUN cd /tmp && \
     git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git && \
     cp -r /tmp/openclaw-nim-yx-auth/* /home/node/.openclaw/extensions/openclaw-nim-yx-auth/ && \
     rm -rf /tmp/openclaw-nim-yx-auth
 
-# 4. 安装插件依赖（以 node 用户执行）
-RUN cd /home/node/.openclaw/extensions/openclaw-nim-yx-auth && \
-    npm install --production && \
+# 5. 安装插件依赖（以 node 身份执行，文件自动属于 node）
+RUN npm install --production && \
     npm install nim-web-sdk-ng@10.9.77-alpha.3
 
-# 5. 清理不需要的文件
-RUN rm -rf /home/node/.openclaw/extensions/openclaw-nim-yx-auth/.git \
-    /home/node/.openclaw/extensions/openclaw-nim-yx-auth/dist \
-    /home/node/.openclaw/extensions/openclaw-nim-yx-auth/node_modules/.cache
+# 6. 清理不需要的文件
+RUN rm -rf .git dist node_modules/.cache
 
-# 切换回 root 用户（用于后续操作）
+# 切换回 root 用户
 USER root
 
 # ========== OpenClaw Easy Web 界面 ==========
