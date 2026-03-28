@@ -1,0 +1,117 @@
+# OpenClaw Easy Docker Image - 开发版
+# 基于上游镜像 justlikemaki/openclaw-docker-cn-im，集成 Web 配置界面、NIM 插件、开发工具
+
+FROM justlikemaki/openclaw-docker-cn-im:latest
+
+LABEL maintainer="OpenClaw Easy"
+LABEL description="OpenClaw with Web Configuration Interface - 耘想定制版（开发环境）"
+LABEL version="1.3.0-dev"
+
+# ========== 配置国内镜像源 ==========
+
+# 配置 Debian 清华镜像源
+RUN sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list 2>/dev/null || true
+
+# 配置 npm 淘宝镜像
+RUN npm config set registry https://registry.npmmirror.com
+
+# ========== 安装系统工具 ==========
+
+# 安装 supervisord、git、tmux 等
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        supervisor \
+        git \
+        tmux \
+        curl \
+        wget \
+        vim \
+        htop \
+        && rm -rf /var/lib/apt/lists/*
+
+# 创建日志目录
+RUN mkdir -p /var/log/supervisor
+
+# ========== 配置 git ==========
+
+RUN git config --global user.name "OpenClaw Bot" && \
+    git config --global user.email "openclaw@vehang.com"
+
+# ========== 安装 Claude Code CLI ==========
+
+# 使用 npm 淘宝镜像安装 Claude Code
+RUN npm install -g @anthropic-ai/claude-code --registry=https://registry.npmmirror.com
+
+# 验证安装
+RUN claude --version || echo "Claude Code CLI installed"
+
+# ========== NIM YX Auth 插件安装 ==========
+
+# 1. 以 node 用户身份创建目录
+RUN install -o node -g node -d /home/node/.openclaw/extensions/openclaw-nim-yx-auth
+
+# 2. 切换到 node 用户
+USER node
+
+# 3. 设置工作目录
+WORKDIR /home/node/.openclaw/extensions/openclaw-nim-yx-auth
+
+# 4. 从 GitHub 克隆插件源码（以 node 身份执行）
+RUN cd /tmp && \
+    git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git && \
+    cp -r /tmp/openclaw-nim-yx-auth/* /home/node/.openclaw/extensions/openclaw-nim-yx-auth/ && \
+    rm -rf /tmp/openclaw-nim-yx-auth
+
+# 5. 安装插件依赖（以 node 身份执行，文件自动属于 node）
+RUN npm install --production --registry=https://registry.npmmirror.com && \
+    npm install nim-web-sdk-ng@10.9.77-alpha.3 --registry=https://registry.npmmirror.com
+
+# 6. 清理不需要的文件
+RUN rm -rf .git dist node_modules/.cache
+
+# 切换回 root 用户
+USER root
+
+# ========== OpenClaw Easy Web 界面 ==========
+
+# 复制 openclaw-easy Web 界面
+COPY . /app/openclaw-easy
+WORKDIR /app/openclaw-easy
+
+# 安装 openclaw-easy 依赖
+RUN npm install --production --registry=https://registry.npmmirror.com
+
+# 设置默认工作目录
+WORKDIR /home/node
+
+# 复制启动脚本
+COPY init-fixed.sh /usr/local/bin/init-fixed.sh
+RUN chmod +x /usr/local/bin/init-fixed.sh
+
+# 复制 supervisord 配置
+COPY supervisord.conf /etc/supervisor/conf.d/openclaw.conf
+
+# ========== 开发工具环境变量 ==========
+
+# 设置 tmux 默认配置
+ENV TMUX_TMPDIR=/tmp
+
+# 设置 Node.js 环境变量
+ENV NODE_ENV=production
+
+# 清除基础镜像的 ENTRYPOINT
+ENTRYPOINT []
+
+# 禁用环境变量同步
+ENV SYNC_MODEL_CONFIG=false
+
+# 暴露端口
+EXPOSE 18780 18789 18790
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
+
+# 启动
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/openclaw.conf"]

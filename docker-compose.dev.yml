@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  openclaw-easy-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: openclaw-easy:dev
+    container_name: openclaw-easy-dev
+    restart: unless-stopped
+    ports:
+      - "18780:18780"
+      - "18789:18789"
+      - "18790:18790"
+    volumes:
+      - ./openclaw-data:/home/node/.openclaw
+    environment:
+      - TZ=Asia/Shanghai
+      - NODE_ENV=production
