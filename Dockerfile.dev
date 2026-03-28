@@ -46,11 +46,16 @@ RUN npm install -g @anthropic-ai/claude-code --registry=https://registry.npmmirr
 # 验证安装
 RUN claude --version || echo "Claude Code CLI installed"
 
+# ========== 清理 npm 缓存权限问题 ==========
+
+# 清理 root 拥有的 npm 缓存文件
+RUN rm -rf /home/node/.npm && \
+    rm -rf /root/.npm
+
 # ========== NIM YX Auth 插件安装 ==========
 
-# 1. 创建插件目录和 npm 缓存目录（以 root 身份，设置正确权限）
-RUN install -o node -g node -d /home/node/.openclaw/extensions/openclaw-nim-yx-auth && \
-    install -o node -g node -d /home/node/.npm
+# 1. 创建插件目录（以 root 身份，设置正确权限）
+RUN install -o node -g node -d /home/node/.openclaw/extensions/openclaw-nim-yx-auth
 
 # 2. 从 GitHub 克隆插件源码
 RUN cd /tmp && \
@@ -65,11 +70,14 @@ USER node
 # 4. 设置工作目录
 WORKDIR /home/node/.openclaw/extensions/openclaw-nim-yx-auth
 
-# 5. 安装插件依赖（以 node 身份执行，文件自动属于 node）
+# 5. 清理 npm 缓存（以 node 用户身份）
+RUN npm cache clean --force
+
+# 6. 安装插件依赖
 RUN npm install --omit=dev --registry=https://registry.npmmirror.com && \
     npm install nim-web-sdk-ng@10.9.77-alpha.3 --registry=https://registry.npmmirror.com
 
-# 6. 清理不需要的文件
+# 7. 清理不需要的文件
 RUN rm -rf .git dist node_modules/.cache
 
 # 切换回 root 用户
