@@ -653,6 +653,37 @@ PYCODE
 
 sync_config_with_env
 
+# ========== NIM YX Auth 插件初始化 ==========
+NIM_PLUGIN_DIR="$OPENCLAW_HOME/extensions/openclaw-nim-yx-auth"
+if [ ! -d "$NIM_PLUGIN_DIR" ] || [ ! -f "$NIM_PLUGIN_DIR/package.json" ]; then
+    echo "=== 检测到 NIM 插件未安装，开始初始化... ==="
+    
+    # 创建插件目录
+    mkdir -p "$NIM_PLUGIN_DIR"
+    
+    # 从 GitHub 克隆插件源码
+    echo "克隆 openclaw-nim-yx-auth 插件..."
+    cd /tmp
+    git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git 2>/dev/null || {
+        echo "❌ 克隆失败，请检查网络连接"
+    }
+    
+    if [ -d "/tmp/openclaw-nim-yx-auth" ]; then
+        cp -r /tmp/openclaw-nim-yx-auth/* "$NIM_PLUGIN_DIR/"
+        rm -rf /tmp/openclaw-nim-yx-auth
+        
+        # 安装依赖
+        echo "安装 NIM 插件依赖..."
+        cd "$NIM_PLUGIN_DIR"
+        npm install --production 2>/dev/null || echo "⚠️ npm install 失败"
+        npm install nim-web-sdk-ng@10.9.77-alpha.3 2>/dev/null || echo "⚠️ nim-web-sdk-ng 安装失败"
+        
+        echo "✅ NIM 插件初始化完成"
+    fi
+else
+    echo "=== NIM 插件已存在，跳过初始化 ==="
+fi
+
 # 确保所有文件和目录的权限正确（仅 root 可执行）
 if [ "$(id -u)" -eq 0 ]; then
     chown -R node:node "$OPENCLAW_HOME" || true
