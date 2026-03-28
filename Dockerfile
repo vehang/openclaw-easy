@@ -1,52 +1,77 @@
 # OpenClaw Easy Docker Image
-# 基于上游镜像 justlikemaki/openclaw-docker-cn-im，集成 Web 配置界面
+# 基于上游镜像 justlikemaki/openclaw-docker-cn-im，集成 Web 配置界面和 NIM 插件
 
 FROM justlikemaki/openclaw-docker-cn-im:latest
 
 LABEL maintainer="OpenClaw Easy"
-LABEL description="OpenClaw with Web Configuration Interface"
-LABEL version="1.0.0"
+LABEL description="OpenClaw with Web Configuration Interface - 耘想定制版"
+LABEL version="1.2.0"
 
-# 安装 supervisord 用于进程管理
+# 安装 supervisord 和 git（用于克隆插件）
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends supervisor && \
+    apt-get install -y --no-install-recommends supervisor git && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建日志目录
 RUN mkdir -p /var/log/supervisor
 
-# 复制 openclaw-easy Web 界面（当前目录）
+# ========== NIM YX Auth 插件安装 ==========
+# 参考: openclaw-nim-yx-auth/DEPLOY.md
+
+# 1. 创建插件目录
+RUN mkdir -p /home/node/.openclaw/extensions/openclaw-nim-yx-auth
+
+# 2. 从 GitHub 克隆插件源码
+RUN git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git /tmp/openclaw-nim-yx-auth && \
+    cp -r /tmp/openclaw-nim-yx-auth/* /home/node/.openclaw/extensions/openclaw-nim-yx-auth/ && \
+    rm -rf /tmp/openclaw-nim-yx-auth
+
+# 3. 安装插件依赖（关键：必须指定 nim-web-sdk-ng 版本！）
+RUN cd /home/node/.openclaw/extensions/openclaw-nim-yx-auth && \
+    npm install --production && \
+    npm install nim-web-sdk-ng@10.9.77-alpha.3
+
+# 4. 清理不需要的文件
+RUN cd /home/node/.openclaw/extensions/openclaw-nim-yx-auth && \
+    rm -rf .git dist node_modules/.cache
+
+# 5. 设置权限
+RUN chown -R node:node /home/node/.openclaw
+
+# ========== OpenClaw Easy Web 界面 ==========
+
+# 复制 openclaw-easy Web 界面
 COPY . /app/openclaw-easy
 WORKDIR /app/openclaw-easy
 
 # 安装 openclaw-easy 依赖
 RUN npm install --production
 
-# 设置默认工作目录为用户主目录
+# 设置默认工作目录
 WORKDIR /home/node
 
-# 复制修复后的启动脚本
+# 复制启动脚本
 COPY init-fixed.sh /usr/local/bin/init-fixed.sh
 RUN chmod +x /usr/local/bin/init-fixed.sh
 
 # 复制 supervisord 配置
 COPY supervisord.conf /etc/supervisor/conf.d/openclaw.conf
 
-# 清除基础镜像的 ENTRYPOINT，使用我们自己的启动方式
+# 清除基础镜像的 ENTRYPOINT
 ENTRYPOINT []
 
-# 禁用环境变量同步，避免覆盖 Web 界面配置
+# 禁用环境变量同步
 ENV SYNC_MODEL_CONFIG=false
 
 # 暴露端口
 # 18780: Web 配置界面
 # 18789: OpenClaw Gateway API
-# 18790: Gateway Control UI (可选)
+# 18790: Gateway Control UI
 EXPOSE 18780 18789 18790
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
 
-# 使用 supervisord 启动
+# 启动
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/openclaw.conf"]
