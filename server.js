@@ -1442,6 +1442,78 @@ app.post('/api/test/ai', authMiddleware, async (req, res) => {
     }
 });
 
+/**
+ * 个人微信安装 - SSE 实时输出
+ * GET /api/weixin/install
+ * 
+ * 执行安装命令，实时推送控制台输出
+ */
+app.get('/api/weixin/install', authMiddleware, (req, res) => {
+    // 设置 SSE 头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    const { spawn } = require('child_process');
+    
+    // 执行安装命令
+    const child = spawn('npx', ['-y', '@tencent-weixin/openclaw-weixin-cli@latest', 'install'], {
+        env: { ...process.env, TERM: 'xterm-256color' },
+        shell: true
+    });
+
+    console.log('[微信安装] 开始执行安装命令...');
+
+    // 发送 SSE 消息的辅助函数
+    const sendEvent = (type, data) => {
+        res.write(`event: ${type}\n`);
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // 发送初始状态
+    sendEvent('status', { message: '正在启动安装程序...' });
+
+    // 捕获标准输出
+    child.stdout.on('data', (data) => {
+        const output = data.toString();
+        console.log('[微信安装] stdout:', output);
+        sendEvent('output', { text: output });
+    });
+
+    // 捕获错误输出
+    child.stderr.on('data', (data) => {
+        const output = data.toString();
+        console.log('[微信安装] stderr:', output);
+        sendEvent('output', { text: output });
+    });
+
+    // 进程结束
+    child.on('close', (code) => {
+        console.log('[微信安装] 进程结束，退出码:', code);
+        if (code === 0) {
+            sendEvent('complete', { success: true, message: '安装完成' });
+        } else {
+            sendEvent('complete', { success: false, message: `安装失败，退出码: ${code}` });
+        }
+        res.end();
+    });
+
+    // 进程错误
+    child.on('error', (error) => {
+        console.error('[微信安装] 进程错误:', error);
+        sendEvent('error', { message: `启动失败: ${error.message}` });
+        res.end();
+    });
+
+    // 客户端断开连接时终止进程
+    req.on('close', () => {
+        console.log('[微信安装] 客户端断开连接，终止进程');
+        child.kill();
+        res.end();
+    });
+});
+
 // ==================== 页面路由 ====================
 
 // 首页重定向
