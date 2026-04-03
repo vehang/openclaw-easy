@@ -1463,16 +1463,8 @@ app.get('/api/weixin/install', authMiddleware, (req, res) => {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    const { spawn } = require('child_process');
+    const { spawn, execSync } = require('child_process');
     
-    // 执行安装命令
-    const child = spawn('npx', ['-y', '@tencent-weixin/openclaw-weixin-cli@latest', 'install'], {
-        env: { ...process.env, TERM: 'xterm-256color' },
-        shell: true
-    });
-
-    console.log('[微信安装] 开始执行安装命令...');
-
     // 发送 SSE 消息的辅助函数
     const sendEvent = (type, data) => {
         res.write(`event: ${type}\n`);
@@ -1480,7 +1472,48 @@ app.get('/api/weixin/install', authMiddleware, (req, res) => {
     };
 
     // 发送初始状态
-    sendEvent('status', { message: '正在启动安装程序...' });
+    sendEvent('status', { message: '正在检测 OpenClaw 版本...' });
+
+    // 获取 OpenClaw 版本
+    let openclawVersion = '';
+    try {
+        openclawVersion = execSync('openclaw --version', { encoding: 'utf-8' }).trim();
+        console.log('[微信安装] OpenClaw 版本:', openclawVersion);
+        sendEvent('output', { text: `检测到 OpenClaw 版本: ${openclawVersion}\n` });
+    } catch (error) {
+        console.error('[微信安装] 获取版本失败:', error.message);
+        sendEvent('output', { text: '无法获取 OpenClaw 版本，使用默认版本\n' });
+    }
+
+    // 修复权限问题
+    sendEvent('status', { message: '正在修复插件目录权限...' });
+    try {
+        execSync('chown -R root:root /home/node/.openclaw/extensions/', { stdio: 'inherit' });
+        sendEvent('output', { text: '权限修复完成\n' });
+    } catch (error) {
+        sendEvent('output', { text: `权限修复警告: ${error.message}\n` });
+    }
+
+    // 清理可能存在的冲突目录
+    sendEvent('status', { message: '正在清理临时文件...' });
+    try {
+        execSync('rm -rf /home/node/.openclaw/extensions/openclaw-weixin', { stdio: 'inherit' });
+        execSync('rm -rf /home/node/.openclaw/extensions/.openclaw-install-stage-*', { stdio: 'inherit' });
+        sendEvent('output', { text: '临时文件清理完成\n' });
+    } catch (error) {
+        // 忽略清理错误
+    }
+
+    // 执行安装命令
+    sendEvent('status', { message: '正在安装个人微信插件...' });
+    sendEvent('output', { text: '\n$ openclaw plugins install @tencent-weixin/openclaw-weixin\n\n' });
+
+    const child = spawn('openclaw', ['plugins', 'install', '@tencent-weixin/openclaw-weixin'], {
+        env: { ...process.env, TERM: 'xterm-256color' },
+        shell: true
+    });
+
+    console.log('[微信安装] 开始执行安装命令...');
 
     // 捕获标准输出
     child.stdout.on('data', (data) => {
