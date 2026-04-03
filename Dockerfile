@@ -5,7 +5,7 @@ FROM justlikemaki/openclaw-docker-cn-im:latest
 
 LABEL maintainer="OpenClaw Easy"
 LABEL description="OpenClaw with Web Configuration Interface - 耘想定制版"
-LABEL version="1.2.4"
+LABEL version="1.2.5"
 
 # 安装 supervisord 和 git
 RUN apt-get update && \
@@ -15,26 +15,35 @@ RUN apt-get update && \
 # 创建日志目录
 RUN mkdir -p /var/log/supervisor
 
-# ========== NIM YX Auth 插件安装（以 root 身份）==========
+# ========== 插件安装（以 root 身份）==========
 
-# 创建插件目录（以 root 身份）
-RUN mkdir -p /home/node/.openclaw/extensions/openclaw-nim-yx-auth
+# 创建插件目录
+RUN mkdir -p /home/node/.openclaw/extensions
 
 # 设置工作目录
-WORKDIR /home/node/.openclaw/extensions/openclaw-nim-yx-auth
+WORKDIR /home/node/.openclaw/extensions
 
-# 从 GitHub 克隆插件源码（以 root 身份执行）
-RUN cd /tmp && \
+# ---------- NIM YX Auth 插件 ----------
+RUN mkdir -p openclaw-nim-yx-auth && \
+    cd /tmp && \
     git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git && \
     cp -r /tmp/openclaw-nim-yx-auth/* /home/node/.openclaw/extensions/openclaw-nim-yx-auth/ && \
-    rm -rf /tmp/openclaw-nim-yx-auth
+    cd /home/node/.openclaw/extensions/openclaw-nim-yx-auth && \
+    npm install --production && \
+    npm install nim-web-sdk-ng@10.9.77-alpha.3 && \
+    rm -rf .git dist node_modules/.cache /tmp/openclaw-nim-yx-auth
 
-# 安装插件依赖（以 root 身份执行）
-RUN npm install --production && \
-    npm install nim-web-sdk-ng@10.9.77-alpha.3
+# ---------- 个人微信插件 ----------
+RUN mkdir -p openclaw-weixin && \
+    cd /tmp && \
+    npm pack @tencent-weixin/openclaw-weixin && \
+    tar -xzf tencent-weixin-openclaw-weixin-*.tgz -C /home/node/.openclaw/extensions/openclaw-weixin --strip-components=1 && \
+    cd /home/node/.openclaw/extensions/openclaw-weixin && \
+    npm install --production && \
+    rm -rf /tmp/tencent-weixin-openclaw-weixin-*.tgz
 
-# 清理不需要的文件
-RUN rm -rf .git dist node_modules/.cache
+# 清理 npm 缓存
+RUN rm -rf /root/.npm /tmp/*
 
 # ========== OpenClaw Easy Web 界面 ==========
 
