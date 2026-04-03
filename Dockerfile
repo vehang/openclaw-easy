@@ -34,17 +34,21 @@ RUN mkdir -p openclaw-nim-yx-auth && \
     rm -rf .git dist node_modules/.cache /tmp/openclaw-nim-yx-auth
 
 # ---------- 个人微信插件 ----------
-# 使用 npm install 直接安装插件到 extensions 目录
-RUN cd /tmp && \
-    mkdir -p openclaw-weixin-temp && \
-    cd openclaw-weixin-temp && \
+RUN cd /home/node/.openclaw/extensions && \
+    # 创建临时目录安装
+    mkdir -p .weixin-tmp && \
+    cd .weixin-tmp && \
     npm init -y && \
-    npm install @tencent-weixin/openclaw-weixin --ignore-scripts && \
-    mkdir -p /home/node/.openclaw/extensions/openclaw-weixin && \
-    cp -r node_modules/@tencent-weixin/openclaw-weixin/* /home/node/.openclaw/extensions/openclaw-weixin/ && \
-    cd /home/node/.openclaw/extensions/openclaw-weixin && \
-    npm install --production && \
-    rm -rf /tmp/openclaw-weixin-temp
+    npm install @tencent-weixin/openclaw-weixin && \
+    # 把插件和依赖整合到一起
+    cd .. && \
+    mv .weixin-tmp/node_modules/@tencent-weixin/openclaw-weixin openclaw-weixin && \
+    mv .weixin-tmp/node_modules openclaw-weixin/node_modules 2>/dev/null || true && \
+    rm -rf .weixin-tmp && \
+    echo "=== 插件目录内容 ===" && \
+    ls -la /home/node/.openclaw/extensions/ && \
+    echo "=== 微信插件内容 ===" && \
+    ls -la /home/node/.openclaw/extensions/openclaw-weixin/
 
 # 清理 npm 缓存
 RUN rm -rf /root/.npm /tmp/*
