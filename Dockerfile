@@ -34,13 +34,17 @@ RUN mkdir -p openclaw-nim-yx-auth && \
     rm -rf .git dist node_modules/.cache /tmp/openclaw-nim-yx-auth
 
 # ---------- 个人微信插件 ----------
-RUN mkdir -p openclaw-weixin && \
-    cd /tmp && \
-    npm pack @tencent-weixin/openclaw-weixin && \
-    tar -xzf tencent-weixin-openclaw-weixin-*.tgz -C /home/node/.openclaw/extensions/openclaw-weixin --strip-components=1 && \
+# 使用 npm install 直接安装插件到 extensions 目录
+RUN cd /tmp && \
+    mkdir -p openclaw-weixin-temp && \
+    cd openclaw-weixin-temp && \
+    npm init -y && \
+    npm install @tencent-weixin/openclaw-weixin --ignore-scripts && \
+    mkdir -p /home/node/.openclaw/extensions/openclaw-weixin && \
+    cp -r node_modules/@tencent-weixin/openclaw-weixin/* /home/node/.openclaw/extensions/openclaw-weixin/ && \
     cd /home/node/.openclaw/extensions/openclaw-weixin && \
     npm install --production && \
-    rm -rf /tmp/tencent-weixin-openclaw-weixin-*.tgz
+    rm -rf /tmp/openclaw-weixin-temp
 
 # 清理 npm 缓存
 RUN rm -rf /root/.npm /tmp/*
