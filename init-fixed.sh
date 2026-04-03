@@ -687,6 +687,14 @@ fi
 # 确保所有文件和目录的权限正确（仅 root 可执行）
 if [ "$(id -u)" -eq 0 ]; then
     chown -R node:node "$OPENCLAW_HOME" || true
+    
+    # ========== 关键修复：插件目录必须是 root 权限 ==========
+    # OpenClaw 安全检查要求插件目录由 root 拥有，否则报 suspicious ownership
+    # 必须在 chown -R node:node 之后，单独把 extensions 改回 root
+    if [ -d "$OPENCLAW_HOME/extensions" ]; then
+        chown -R root:root "$OPENCLAW_HOME/extensions" || true
+        echo "✅ 已修复插件目录权限为 root:root"
+    fi
 fi
 
 echo "=== 初始化完成 ==="
