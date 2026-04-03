@@ -682,16 +682,24 @@ function formToConfig(formConfig) {
         channels.wecom.enabled = false;
     }
 
-    // 网易云信配置
+    // 网易云信配置（只更新，不禁用 - 因为 web 表单没有此选项）
     if (im.nim && im.nim.enabled) {
         channels.nim = {
             enabled: true,
             appId: im.nim.appId || '',
             appSecret: im.nim.appSecret || ''
         };
-    } else if (channels.nim) {
-        channels.nim.enabled = false;
     }
+    // 注意：如果 im.nim 不存在，保留现有 channels.nim 配置，不做修改
+
+    // 个人微信配置（只更新，不禁用 - 因为通过安装流程设置）
+    if (im.weixin && im.weixin.enabled) {
+        channels.weixin = {
+            enabled: true,
+            token: im.weixin.token || ''
+        };
+    }
+    // 注意：如果 im.weixin 不存在，保留现有 channels.weixin 配置，不做修改
 
     // 构建 gateway 配置
     const gatewayConfig = {
