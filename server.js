@@ -32,6 +32,9 @@ const PASSWORD_FILE = path.join(OPENCLAW_DIR, '.passwd');
 // Session 存储（内存中）
 const sessions = new Map();
 
+// Simple 接口配置缓存（内存中）
+let simpleConfigCache = null;
+
 // ==================== 渠道必填字段定义 ====================
 const CHANNEL_REQUIRED_FIELDS = {
     feishu: {
@@ -1197,33 +1200,55 @@ app.post('/api/config/simple', async (req, res) => {
     try {
         const { nickName, apiUrl, apiKey, modelName, appId, appSecret, authToken } = req.body;
 
-        // 验证必填参数
+        // ==================== 参数校验 ====================
         const errors = [];
-        
+
+        // 1. 必传参数校验：apiUrl、apiKey、modelName
         if (!apiUrl || apiUrl.trim() === '') {
-            errors.push('apiUrl 不能为空');
+            errors.push('apiUrl必传');
         }
         
         if (!apiKey || apiKey.trim() === '') {
-            errors.push('apiKey 不能为空');
+            errors.push('apiKey必传');
         }
         
         if (!modelName || modelName.trim() === '') {
-            errors.push('modelName 不能为空');
+            errors.push('modelName必传');
         }
 
-        // 验证 NIM 认证方式：appId + appSecret 或 authToken 二选一
-        const hasAppCredentials = appId && appSecret;
+        // 2. appId + appSecret 组校验：要么都不传，要么都传
+        const hasAppId = appId && appId.trim() !== '';
+        const hasAppSecret = appSecret && appSecret.trim() !== '';
+        const hasAppCredentialsGroup = hasAppId && hasAppSecret;
+        
+        if ((hasAppId && !hasAppSecret) || (!hasAppId && hasAppSecret)) {
+            errors.push('appId和appSecret需同时传递');
+        }
+
+        // 3. nickName + authToken 组校验：要么都不传，要么都传
+        const hasNickName = nickName && nickName.trim() !== '';
         const hasAuthToken = authToken && authToken.trim() !== '';
-		
+        const hasAuthTokenGroup = hasNickName && hasAuthToken;
+        
+        if ((hasNickName && !hasAuthToken) || (!hasNickName && hasAuthToken)) {
+            errors.push('nickName和authToken需同时传递');
+        }
+
+        // 4. 两组必须至少传一组
+        if (!hasAppCredentialsGroup && !hasAuthTokenGroup) {
+            errors.push('需传递appId+appSecret或nickName+authToken');
+        }
+
+        // 返回校验错误
         if (errors.length > 0) {
             return res.json({ code: 1002, msg: errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
         }
 
+        // ==================== 构建配置 ====================
         // 读取现有配置
         const existingConfig = readConfig();
 
-        // 构建 AI 配置
+        // 构建 AI 配置（必传参数，已确保非空）
         const defaultProvider = {
             baseUrl: apiUrl.trim(),
             apiKey: apiKey.trim(),
@@ -1244,23 +1269,23 @@ app.post('/api/config/simple', async (req, res) => {
             }]
         };
 
-        // 构建 NIM 配置
+        // 构建 NIM 配置（根据传参情况决定）
         const channels = { ...existingConfig.channels };
         
-        if (hasAppCredentials || hasAuthToken) {
-            channels.nim = {
-                enabled: true,
-                nickName: nickName ? nickName.trim() : undefined
-            };
-            
-            if (hasAuthToken) {
-                channels.nim.authToken = authToken.trim();
-            }
-            
-            if (hasAppCredentials) {
-                channels.nim.appId = appId.trim();
-                channels.nim.appSecret = appSecret.trim();
-            }
+        channels.nim = {
+            enabled: true
+        };
+
+        // 设置 appId + appSecret 组（如果传了）
+        if (hasAppCredentialsGroup) {
+            channels.nim.appId = appId.trim();
+            channels.nim.appSecret = appSecret.trim();
+        }
+
+        // 设置 nickName + authToken 组（如果传了）
+        if (hasAuthTokenGroup) {
+            channels.nim.nickName = nickName.trim();
+            channels.nim.authToken = authToken.trim();
         }
 
         // 构建插件配置 - 确保 nim 插件被正确注册
@@ -1313,6 +1338,25 @@ app.post('/api/config/simple', async (req, res) => {
         // 保存配置
         saveConfig(newConfig);
 
+        // 缓存 simple 接口的原始参数（只缓存有效值，空串不缓存）
+        simpleConfigCache = {
+            apiUrl: apiUrl.trim(),
+            apiKey: apiKey.trim(),
+            modelName: modelName.trim(),
+            updatedAt: Math.floor(Date.now() / 1000)
+        };
+
+        // 只缓存有效值（非空串）
+        if (hasAppCredentialsGroup) {
+            simpleConfigCache.appId = appId.trim();
+            simpleConfigCache.appSecret = appSecret.trim();
+        }
+        
+        if (hasAuthTokenGroup) {
+            simpleConfigCache.nickName = nickName.trim();
+            simpleConfigCache.authToken = authToken.trim();
+        }
+
         // 重启 Gateway
         let restartResult = null;
         try {
@@ -1330,6 +1374,35 @@ app.post('/api/config/simple', async (req, res) => {
     } catch (error) {
         console.error('简化配置保存失败:', error);
         res.json({ code: 1000, msg: '配置保存失败', currentTime: Math.floor(Date.now() / 1000) });
+    }
+});
+
+/**
+ * 查询缓存的 Simple 配置参数
+ * GET /api/config/simple
+ * 
+ * 返回之前通过 POST /api/config/simple 保存的参数缓存
+ * 无需鉴权
+ */
+app.get('/api/config/simple', (req, res) => {
+    try {
+        if (!simpleConfigCache) {
+            return res.json({
+                code: 1001,
+                msg: '暂无缓存配置',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+
+        res.json({
+            code: 0,
+            msg: '成功',
+            data: simpleConfigCache,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    } catch (error) {
+        console.error('查询 Simple 配置缓存失败:', error);
+        res.json({ code: 1000, msg: '查询失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
