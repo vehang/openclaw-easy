@@ -1451,19 +1451,19 @@ app.post('/api/test/ai', authMiddleware, async (req, res) => {
 });
 
 /**
- * 个人微信安装 - SSE 实时输出
- * GET /api/weixin/install
+ * 个人微信登录 - SSE 实时输出
+ * GET /api/weixin/login
  * 
- * 执行安装命令，实时推送控制台输出
+ * 执行登录命令，展示二维码，实时推送控制台输出
  */
-app.get('/api/weixin/install', authMiddleware, (req, res) => {
+app.get('/api/weixin/login', authMiddleware, (req, res) => {
     // 设置 SSE 头
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('X-Accel-Buffering', 'no');
 
-    const { spawn, execSync } = require('child_process');
+    const { spawn } = require('child_process');
     
     // 发送 SSE 消息的辅助函数
     const sendEvent = (type, data) => {
@@ -1472,84 +1472,52 @@ app.get('/api/weixin/install', authMiddleware, (req, res) => {
     };
 
     // 发送初始状态
-    sendEvent('status', { message: '正在检测 OpenClaw 版本...' });
+    sendEvent('status', { message: '正在启动微信登录...' });
+    sendEvent('output', { text: '$ openclaw channels login --channel openclaw-weixin\n\n' });
 
-    // 获取 OpenClaw 版本
-    let openclawVersion = '';
-    try {
-        openclawVersion = execSync('openclaw --version', { encoding: 'utf-8' }).trim();
-        console.log('[微信安装] OpenClaw 版本:', openclawVersion);
-        sendEvent('output', { text: `检测到 OpenClaw 版本: ${openclawVersion}\n` });
-    } catch (error) {
-        console.error('[微信安装] 获取版本失败:', error.message);
-        sendEvent('output', { text: '无法获取 OpenClaw 版本，使用默认版本\n' });
-    }
-
-    // 修复权限问题
-    sendEvent('status', { message: '正在修复插件目录权限...' });
-    try {
-        execSync('chown -R root:root /home/node/.openclaw/extensions/', { stdio: 'inherit' });
-        sendEvent('output', { text: '权限修复完成\n' });
-    } catch (error) {
-        sendEvent('output', { text: `权限修复警告: ${error.message}\n` });
-    }
-
-    // 清理可能存在的冲突目录
-    sendEvent('status', { message: '正在清理临时文件...' });
-    try {
-        execSync('rm -rf /home/node/.openclaw/extensions/openclaw-weixin', { stdio: 'inherit' });
-        execSync('rm -rf /home/node/.openclaw/extensions/.openclaw-install-stage-*', { stdio: 'inherit' });
-        sendEvent('output', { text: '临时文件清理完成\n' });
-    } catch (error) {
-        // 忽略清理错误
-    }
-
-    // 执行安装命令
-    sendEvent('status', { message: '正在安装个人微信插件...' });
-    sendEvent('output', { text: '\n$ openclaw plugins install @tencent-weixin/openclaw-weixin\n\n' });
-
-    const child = spawn('openclaw', ['plugins', 'install', '@tencent-weixin/openclaw-weixin'], {
+    // 执行登录命令
+    const child = spawn('openclaw', ['channels', 'login', '--channel', 'openclaw-weixin'], {
         env: { ...process.env, TERM: 'xterm-256color' },
         shell: true
     });
 
-    console.log('[微信安装] 开始执行安装命令...');
+    console.log('[微信登录] 开始执行登录命令...');
 
     // 捕获标准输出
     child.stdout.on('data', (data) => {
         const output = data.toString();
-        console.log('[微信安装] stdout:', output);
+        console.log('[微信登录] stdout:', output);
         sendEvent('output', { text: output });
     });
 
     // 捕获错误输出
     child.stderr.on('data', (data) => {
         const output = data.toString();
-        console.log('[微信安装] stderr:', output);
+        console.log('[微信登录] stderr:', output);
         sendEvent('output', { text: output });
     });
 
     // 进程结束
     child.on('close', (code) => {
-        console.log('[微信安装] 进程结束，退出码:', code);
+        console.log('[微信登录] 进程结束，退出码:', code);
         if (code === 0) {
-            sendEvent('complete', { success: true, message: '安装完成' });
+            sendEvent('complete', { success: true, message: '登录成功' });
         } else {
-            sendEvent('complete', { success: false, message: `安装失败，退出码: ${code}` });
+            sendEvent('complete', { success: false, message: `登录失败，退出码: ${code}` });
         }
         res.end();
     });
 
     // 进程错误
     child.on('error', (error) => {
-        console.error('[微信安装] 进程错误:', error);
+        console.error('[微信登录] 进程错误:', error);
         sendEvent('error', { message: `启动失败: ${error.message}` });
         res.end();
     });
 
     // 客户端断开连接时终止进程
     req.on('close', () => {
-        console.log('[微信安装] 客户端断开连接，终止进程');
+        console.log('[微信登录] 客户端断开连接，终止进程');
         child.kill();
         res.end();
     });

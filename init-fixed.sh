@@ -733,6 +733,20 @@ echo "Gateway 禁用设备认证: ${OPENCLAW_GATEWAY_DANGEROUSLY_DISABLE_DEVICE_
 echo "插件启用: ${OPENCLAW_PLUGINS_ENABLED:-true}"
 echo "允许插件列表已由系统自动同步"
 
+# ========== 启用个人微信插件 ==========
+# 检查插件是否存在
+if [ -d "$OPENCLAW_HOME/extensions/openclaw-weixin" ]; then
+    echo "=== 启用个人微信插件 ==="
+    
+    # 启用插件
+    if command -v openclaw &> /dev/null; then
+        openclaw config set plugins.entries.openclaw-weixin.enabled true 2>/dev/null || true
+        echo "✅ 已启用 openclaw-weixin 插件"
+    fi
+else
+    echo "ℹ️ 个人微信插件未安装，跳过启用"
+fi
+
 # 安装 bun
 export BUN_INSTALL="/usr/local"
 export PATH="$BUN_INSTALL/bin:$PATH"

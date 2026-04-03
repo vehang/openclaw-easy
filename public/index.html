@@ -763,11 +763,11 @@
                                 <!-- 安装区域 -->
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
                                     <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinInstallBtn" onclick="startWeixinInstall()">
-                                            <span class="iconify" data-icon="mdi:download"></span> 一键安装
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
+                                            <span class="iconify" data-icon="mdi:qrcode"></span> 扫码登录
                                         </button>
-                                        <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinInstall()" style="display: none;">
-                                            <span class="iconify" data-icon="mdi:stop"></span> 停止安装
+                                        <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
+                                            <span class="iconify" data-icon="mdi:stop"></span> 取消
                                         </button>
                                     </div>
                                     
@@ -775,7 +775,7 @@
                                     <div id="weixinConsoleWrapper" style="display: none;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                             <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
-                                            <span id="weixinInstallStatus" style="font-size: 12px; color: var(--warning-color);">正在安装...</span>
+                                            <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                         </div>
                                         <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; line-height: 1.6;">
                                             <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-break: break-all;"></div>
@@ -1129,30 +1129,26 @@
         let weixinEventSource = null;
 
         /**
-         * 开始个人微信安装
+         * 开始个人微信登录
          */
-        function startWeixinInstall() {
-            const installBtn = document.getElementById('weixinInstallBtn');
+        function startWeixinLogin() {
+            const loginBtn = document.getElementById('weixinLoginBtn');
             const stopBtn = document.getElementById('weixinStopBtn');
             const consoleWrapper = document.getElementById('weixinConsoleWrapper');
             const consoleOutput = document.getElementById('weixinConsoleOutput');
-            const installStatus = document.getElementById('weixinInstallStatus');
+            const loginStatus = document.getElementById('weixinLoginStatus');
 
             // 显示控制台区域
             consoleWrapper.style.display = 'block';
             consoleOutput.textContent = '';
-            installBtn.disabled = true;
+            loginBtn.disabled = true;
             stopBtn.style.display = 'inline-flex';
 
-            installStatus.textContent = '正在安装...';
-            installStatus.style.color = 'var(--warning-color)';
-
-            // 添加初始输出
-            appendWeixinOutput('$ npx -y @tencent-weixin/openclaw-weixin-cli@latest install\n');
-            appendWeixinOutput('正在启动安装程序...\n\n');
+            loginStatus.textContent = '正在登录...';
+            loginStatus.style.color = 'var(--warning-color)';
 
             // 建立 SSE 连接
-            weixinEventSource = new EventSource('/api/weixin/install');
+            weixinEventSource = new EventSource('/api/weixin/login');
 
             // 监听输出事件
             weixinEventSource.addEventListener('output', (e) => {
@@ -1175,21 +1171,21 @@
                 weixinEventSource.close();
                 weixinEventSource = null;
 
-                installBtn.disabled = false;
+                loginBtn.disabled = false;
                 stopBtn.style.display = 'none';
 
                 if (data.success) {
-                    installStatus.textContent = '安装完成';
-                    installStatus.style.color = 'var(--success-color)';
-                    appendWeixinOutput('\n✅ 安装完成！\n');
+                    loginStatus.textContent = '登录成功';
+                    loginStatus.style.color = 'var(--success-color)';
+                    appendWeixinOutput('\n✅ 登录成功！\n');
 
                     // 显示配置区域
                     document.getElementById('weixinConfig').style.display = 'block';
                     document.getElementById('weixinEnabled').checked = true;
                     updateChannelStatusUI('weixin');
                 } else {
-                    installStatus.textContent = '安装失败';
-                    installStatus.style.color = 'var(--danger-color)';
+                    loginStatus.textContent = '登录失败';
+                    loginStatus.style.color = 'var(--danger-color)';
                     appendWeixinOutput(`\n❌ ${data.message}\n`);
                 }
             });
@@ -1199,10 +1195,10 @@
                 appendWeixinOutput('\n❌ 连接错误，请重试\n');
                 weixinEventSource.close();
                 weixinEventSource = null;
-                installBtn.disabled = false;
+                loginBtn.disabled = false;
                 stopBtn.style.display = 'none';
-                installStatus.textContent = '连接错误';
-                installStatus.style.color = 'var(--danger-color)';
+                loginStatus.textContent = '连接错误';
+                loginStatus.style.color = 'var(--danger-color)';
             });
 
             // 连接错误
@@ -1228,24 +1224,24 @@
         }
 
         /**
-         * 停止个人微信安装
+         * 停止个人微信登录
          */
-        function stopWeixinInstall() {
+        function stopWeixinLogin() {
             if (weixinEventSource) {
                 weixinEventSource.close();
                 weixinEventSource = null;
             }
 
-            const installBtn = document.getElementById('weixinInstallBtn');
+            const loginBtn = document.getElementById('weixinLoginBtn');
             const stopBtn = document.getElementById('weixinStopBtn');
-            const installStatus = document.getElementById('weixinInstallStatus');
+            const loginStatus = document.getElementById('weixinLoginStatus');
 
-            installBtn.disabled = false;
+            loginBtn.disabled = false;
             stopBtn.style.display = 'none';
-            installStatus.textContent = '已取消';
-            installStatus.style.color = 'var(--text-secondary)';
+            loginStatus.textContent = '已取消';
+            loginStatus.style.color = 'var(--text-secondary)';
 
-            appendWeixinOutput('\n⚠️ 安装已取消\n');
+            appendWeixinOutput('\n⚠️ 登录已取消\n');
         }
 
         // ==================== 实时进度跟踪 ====================
