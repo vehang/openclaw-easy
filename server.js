@@ -1365,15 +1365,6 @@ app.post('/api/config/simple', async (req, res) => {
             simpleConfigCache.authToken = authToken.trim();
         }
 
-        // 重启 Gateway
-        let restartResult = null;
-        try {
-            restartResult = await restartGateway();
-        } catch (restartError) {
-            console.error('自动重启失败:', restartError);
-            restartResult = { success: false, message: restartError.message };
-        }
-
         res.json({
             code: 0,
             msg: '成功',
