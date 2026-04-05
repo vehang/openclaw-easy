@@ -1203,22 +1203,28 @@
             // 监听输出事件
             weixinEventSource.addEventListener('output', (e) => {
                 const data = JSON.parse(e.data);
+                console.log('[微信登录] SSE output 事件触发，数据长度:', data.text ? data.text.length : 0);
+                
                 appendWeixinOutput(data.text);
                 
                 // 累积所有输出
                 allOutput += data.text;
+                console.log('[微信登录] 累积输出总长度:', allOutput.length);
                 
-                // 从累积的输出中提取最后一个二维码链接
+                // 从累积的输出中提取所有二维码链接
                 const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/g);
-                console.log('[微信登录] 输出内容:', data.text.substring(0, 100));
+                console.log('[微信登录] 匹配结果:', qrcodeMatches ? qrcodeMatches.length + ' 个链接' : '无匹配');
                 
                 if (qrcodeMatches && qrcodeMatches.length > 0) {
                     const newUrl = qrcodeMatches[qrcodeMatches.length - 1];  // 取最后一个
-                    console.log('[微信登录] 匹配到链接:', newUrl);
+                    console.log('[微信登录] 最新链接:', newUrl.substring(0, 60) + '...');
                     // 如果是新的链接，更新二维码
                     if (newUrl !== currentQrcodeUrl) {
+                        console.log('[微信登录] 链接已更新，调用 updateWeixinQrcode');
                         currentQrcodeUrl = newUrl;
                         updateWeixinQrcode(newUrl);
+                    } else {
+                        console.log('[微信登录] 链接未变化，跳过更新');
                     }
                 }
                 // 自动滚动到底部
@@ -1328,15 +1334,36 @@
          * 更新微信二维码
          */
         function updateWeixinQrcode(url) {
-            console.log('[微信登录] 获取到二维码链接:', url);
+            console.log('[微信登录] updateWeixinQrcode 被调用，URL:', url ? url.substring(0, 50) + '...' : 'null');
+            
             const qrcodeLoading = document.getElementById('weixinQrcodeLoading');
             const qrcodeImage = document.getElementById('weixinQrcodeImage');
+            
+            if (!qrcodeLoading || !qrcodeImage) {
+                console.error('[微信登录] 找不到二维码容器元素');
+                return;
+            }
+            
+            console.log('[微信登录] 找到容器元素，准备生成二维码');
             
             // 清空旧的二维码
             qrcodeImage.innerHTML = '';
             
-            // 生成新的二维码
-            if (typeof QRCode !== 'undefined') {
+            // 检查 QRCode 库
+            if (typeof QRCode === 'undefined') {
+                console.error('[微信登录] QRCode 库未加载，尝试从 window 获取');
+                // 尝试从 window 获取
+                if (window.QRCode) {
+                    console.log('[微信登录] 从 window.QRCode 获取成功');
+                } else {
+                    console.error('[微信登录] window.QRCode 也不存在');
+                    return;
+                }
+            }
+            
+            console.log('[微信登录] 开始生成二维码 canvas...');
+            
+            try {
                 QRCode.toCanvas(url, { 
                     width: 160,
                     margin: 2,
@@ -1345,19 +1372,22 @@
                         light: '#ffffff'
                     }
                 }, function(error, canvas) {
+                    console.log('[微信登录] QRCode.toCanvas 回调执行');
                     if (error) {
-                        console.error('生成二维码失败:', error);
+                        console.error('[微信登录] 生成二维码失败:', error);
                         return;
                     }
+                    
+                    console.log('[微信登录] 二维码 canvas 生成成功');
                     
                     // 隐藏 loading，显示二维码
                     qrcodeLoading.style.display = 'none';
                     qrcodeImage.style.display = 'block';
                     qrcodeImage.appendChild(canvas);
-                    console.log('[微信登录] 二维码已更新');
+                    console.log('[微信登录] 二维码已添加到页面');
                 });
-            } else {
-                console.error('QRCode 库未加载');
+            } catch (e) {
+                console.error('[微信登录] QRCode.toCanvas 执行异常:', e);
             }
         }
 
