@@ -254,7 +254,7 @@ function getDefaultConfig() {
                 "imageModel": {
                     "primary": "default/glm-5"
                 },
-                "workspace": "/home/node/.openclaw/workspace",
+                "workspace": "/root/.openclaw/workspace",
                 "compaction": {
                     "mode": "safeguard",
                     "reserveTokensFloor": 20000
@@ -300,7 +300,7 @@ function getDefaultConfig() {
                 "command": "/usr/local/bin/qmd",
                 "paths": [
                     {
-                        "path": "/home/node/.openclaw/workspace",
+                        "path": "/root/.openclaw/workspace",
                         "name": "workspace",
                         "pattern": "**/*.md"
                     }
@@ -1311,7 +1311,7 @@ app.post('/api/config/simple', async (req, res) => {
         // 设置插件加载路径（关键！确保 OpenClaw 能找到插件）
         plugins.load = plugins.load || {};
         plugins.load.paths = plugins.load.paths || [];
-        const nimPluginPath = '/home/node/.openclaw/extensions/openclaw-nim-yx-auth';
+        const nimPluginPath = '/root/.openclaw/extensions/openclaw-nim-yx-auth';
         if (!plugins.load.paths.includes(nimPluginPath)) {
             plugins.load.paths.push(nimPluginPath);
         }
