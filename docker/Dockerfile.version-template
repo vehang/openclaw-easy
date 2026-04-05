@@ -1,0 +1,25 @@
+# OpenClaw 版本镜像 - 基于 openclaw-base
+# 只需安装对应版本的 openclaw，构建时间约 2-3 分钟
+ARG BASE_IMAGE=openclaw-base:latest
+FROM ${BASE_IMAGE}
+
+# 设置要安装的 OpenClaw 版本
+ARG OPENCLAW_VERSION=2026.4.1
+
+# 安装指定版本的 OpenClaw
+RUN npm install -g openclaw@${OPENCLAW_VERSION}
+
+# 同步种子扩展到运行目录（init.sh 在启动时也会做，但我们需要在构建时就准备好）
+RUN mkdir -p /root/.openclaw/extensions && \
+    cp -a /root/.openclaw-seed/extensions/. /root/.openclaw/extensions/
+
+# 安装个人微信插件（会根据 openclaw 版本自动匹配插件版本）
+# timeout 120秒：足够完成插件安装，但会终止后续的扫码等待
+# 2026.3.13 使用 compat 版本，可能需要更长安装时间
+RUN timeout 120 npx -y @tencent-weixin/openclaw-weixin-cli@latest install || true
+
+# 更新 seed 版本标识
+RUN printf '%s\n' "${OPENCLAW_VERSION}" > /root/.openclaw-seed/extensions/.seed-version
+
+# 设置入口点
+ENTRYPOINT ["/bin/bash", "/usr/local/bin/init.sh"]
