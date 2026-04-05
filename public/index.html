@@ -386,65 +386,54 @@
         }
 
     
-        /* 微信二维码弹窗样式 */
-        .weixin-qrcode-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        }
-        .weixin-qrcode-content {
+        /* 微信二维码展示样式 */
+        .weixin-qrcode-panel {
             background: white;
-            padding: 32px;
-            border-radius: 16px;
+            border-radius: 12px;
+            padding: 20px;
             text-align: center;
-            max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         .weixin-qrcode-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
             color: #333;
         }
         .weixin-qrcode-subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: #666;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         .weixin-qrcode-image {
-            padding: 16px;
+            padding: 12px;
             background: white;
             border-radius: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         .weixin-qrcode-image canvas {
             display: block !important;
+            margin: 0 auto;
         }
         .weixin-qrcode-tip {
-            font-size: 12px;
+            font-size: 11px;
             color: #999;
         }
         .weixin-qrcode-loading {
-            padding: 60px 0;
+            padding: 40px 0;
         }
         .weixin-qrcode-loading .spinner {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border: 3px solid #e0e0e0;
             border-top-color: #07c160;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
+            margin: 0 auto 12px;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
         }
 </style>
 </head>
@@ -831,33 +820,31 @@
                                         </button>
                                     </div>
                                     
-                                    <div id="weixinConsoleWrapper" style="display: none;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                            <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
-                                            <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
+                                    <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
+                                        <div style="display: flex; gap: 16px;">
+                                            <div style="flex: 2;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                    <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
+                                                    <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
+                                                </div>
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5;">
+                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-break: break-all;"></div>
+                                                </div>
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <div class="weixin-qrcode-panel">
+                                                    <div class="weixin-qrcode-title">微信扫码登录</div>
+                                                    <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
+                                                    <div id="weixinQrcodeLoading" class="weixin-qrcode-loading">
+                                                        <div class="spinner"></div>
+                                                        <div style="color: #666; font-size: 12px;">等待二维码...</div>
+                                                    </div>
+                                                    <div id="weixinQrcodeImage" class="weixin-qrcode-image" style="display: none;"></div>
+                                                    <div class="weixin-qrcode-tip">二维码会定期刷新</div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; max-height: 400px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; line-height: 1.6;">
-                                            <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-break: break-all;"></div>
-                                        </div>
-                                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">
-                                            <span class="iconify" data-icon="mdi:information" style="vertical-align: middle;"></span>
-                                            请在上方输出中找到二维码，使用手机微信扫码登录
-                                        </p>
                                     </div>
-                                </div>
-                                
-                                <div class="im-config-panel" id="weixinConfig" style="display: none; margin-top: 16px;">
-                                    <div class="form-group">
-                                        <label class="form-label">Token <span class="required-mark">*</span></label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control" id="weixinToken"
-                                                   placeholder="安装完成后自动填充" readonly>
-                                            <button type="button" class="toggle-password" onclick="togglePassword('weixinToken')">
-                                                <span class="iconify" data-icon="mdi:eye"></span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="step-navigation">
@@ -953,21 +940,7 @@
         </main>
     </div>
 
-    <!-- 微信二维码弹窗 -->
-    <div id="weixinQrcodeModal" class="weixin-qrcode-modal" style="display: none;">
-        <div class="weixin-qrcode-content">
-            <div class="weixin-qrcode-title">微信扫码登录</div>
-            <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
-            <div id="weixinQrcodeLoading" class="weixin-qrcode-loading">
-                <div class="spinner"></div>
-                <div style="color: #666;">正在获取二维码...</div>
-            </div>
-            <div id="weixinQrcodeImage" class="weixin-qrcode-image" style="display: none;"></div>
-            <div class="weixin-qrcode-tip">二维码会定期刷新，请尽快扫码</div>
-        </div>
-    </div>
-
-    <!-- Toast 容器 -->
+        <!-- Toast 容器 -->
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- 修改密码模态框 -->
@@ -1220,14 +1193,6 @@
             loginStatus.style.color = 'var(--warning-color)';
 
             // 显示二维码弹窗
-            const qrcodeModal = document.getElementById('weixinQrcodeModal');
-            const qrcodeLoading = document.getElementById('weixinQrcodeLoading');
-            const qrcodeImage = document.getElementById('weixinQrcodeImage');
-            qrcodeModal.style.display = 'flex';
-            qrcodeLoading.style.display = 'block';
-            qrcodeImage.style.display = 'none';
-            qrcodeImage.innerHTML = '';
-
             // 当前二维码链接
             let currentQrcodeUrl = null;
 
@@ -1240,14 +1205,17 @@
                 appendWeixinOutput(data.text);
                 
                 // 提取二维码链接
-                const qrcodeMatch = data.text.match(/https:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]]+/);
+                const qrcodeMatch = data.text.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/);
+                console.log('[微信登录] 输出内容:', data.text.substring(0, 200));
                 if (qrcodeMatch) {
                     const newUrl = qrcodeMatch[0];
+                    console.log('[微信登录] 匹配到链接:', newUrl);
                     // 如果是新的链接，更新二维码
                     if (newUrl !== currentQrcodeUrl) {
                         currentQrcodeUrl = newUrl;
                         updateWeixinQrcode(newUrl);
                     }
+                }
                 }
                 
                 // 自动滚动到底部
@@ -1269,7 +1237,7 @@
 
                 loginBtn.disabled = false;
                 stopBtn.style.display = 'none';
-                qrcodeModal.style.display = 'none';
+                // 二维码区域保留
 
                 if (data.success) {
                     loginStatus.textContent = '登录成功';
@@ -1296,7 +1264,7 @@
                 stopBtn.style.display = 'none';
                 loginStatus.textContent = '连接错误';
                 loginStatus.style.color = 'var(--danger-color)';
-                qrcodeModal.style.display = 'none';
+                // 二维码区域保留
             });
 
             // 连接错误
@@ -1309,7 +1277,7 @@
                     stopBtn.style.display = 'none';
                     loginStatus.textContent = '连接失败';
                     loginStatus.style.color = 'var(--danger-color)';
-                    qrcodeModal.style.display = 'none';
+                    // 二维码区域保留
                 }
             };
         }
@@ -1347,6 +1315,7 @@
          * 更新微信二维码
          */
         function updateWeixinQrcode(url) {
+            console.log('[微信登录] 获取到二维码链接:', url);
             const qrcodeLoading = document.getElementById('weixinQrcodeLoading');
             const qrcodeImage = document.getElementById('weixinQrcodeImage');
             
@@ -1354,24 +1323,29 @@
             qrcodeImage.innerHTML = '';
             
             // 生成新的二维码
-            QRCode.toCanvas(url, { 
-                width: 200,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#ffffff'
-                }
-            }, function(error, canvas) {
-                if (error) {
-                    console.error('生成二维码失败:', error);
-                    return;
-                }
-                
-                // 隐藏 loading，显示二维码
-                qrcodeLoading.style.display = 'none';
-                qrcodeImage.style.display = 'block';
-                qrcodeImage.appendChild(canvas);
-            });
+            if (typeof QRCode !== 'undefined') {
+                QRCode.toCanvas(url, { 
+                    width: 160,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                }, function(error, canvas) {
+                    if (error) {
+                        console.error('生成二维码失败:', error);
+                        return;
+                    }
+                    
+                    // 隐藏 loading，显示二维码
+                    qrcodeLoading.style.display = 'none';
+                    qrcodeImage.style.display = 'block';
+                    qrcodeImage.appendChild(canvas);
+                    console.log('[微信登录] 二维码已更新');
+                });
+            } else {
+                console.error('QRCode 库未加载');
+            }
         }
 
         // ==================== 实时进度跟踪 ====================
