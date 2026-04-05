@@ -836,8 +836,8 @@
                                                     <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
                                                     <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                                 </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1;">
-                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre; font-family: 'Courier New', 'Monaco', monospace;"></div>
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1; white-space: pre;">
+                                                    <div id="weixinConsoleOutput" style="color: #00ff88;"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1232,7 +1232,38 @@
         /**
          * 保存微信绑定状态
          */
-        function saveWeixinBindStatus(bound) {
+        
+        /**
+         * 微信登录成功处理
+         */
+        function onWeixinLoginSuccess() {
+            // 隐藏二维码和控制台区域
+            document.getElementById('weixinConsoleWrapper').style.display = 'none';
+            
+            // 显示绑定状态
+            const bindStatus = document.getElementById('weixinBindStatus');
+            bindStatus.style.display = 'inline-flex';
+            bindStatus.style.alignItems = 'center';
+            bindStatus.style.gap = '4px';
+            
+            // 更新按钮文案
+            document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
+            
+            // 更新状态
+            const status = document.getElementById('weixinStatus');
+            status.textContent = '已绑定';
+            status.classList.remove('incomplete');
+            status.classList.add('complete');
+            
+            // 保存绑定状态
+            saveWeixinBindStatus(true);
+            
+            // 更新登录状态文字
+            document.getElementById('weixinLoginStatus').textContent = '登录成功';
+            document.getElementById('weixinLoginStatus').style.color = 'var(--success-color)';
+        }
+
+function saveWeixinBindStatus(bound) {
             localStorage.setItem('weixin_bound', bound ? 'true' : 'false');
         }
 
