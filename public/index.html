@@ -1212,7 +1212,7 @@
                 console.log('[微信登录] 累积输出总长度:', allOutput.length);
                 
                 // 从累积的输出中提取所有二维码链接
-                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/g);
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/\S+/g);
                 console.log('[微信登录] 匹配结果:', qrcodeMatches ? qrcodeMatches.length + ' 个链接' : '无匹配');
                 
                 if (qrcodeMatches && qrcodeMatches.length > 0) {
