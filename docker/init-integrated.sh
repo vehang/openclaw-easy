@@ -133,7 +133,20 @@ sync_config_with_env() {
         "/root/.openclaw/extensions/openclaw-weixin"
       ]
     },
-    "installs": {}
+    "installs": {
+      "nim": {
+        "source": "git",
+        "spec": "https://github.com/vehang/openclaw-nim-yx-auth.git",
+        "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
+        "version": "1.0.0"
+      },
+      "openclaw-weixin": {
+        "source": "npm",
+        "spec": "@tencent-weixin/openclaw-weixin",
+        "installPath": "/root/.openclaw/extensions/openclaw-weixin",
+        "version": "1.0.3"
+      }
+    }
   },
   "memory": {
     "backend": "qmd",
