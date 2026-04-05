@@ -836,7 +836,7 @@
                                                     <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
                                                     <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                                 </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1; white-space: pre;">
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word;">
                                                     <div id="weixinConsoleOutput" style="color: #00ff88;"></div>
                                                 </div>
                                             </div>
@@ -891,7 +891,7 @@
                                                     <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
                                                     <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                                 </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1;">
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word;">
                                                     <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre; font-family: 'Courier New', 'Monaco', monospace;"></div>
                                                 </div>
                                             </div>
@@ -1263,22 +1263,56 @@
             document.getElementById('weixinLoginStatus').style.color = 'var(--success-color)';
         }
 
-function saveWeixinBindStatus(bound) {
-            localStorage.setItem('weixin_bound', bound ? 'true' : 'false');
+async function saveWeixinBindStatus(bound) {
+            // 保存到服务端配置
+            try {
+                // 先获取当前配置
+                const getResponse = await fetch('/api/config');
+                const config = await getResponse.json();
+                
+                // 更新微信绑定状态
+                if (!config.channels) config.channels = {};
+                if (!config.channels.weixin) config.channels.weixin = {};
+                config.channels.weixin.bound = bound;
+                
+                // 保存
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                console.log('[微信登录] 状态已保存到服务端:', bound);
+            } catch (e) {
+                console.error('[微信登录] 保存状态失败:', e);
+            }
+        } catch (e) {
+                console.error('[微信登录] 保存状态失败:', e);
+            }
         }
 
         /**
          * 加载微信绑定状态
          */
-        function loadWeixinBindStatus() {
-            return localStorage.getItem('weixin_bound') === 'true';
+        async function loadWeixinBindStatus() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                const isBound = config?.channels?.weixin?.bound === true;
+                console.log('[微信登录] 从服务端加载绑定状态:', isBound);
+                return isBound;
+            } catch (e) {
+                console.error('[微信登录] 加载状态失败:', e);
+                return false;
+            }
+        }
         }
 
         /**
          * 初始化微信绑定状态显示
          */
-        function initWeixinBindStatus() {
-            const isBound = loadWeixinBindStatus();
+        async function initWeixinBindStatus() {
+            const isBound = await loadWeixinBindStatus();
+            console.log('[微信登录] 初始化绑定状态:', isBound);
             if (isBound) {
                 // 显示已绑定状态
                 document.getElementById('weixinBindStatus').style.display = 'inline-flex';
