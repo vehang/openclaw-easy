@@ -801,7 +801,7 @@
                                         </div>
                                     </div>
                                     <div class="channel-status incomplete" id="weixinStatus">
-                                        未配置
+                                        未启动
                                     </div>
                                     <label class="switch">
                                         <input type="checkbox" id="weixinEnabled" onchange="toggleImConfig('weixin')">
@@ -811,7 +811,7 @@
                                 
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
                                     <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()" style="display: inline-flex; align-items: center; gap: 8px;">
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()" disabled style="display: inline-flex; align-items: center; gap: 8px;">
                                         <span class="iconify" data-icon="mdi:qrcode-scan"></span>
                                         点击扫码登录
                                     </button>
@@ -1250,6 +1250,11 @@
                     // 显示配置区域
                     document.getElementById('weixinConfig').style.display = 'block';
                     document.getElementById('weixinEnabled').checked = true;
+                    // 更新状态为已启动
+                    const status = document.getElementById('weixinStatus');
+                    status.textContent = '已启动';
+                    status.classList.remove('incomplete');
+                    status.classList.add('complete');
                     updateChannelStatusUI('weixin');
                 } else {
                     loginStatus.textContent = '登录失败，请重新扫码';
@@ -1672,7 +1677,7 @@
                             }
                         } else {
                             statusEl.className = 'channel-status incomplete';
-                            statusEl.textContent = '未启用';
+                            statusEl.textContent = platform === 'weixin' ? '未启动' : '未启用';
                         }
                     }
                 }
@@ -1814,6 +1819,23 @@
 
             // 更新状态
             updateChannelStatusUI(platform);
+
+            // 微信特殊处理：启用/禁用扫码登录按钮
+            if (platform === 'weixin') {
+                const loginBtn = document.getElementById('weixinLoginBtn');
+                const status = document.getElementById('weixinStatus');
+                if (enabled) {
+                    loginBtn.disabled = false;
+                    status.textContent = '已启动';
+                    status.classList.remove('incomplete');
+                    status.classList.add('complete');
+                } else {
+                    loginBtn.disabled = true;
+                    status.textContent = '未启动';
+                    status.classList.remove('complete');
+                    status.classList.add('incomplete');
+                }
+            }
 
             // 重新计算进度（启用/禁用渠道会影响总字段数）
             calculateProgress();
