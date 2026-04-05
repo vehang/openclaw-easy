@@ -811,9 +811,10 @@
                                 
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
                                     <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
-                                            <span class="iconify" data-icon="mdi:qrcode"></span> 扫码登录
-                                        </button>
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" style="display: inline-flex; align-items: center; gap: 8px;">
+                                        <span class="iconify" data-icon="mdi:qrcode-scan"></span>
+                                        点击扫码登录
+                                    </button>
                                         <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
                                             <span class="iconify" data-icon="mdi:stop"></span> 取消
                                         </button>
@@ -1251,9 +1252,14 @@
                     document.getElementById('weixinEnabled').checked = true;
                     updateChannelStatusUI('weixin');
                 } else {
-                    loginStatus.textContent = '登录失败';
+                    loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
                     appendWeixinOutput(`\n❌ ${data.message}\n`);
+                    // 登录失败时，如果已有二维码链接，继续显示二维码
+                    if (currentQrcodeUrl) {
+                        document.getElementById('weixinQrcodeLoading').style.display = 'none';
+                        document.getElementById('weixinQrcodeImage').style.display = 'block';
+                    }
                 }
             });
 
