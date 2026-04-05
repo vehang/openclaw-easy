@@ -6,7 +6,6 @@
     <title>OpenClaw - 配置管理</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         /* 精致步骤导航 - 顶部细条 */
         .steps-nav {
@@ -817,7 +816,7 @@
                                     </div>
                                     <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
                                         <div style="display: flex; gap: 16px;">
-                                            <div style="flex: 1;">
+                                            <div style="flex: 0 0 200px; min-width: 200px;">
                                                 <div class="weixin-qrcode-panel">
                                                     <div class="weixin-qrcode-title">微信扫码登录</div>
                                                     <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
@@ -2541,5 +2540,7 @@
         });
     </script>
     </div>
+    <!-- QRCode 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </body>
 </html>
