@@ -1794,8 +1794,8 @@ function startWeixinLogin() {
             // 加载配置状态（用于更新各渠道状态）
             await loadConfigStatus();
         
-    // 初始化微信绑定状态
-    initWeixinBindStatus();
+    // 初始化微信绑定状态（异步，不阻塞其他初始化）
+    initWeixinBindStatus().catch(e => console.error('[微信登录] 初始化失败:', e));
 });
 
         /**
