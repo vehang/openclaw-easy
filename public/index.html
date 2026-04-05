@@ -831,13 +831,13 @@
                                                     <div class="weixin-qrcode-tip">二维码会定期刷新</div>
                                                 </div>
                                             </div>
-                                            <div style="flex: 2;">
+                                            <div style="flex: 2; min-width: 0;">
                                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                                     <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
                                                     <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                                 </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word;">
-                                                    <div id="weixinConsoleOutput" style="color: #00ff88;"></div>
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word; width: 100%; max-width: 100%;">
+                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-wrap: break-word;"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -853,52 +853,6 @@
                                         </div>
                                     </div>
                                     <div class="channel-status incomplete" id="weixinStatus">
-                                        未启动
-                                    </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="weixinEnabled" onchange="toggleImConfig('weixin')">
-                                        <span class="switch-slider"></span>
-                                    </label>
-                                </div>
-                                
-                                <div id="weixinInstallPanel" style="margin-top: 16px;">
-                                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()" disabled style="display: inline-flex; align-items: center; gap: 8px;">
-                                        <span class="iconify" data-icon="mdi:qrcode-scan"></span>
-                                        点击扫码登录
-                                    </button>
-                                        <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
-                                            <span class="iconify" data-icon="mdi:stop"></span> 取消
-                                        </button>
-                                    </div>
-                                    
-                                    <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
-                                        <div style="display: flex; gap: 16px;">
-                                            <div style="flex: 1;">
-                                                <div class="weixin-qrcode-panel">
-                                                    <div class="weixin-qrcode-title">微信扫码登录</div>
-                                                    <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
-                                                    <div id="weixinQrcodeLoading" class="weixin-qrcode-loading">
-                                                        <div class="spinner"></div>
-                                                        <div style="color: #666; font-size: 12px;">等待二维码...</div>
-                                                    </div>
-                                                    <div id="weixinQrcodeImage" class="weixin-qrcode-image" style="display: none;"></div>
-                                                    <div class="weixin-qrcode-tip">二维码会定期刷新</div>
-                                                </div>
-                                            </div>
-                                            <div style="flex: 2;">
-                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                                    <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
-                                                    <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
-                                                </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word;">
-                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre; font-family: 'Courier New', 'Monaco', monospace;"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                            </div>
-
                             <div class="step-navigation">
                                 <div class="step-navigation-left">
                                     <button type="button" class="btn btn-secondary" onclick="prevStep()">
@@ -1252,12 +1206,24 @@
             status.classList.remove('incomplete');
             status.classList.add('complete');
             
-            // 保存绑定状态到服务端配置
+            // 保存微信配置到服务端
+            const weixinConfig = {
+                channels: {
+                    weixin: {
+                        enabled: true,
+                        bound: true
+                    }
+                }
+            };
+            
             fetch('/api/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ channels: { weixin: { bound: true } } })
-            }).catch(e => console.error('[微信登录] 保存状态失败:', e));
+                body: JSON.stringify(weixinConfig)
+            })
+            .then(res => res.json())
+            .then(data => console.log('[微信登录] 配置保存成功:', data))
+            .catch(e => console.error('[微信登录] 保存状态失败:', e));
         }
 
         /**
@@ -1341,15 +1307,9 @@
                     loginStatus.textContent = '登录成功';
                     loginStatus.style.color = 'var(--success-color)';
                     appendWeixinOutput('\n✅ 登录成功！\n');
-
-                    // 显示配置区域
-                    document.getElementById('weixinConfig').style.display = 'block';
-                        // 同时启用扫码登录按钮
-                        document.getElementById('weixinLoginBtn').disabled = false;
-                        document.getElementById('weixinStatus').textContent = '已启动';
-                        document.getElementById('weixinStatus').classList.remove('incomplete');
-                        document.getElementById('weixinStatus').classList.add('complete');
                     
+                    // 调用登录成功处理函数
+                    onWeixinLoginSuccess();
                 } else {
                     loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
