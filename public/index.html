@@ -797,7 +797,7 @@
                                     <div class="switch-label">
                                         <div class="switch-text">
                                             <h4>个人微信机器人</h4>
-                                            <p>扫码登录个人微信，接入机器人功能</p>
+                                            <p>点击扫码登录个人微信，接入机器人功能</p>
                                         </div>
                                     </div>
                                     <div class="channel-status complete" id="weixinStatus">
@@ -807,7 +807,7 @@
                                 
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
                                     <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()" style="display: inline-flex; align-items: center; gap: 8px;">
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
                                             <span class="iconify" data-icon="mdi:qrcode-scan"></span>
                                             点击扫码登录
                                         </button>
@@ -1312,13 +1312,7 @@
                         document.getElementById('weixinStatus').textContent = '已启动';
                         document.getElementById('weixinStatus').classList.remove('incomplete');
                         document.getElementById('weixinStatus').classList.add('complete');
-                    document.getElementById('weixinEnabled').checked = true;
-                    // 更新状态为已启动
-                    const status = document.getElementById('weixinStatus');
-                    status.textContent = '已启动';
-                    status.classList.remove('incomplete');
-                    status.classList.add('complete');
-                    updateChannelStatusUI('weixin');
+                    
                 } else {
                     loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
