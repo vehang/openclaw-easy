@@ -1187,6 +1187,7 @@
             consoleWrapper.style.display = 'block';
             consoleOutput.textContent = '';
             loginBtn.disabled = true;
+                        console.log('[微信登录] 按钮已禁用');
             stopBtn.style.display = 'inline-flex';
 
             loginStatus.textContent = '正在登录...';
@@ -1245,6 +1246,7 @@
                 weixinEventSource = null;
 
                 loginBtn.disabled = false;
+                        console.log('[微信登录] 按钮已启用');
                 stopBtn.style.display = 'none';
                 // 二维码区域保留
 
@@ -1255,6 +1257,11 @@
 
                     // 显示配置区域
                     document.getElementById('weixinConfig').style.display = 'block';
+                        // 同时启用扫码登录按钮
+                        document.getElementById('weixinLoginBtn').disabled = false;
+                        document.getElementById('weixinStatus').textContent = '已启动';
+                        document.getElementById('weixinStatus').classList.remove('incomplete');
+                        document.getElementById('weixinStatus').classList.add('complete');
                     document.getElementById('weixinEnabled').checked = true;
                     // 更新状态为已启动
                     const status = document.getElementById('weixinStatus');
@@ -1280,6 +1287,7 @@
                 weixinEventSource.close();
                 weixinEventSource = null;
                 loginBtn.disabled = false;
+                        console.log('[微信登录] 按钮已启用');
                 stopBtn.style.display = 'none';
                 loginStatus.textContent = '连接错误';
                 loginStatus.style.color = 'var(--danger-color)';
@@ -1293,6 +1301,7 @@
                     weixinEventSource.close();
                     weixinEventSource = null;
                     loginBtn.disabled = false;
+                        console.log('[微信登录] 按钮已启用');
                     stopBtn.style.display = 'none';
                     loginStatus.textContent = '连接失败';
                     loginStatus.style.color = 'var(--danger-color)';
@@ -1323,6 +1332,7 @@
             const loginStatus = document.getElementById('weixinLoginStatus');
 
             loginBtn.disabled = false;
+                        console.log('[微信登录] 按钮已启用');
             stopBtn.style.display = 'none';
             loginStatus.textContent = '已取消';
             loginStatus.style.color = 'var(--text-secondary)';
@@ -1818,6 +1828,11 @@
                     document.getElementById('weixinToken').value = config.im.weixin.token || '';
                     if (config.im.weixin.enabled) {
                         document.getElementById('weixinConfig').style.display = 'block';
+                        // 同时启用扫码登录按钮
+                        document.getElementById('weixinLoginBtn').disabled = false;
+                        document.getElementById('weixinStatus').textContent = '已启动';
+                        document.getElementById('weixinStatus').classList.remove('incomplete');
+                        document.getElementById('weixinStatus').classList.add('complete');
                     }
                 }
             }
@@ -1836,6 +1851,7 @@
          * 切换 IM 配置面板显示
          */
         function toggleImConfig(platform) {
+            console.log("[微信登录] toggleImConfig 被调用，平台:", platform, "启用状态:", document.getElementById(`${platform}Enabled`).checked);
             const enabled = document.getElementById(`${platform}Enabled`).checked;
             const configPanel = document.getElementById(`${platform}Config`);
 
@@ -1851,16 +1867,19 @@
             updateChannelStatusUI(platform);
 
             // 微信特殊处理：启用/禁用扫码登录按钮
+                console.log('[微信登录] toggleImConfig 微信处理，enabled:', enabled);
             if (platform === 'weixin') {
                 const loginBtn = document.getElementById('weixinLoginBtn');
                 const status = document.getElementById('weixinStatus');
                 if (enabled) {
                     loginBtn.disabled = false;
+                        console.log('[微信登录] 按钮已启用');
                     status.textContent = '已启动';
                     status.classList.remove('incomplete');
                     status.classList.add('complete');
                 } else {
                     loginBtn.disabled = true;
+                        console.log('[微信登录] 按钮已禁用');
                     status.textContent = '未启动';
                     status.classList.remove('complete');
                     status.classList.add('incomplete');
