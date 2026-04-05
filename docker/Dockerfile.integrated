@@ -58,8 +58,8 @@ RUN npm install --production && \
     echo "✅ openclaw-easy 安装完成"
 
 # ========== 复制配置文件 ==========
-COPY supervisord-integrated.conf /etc/supervisor/conf.d/openclaw.conf
-COPY init-integrated.sh /usr/local/bin/init-integrated.sh
+COPY docker/supervisord-integrated.conf /etc/supervisor/conf.d/openclaw.conf
+COPY docker/init-integrated.sh /usr/local/bin/init-integrated.sh
 RUN chmod +x /usr/local/bin/init-integrated.sh
 
 # ========== 清理 ==========

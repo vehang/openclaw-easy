@@ -5,7 +5,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_DIR"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -22,7 +23,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 # 构建基础镜像
 build_base() {
     log_info "构建基础镜像 openclaw-base:latest ..."
-    docker build -f Dockerfile.base -t openclaw-base:latest .
+    docker build -f docker/Dockerfile.base -t openclaw-base:latest .
     log_success "基础镜像构建完成!"
     docker images openclaw-base:latest
 }
@@ -45,7 +46,7 @@ build_version() {
 
     docker build \
         --build-arg OPENCLAW_VERSION="$version" \
-        -f Dockerfile.version-template \
+        -f docker/Dockerfile.version-template \
         -t "openclaw:${version}-root" \
         .
 
@@ -53,7 +54,7 @@ build_version() {
     docker images "openclaw:${version}-root"
 }
 
-# 构建整合版镜像 (基于已构建的版本镜像 + NIM插件 + 微信插件 + openclaw-easy)
+# 构建整合版镜像
 build_integrated() {
     local version="$1"
     if [ -z "$version" ]; then
@@ -74,7 +75,7 @@ build_integrated() {
     docker build \
         --build-arg BASE_VERSION="${version}-root" \
         --build-arg OPENCLAW_VERSION="$version" \
-        -f Dockerfile.integrated \
+        -f docker/Dockerfile.integrated \
         -t "openclaw:${version}-integrated" \
         -t "openclaw-integrated:latest" \
         .
