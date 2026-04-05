@@ -805,14 +805,17 @@
                                 </div>
                                 
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
-                                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
                                         <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
                                             <span class="iconify" data-icon="mdi:qrcode-scan"></span>
-                                            点击扫码登录
+                                            <span id="weixinLoginBtnText">点击扫码登录</span>
                                         </button>
                                         <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
                                             <span class="iconify" data-icon="mdi:stop"></span> 取消
                                         </button>
+                                        <span id="weixinBindStatus" style="display: none; color: #10b981; font-size: 14px; font-weight: 500;">
+                                            <span class="iconify" data-icon="mdi:check-circle"></span> 已成功绑定微信
+                                        </span>
                                     </div>
                                     <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
                                         <div style="display: flex; gap: 16px;">
@@ -1225,7 +1228,38 @@
         /**
          * 开始个人微信登录
          */
-        function startWeixinLogin() {
+        
+        /**
+         * 保存微信绑定状态
+         */
+        function saveWeixinBindStatus(bound) {
+            localStorage.setItem('weixin_bound', bound ? 'true' : 'false');
+        }
+
+        /**
+         * 加载微信绑定状态
+         */
+        function loadWeixinBindStatus() {
+            return localStorage.getItem('weixin_bound') === 'true';
+        }
+
+        /**
+         * 初始化微信绑定状态显示
+         */
+        function initWeixinBindStatus() {
+            const isBound = loadWeixinBindStatus();
+            if (isBound) {
+                // 显示已绑定状态
+                document.getElementById('weixinBindStatus').style.display = 'inline-flex';
+                document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
+                const status = document.getElementById('weixinStatus');
+                status.textContent = '已绑定';
+                status.classList.remove('incomplete');
+                status.classList.add('complete');
+            }
+        }
+
+function startWeixinLogin() {
             const loginBtn = document.getElementById('weixinLoginBtn');
             const stopBtn = document.getElementById('weixinStopBtn');
             const consoleWrapper = document.getElementById('weixinConsoleWrapper');
@@ -1694,7 +1728,10 @@
 
             // 加载配置状态（用于更新各渠道状态）
             await loadConfigStatus();
-        });
+        
+    // 初始化微信绑定状态
+    initWeixinBindStatus();
+});
 
         /**
          * 加载配置数据
