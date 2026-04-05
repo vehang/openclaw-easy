@@ -1194,6 +1194,7 @@
             // 显示二维码弹窗
             // 当前二维码链接
             let currentQrcodeUrl = null;
+            let allOutput = '';  // 累积所有输出
 
             // 建立 SSE 连接
             weixinEventSource = new EventSource('/api/weixin/login');
@@ -1203,11 +1204,15 @@
                 const data = JSON.parse(e.data);
                 appendWeixinOutput(data.text);
                 
-                // 提取二维码链接
-                const qrcodeMatch = data.text.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/);
-                console.log('[微信登录] 输出内容:', data.text.substring(0, 200));
-                if (qrcodeMatch) {
-                    const newUrl = qrcodeMatch[0];
+                // 累积所有输出
+                allOutput += data.text;
+                
+                // 从累积的输出中提取最后一个二维码链接
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/g);
+                console.log('[微信登录] 输出内容:', data.text.substring(0, 100));
+                
+                if (qrcodeMatches && qrcodeMatches.length > 0) {
+                    const newUrl = qrcodeMatches[qrcodeMatches.length - 1];  // 取最后一个
                     console.log('[微信登录] 匹配到链接:', newUrl);
                     // 如果是新的链接，更新二维码
                     if (newUrl !== currentQrcodeUrl) {
