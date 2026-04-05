@@ -1851,42 +1851,44 @@
          * 切换 IM 配置面板显示
          */
         function toggleImConfig(platform) {
-            console.log("[微信登录] toggleImConfig 被调用，平台:", platform, "启用状态:", document.getElementById(`${platform}Enabled`).checked);
+            console.log("[微信登录] toggleImConfig 被调用，平台:", platform);
             const enabled = document.getElementById(`${platform}Enabled`).checked;
-            const configPanel = document.getElementById(`${platform}Config`);
-
-            if (enabled) {
-                configPanel.classList.add('active');
-            } else {
-                configPanel.classList.remove('active');
-                // 清除错误提示
-                clearChannelErrors(platform);
+            
+            // 微信没有 configPanel，特殊处理
+            if (platform !== 'weixin') {
+                const configPanel = document.getElementById(`${platform}Config`);
+                if (enabled) {
+                    configPanel.classList.add('active');
+                } else {
+                    configPanel.classList.remove('active');
+                    clearChannelErrors(platform);
+                }
             }
 
             // 更新状态
             updateChannelStatusUI(platform);
 
             // 微信特殊处理：启用/禁用扫码登录按钮
-                console.log('[微信登录] toggleImConfig 微信处理，enabled:', enabled);
             if (platform === 'weixin') {
+                console.log('[微信登录] 微信特殊处理，enabled:', enabled);
                 const loginBtn = document.getElementById('weixinLoginBtn');
                 const status = document.getElementById('weixinStatus');
                 if (enabled) {
                     loginBtn.disabled = false;
-                        console.log('[微信登录] 按钮已启用');
+                    console.log('[微信登录] 按钮已启用');
                     status.textContent = '已启动';
                     status.classList.remove('incomplete');
                     status.classList.add('complete');
                 } else {
                     loginBtn.disabled = true;
-                        console.log('[微信登录] 按钮已禁用');
+                    console.log('[微信登录] 按钮已禁用');
                     status.textContent = '未启动';
                     status.classList.remove('complete');
                     status.classList.add('incomplete');
                 }
             }
 
-            // 重新计算进度（启用/禁用渠道会影响总字段数）
+            // 重新计算进度
             calculateProgress();
         }
 
