@@ -135,7 +135,7 @@ sync_config_with_env() {
     },
     "installs": {
       "nim": {
-        "source": "git",
+        "source": "path",
         "spec": "https://github.com/vehang/openclaw-nim-yx-auth.git",
         "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
         "version": "1.0.0"
@@ -222,7 +222,7 @@ config["plugins"] = {
     },
     "installs": {
         "nim": {
-            "source": "git",
+            "source": "path",
             "spec": "https://github.com/vehang/openclaw-nim-yx-auth.git",
             "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
             "version": "1.0.0"
