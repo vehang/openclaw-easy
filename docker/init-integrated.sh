@@ -210,6 +210,33 @@ if env.get('OPENCLAW_GATEWAY_TOKEN'):
     }
     print('✅ Gateway 配置已同步')
 
+# 确保 plugins 配置正确
+config["plugins"] = {
+    "enabled": True,
+    "allow": ["nim", "openclaw-weixin"],
+    "load": {
+        "paths": [
+            "/root/.openclaw/extensions/openclaw-nim-yx-auth",
+            "/root/.openclaw/extensions/openclaw-weixin"
+        ]
+    },
+    "installs": {
+        "nim": {
+            "source": "git",
+            "spec": "https://github.com/vehang/openclaw-nim-yx-auth.git",
+            "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
+            "version": "1.0.0"
+        },
+        "openclaw-weixin": {
+            "source": "npm",
+            "spec": "@tencent-weixin/openclaw-weixin",
+            "installPath": "/root/.openclaw/extensions/openclaw-weixin",
+            "version": "1.0.3"
+        }
+    }
+}
+print("✅ plugins 配置已合并")
+
 with open(config_file, 'w') as f:
     json.dump(config, f, indent=2, ensure_ascii=False)
 PYCODE

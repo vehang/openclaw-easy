@@ -75,7 +75,7 @@ build_integrated() {
     docker build \
         --build-arg BASE_VERSION="${version}-root" \
         --build-arg OPENCLAW_VERSION="$version" \
-        -f docker/Dockerfile.integrated \
+        -f Dockerfile.integrated \
         -t "openclaw:${version}-integrated" \
         -t "openclaw-integrated:latest" \
         .

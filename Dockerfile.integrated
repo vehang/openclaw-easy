@@ -1,0 +1,86 @@
+# OpenClaw 整合版镜像 - 基于已构建的版本镜像
+# 整合：NIM YX Auth 插件 + 微信插件 + openclaw-easy Web 界面
+# 全部以 root 权限运行
+
+# 使用已构建的版本镜像作为基础
+# 构建时传入：--build-arg BASE_VERSION=2026.3.13-root
+ARG BASE_VERSION=2026.3.13-root
+FROM openclaw:${BASE_VERSION}
+
+# 设置要安装的 OpenClaw 版本（用于标签）
+ARG OPENCLAW_VERSION=2026.3.13
+
+LABEL maintainer="OpenClaw Integrated"
+LABEL description="OpenClaw 整合版 - NIM插件 + 微信插件 + Web配置界面"
+LABEL version="${OPENCLAW_VERSION}-integrated"
+
+# ========== 安装系统依赖 ==========
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends supervisor && \
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /var/log/supervisor
+
+# ========== 准备种子目录 ==========
+# 将运行目录的插件复制到种子目录，确保启动时能同步
+RUN echo "=== 准备种子目录 ===" && \
+    mkdir -p /root/.openclaw-seed/extensions && \
+    # 复制已有的 napcat 插件（种子目录已有） \
+    # 复制微信插件到种子目录 \
+    if [ -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
+        cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
+        echo "✅ 微信插件已复制到种子目录"; \
+    fi && \
+    ls -la /root/.openclaw-seed/extensions/
+
+# ========== 安装 NIM YX Auth 插件到种子目录 ==========
+RUN echo "=== 安装 NIM YX Auth 插件 ===" && \
+    cd /tmp && \
+    git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git && \
+    cp -r /tmp/openclaw-nim-yx-auth /root/.openclaw-seed/extensions/ && \
+    cd /root/.openclaw-seed/extensions/openclaw-nim-yx-auth && \
+    npm install --production && \
+    npm install nim-web-sdk-ng@10.9.77-alpha.3 && \
+    rm -rf .git dist node_modules/.cache /tmp/openclaw-nim-yx-auth && \
+    echo "✅ NIM YX Auth 插件安装完成"
+
+# ========== 更新种子版本标识 ==========
+RUN printf '%s\n' "${OPENCLAW_VERSION}" > /root/.openclaw-seed/extensions/.seed-version && \
+    echo "=== 种子目录最终内容 ===" && \
+    ls -la /root/.openclaw-seed/extensions/
+
+# ========== 清理运行目录（启动时会从种子目录同步） ==========
+RUN rm -rf /root/.openclaw/extensions/* 2>/dev/null || true
+
+# ========== 安装 openclaw-easy ==========
+COPY . /app/openclaw-easy
+WORKDIR /app/openclaw-easy
+RUN npm install --production && \
+    echo "✅ openclaw-easy 安装完成"
+
+# ========== 复制配置文件 ==========
+COPY docker/supervisord-integrated.conf /etc/supervisor/conf.d/openclaw.conf
+COPY docker/init-integrated.sh /usr/local/bin/init-integrated.sh
+RUN chmod +x /usr/local/bin/init-integrated.sh
+
+# ========== 清理 ==========
+RUN rm -rf /root/.npm /tmp/* /root/.cache
+
+# ========== 环境变量 ==========
+# 注意：OPENCLAW_HOME 应该是用户主目录，OpenClaw 会在其下创建 .openclaw/ 目录
+ENV HOME=/root \
+    OPENCLAW_HOME=/root \
+    SYNC_MODEL_CONFIG=false
+
+# ========== 端口 ==========
+# 18780 - openclaw-easy Web 界面
+# 18789 - OpenClaw Gateway
+# 18790 - OpenClaw Node
+EXPOSE 18780 18789 18790
+
+# ========== 健康检查 ==========
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
+
+# ========== 启动 ==========
+ENTRYPOINT []
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/openclaw.conf"]
