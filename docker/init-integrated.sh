@@ -136,13 +136,11 @@ sync_config_with_env() {
     "installs": {
       "nim": {
         "source": "path",
-        "spec": "https://github.com/vehang/openclaw-nim-yx-auth.git",
         "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
         "version": "1.0.0"
       },
       "openclaw-weixin": {
         "source": "npm",
-        "spec": "@tencent-weixin/openclaw-weixin",
         "installPath": "/root/.openclaw/extensions/openclaw-weixin",
         "version": "1.0.3"
       }
@@ -210,7 +208,22 @@ if env.get('OPENCLAW_GATEWAY_TOKEN'):
     }
     print('✅ Gateway 配置已同步')
 
-# 确保 plugins 配置正确
+with open(config_file, 'w') as f:
+    json.dump(config, f, indent=2, ensure_ascii=False)
+PYCODE
+    fi
+
+    # ========== 始终确保 plugins 配置正确 ==========
+    echo "确保 plugins 配置正确..."
+    export CONFIG_FILE="$config_file"
+    python3 - << 'PYCODE'
+import json, os
+
+config_file = os.environ.get('CONFIG_FILE')
+with open(config_file, 'r') as f:
+    config = json.load(f)
+
+# 确保 plugins 配置正确（包含 NIM 和微信插件）
 config["plugins"] = {
     "enabled": True,
     "allow": ["nim", "openclaw-weixin"],
@@ -223,24 +236,21 @@ config["plugins"] = {
     "installs": {
         "nim": {
             "source": "path",
-            "spec": "https://github.com/vehang/openclaw-nim-yx-auth.git",
             "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
             "version": "1.0.0"
         },
         "openclaw-weixin": {
             "source": "npm",
-            "spec": "@tencent-weixin/openclaw-weixin",
             "installPath": "/root/.openclaw/extensions/openclaw-weixin",
             "version": "1.0.3"
         }
     }
 }
-print("✅ plugins 配置已合并")
+print("✅ plugins 配置已确保正确")
 
 with open(config_file, 'w') as f:
     json.dump(config, f, indent=2, ensure_ascii=False)
 PYCODE
-    fi
 }
 
 # ========== 执行同步 ==========
