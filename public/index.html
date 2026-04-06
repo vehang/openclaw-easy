@@ -6,6 +6,7 @@
     <title>OpenClaw - 配置管理</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/npm/qrcode/build/qrcode.min.js"></script>
     <style>
         /* 精致步骤导航 - 顶部细条 */
         .steps-nav {
@@ -795,28 +796,30 @@
                                 <div class="switch-wrapper" style="padding-top: 0;">
                                     <div class="switch-label">
                                         <div class="switch-text">
-                                            <h4>个人微信机器人</h4>
-                                            <p>点击扫码登录个人微信，接入机器人功能</p>
+                                            <h4>启用个人微信机器人</h4>
+                                            <p>扫码登录个人微信，接入机器人功能</p>
                                         </div>
                                     </div>
-                                    <div class="channel-status complete" id="weixinStatus">
-                                        已启用
+                                    <div class="channel-status incomplete" id="weixinStatus">
+                                        未启动
                                     </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="weixinEnabled" onchange="toggleImConfig('weixin')">
+                                        <span class="switch-slider"></span>
+                                    </label>
                                 </div>
                                 
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
-                                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
-                                            <span class="iconify" data-icon="mdi:qrcode-scan"></span>
-                                            <span id="weixinLoginBtnText">点击扫码登录</span>
-                                        </button>
+                                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()" disabled style="display: inline-flex; align-items: center; gap: 8px;">
+                                        <span class="iconify" data-icon="mdi:qrcode-scan"></span>
+                                        点击扫码登录
+                                    </button>
                                         <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
                                             <span class="iconify" data-icon="mdi:stop"></span> 取消
                                         </button>
-                                        <span id="weixinBindStatus" style="display: none; color: #10b981; font-size: 14px; font-weight: 500;">
-                                            <span class="iconify" data-icon="mdi:check-circle"></span> 已成功绑定微信
-                                        </span>
                                     </div>
+                                    
                                     <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
                                         <div style="display: flex; gap: 16px;">
                                             <div style="flex: 0 0 200px; min-width: 200px;">
@@ -842,17 +845,8 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
                             </div>
-                            <!-- 企业微信b">
-                                <div class="switch-wrapper" style="padding-top: 0;">
-                                    <div class="switch-label">
-                                        <div class="switch-text">
-                                            <h4>启用个人微信机器人</h4>
-                                            <p>扫码登录个人微信，接入机器人功能</p>
-                                        </div>
-                                    </div>
-                                    <div class="channel-status incomplete" id="weixinStatus">
+
                             <div class="step-navigation">
                                 <div class="step-navigation-left">
                                     <button type="button" class="btn btn-secondary" onclick="prevStep()">
@@ -1182,53 +1176,6 @@
         /**
          * 开始个人微信登录
          */
-        
-        /**
-         * 保存微信绑定状态
-         */
-        
-        /**
-         * 微信登录成功处理
-         */
-        function onWeixinLoginSuccess() {
-            console.log('[微信登录] 检测到登录成功');
-            
-            // 隐藏二维码和控制台区域
-            document.getElementById('weixinConsoleWrapper').style.display = 'none';
-            
-            // 显示绑定状态
-            document.getElementById('weixinBindStatus').style.display = 'inline-flex';
-            document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
-            
-            // 更新状态
-            const status = document.getElementById('weixinStatus');
-            status.textContent = '已绑定';
-            status.classList.remove('incomplete');
-            status.classList.add('complete');
-            
-            // 保存微信配置到服务端
-            const weixinConfig = {
-                channels: {
-                    weixin: {
-                        enabled: true,
-                        bound: true
-                    }
-                }
-            };
-            
-            fetch('/api/config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(weixinConfig)
-            })
-            .then(res => res.json())
-            .then(data => console.log('[微信登录] 配置保存成功:', data))
-            .catch(e => console.error('[微信登录] 保存状态失败:', e));
-        }
-
-        /**
-         * 开始个人微信登录
-         */
         function startWeixinLogin() {
             const loginBtn = document.getElementById('weixinLoginBtn');
             const stopBtn = document.getElementById('weixinStopBtn');
@@ -1240,7 +1187,6 @@
             consoleWrapper.style.display = 'block';
             consoleOutput.textContent = '';
             loginBtn.disabled = true;
-                        console.log('[微信登录] 按钮已禁用');
             stopBtn.style.display = 'inline-flex';
 
             loginStatus.textContent = '正在登录...';
@@ -1257,33 +1203,27 @@
             // 监听输出事件
             weixinEventSource.addEventListener('output', (e) => {
                 const data = JSON.parse(e.data);
-                console.log('[微信登录] SSE output 事件触发，数据长度:', data.text ? data.text.length : 0);
-                
                 appendWeixinOutput(data.text);
                 
                 // 累积所有输出
                 allOutput += data.text;
-                console.log('[微信登录] 累积输出总长度:', allOutput.length);
                 
-                // 从累积的输出中提取所有二维码链接
-                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/\S+/g);
-                console.log('[微信登录] 匹配结果:', qrcodeMatches ? qrcodeMatches.length + ' 个链接' : '无匹配');
+                // 从累积的输出中提取最后一个二维码链接
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/g);
+                console.log('[微信登录] 输出内容:', data.text.substring(0, 100));
                 
                 if (qrcodeMatches && qrcodeMatches.length > 0) {
                     const newUrl = qrcodeMatches[qrcodeMatches.length - 1];  // 取最后一个
-                    console.log('[微信登录] 最新链接:', newUrl.substring(0, 60) + '...');
+                    console.log('[微信登录] 匹配到链接:', newUrl);
                     // 如果是新的链接，更新二维码
                     if (newUrl !== currentQrcodeUrl) {
-                        console.log('[微信登录] 链接已更新，调用 updateWeixinQrcode');
                         currentQrcodeUrl = newUrl;
                         updateWeixinQrcode(newUrl);
-                    } else {
-                        console.log('[微信登录] 链接未变化，跳过更新');
                     }
                 }
                 // 自动滚动到底部
-                const consoleEl = document.getElementById("weixinConsole");
-                consoleEl.scrollTop = consoleEl.scrollHeight;
+                const console = document.getElementById('weixinConsole');
+                console.scrollTop = console.scrollHeight;
             });
 
             // 监听状态事件
@@ -1299,7 +1239,6 @@
                 weixinEventSource = null;
 
                 loginBtn.disabled = false;
-                        console.log('[微信登录] 按钮已启用');
                 stopBtn.style.display = 'none';
                 // 二维码区域保留
 
@@ -1307,9 +1246,16 @@
                     loginStatus.textContent = '登录成功';
                     loginStatus.style.color = 'var(--success-color)';
                     appendWeixinOutput('\n✅ 登录成功！\n');
-                    
-                    // 调用登录成功处理函数
-                    onWeixinLoginSuccess();
+
+                    // 显示配置区域
+                    document.getElementById('weixinConfig').style.display = 'block';
+                    document.getElementById('weixinEnabled').checked = true;
+                    // 更新状态为已启动
+                    const status = document.getElementById('weixinStatus');
+                    status.textContent = '已启动';
+                    status.classList.remove('incomplete');
+                    status.classList.add('complete');
+                    updateChannelStatusUI('weixin');
                 } else {
                     loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
@@ -1328,7 +1274,6 @@
                 weixinEventSource.close();
                 weixinEventSource = null;
                 loginBtn.disabled = false;
-                        console.log('[微信登录] 按钮已启用');
                 stopBtn.style.display = 'none';
                 loginStatus.textContent = '连接错误';
                 loginStatus.style.color = 'var(--danger-color)';
@@ -1342,7 +1287,6 @@
                     weixinEventSource.close();
                     weixinEventSource = null;
                     loginBtn.disabled = false;
-                        console.log('[微信登录] 按钮已启用');
                     stopBtn.style.display = 'none';
                     loginStatus.textContent = '连接失败';
                     loginStatus.style.color = 'var(--danger-color)';
@@ -1373,7 +1317,6 @@
             const loginStatus = document.getElementById('weixinLoginStatus');
 
             loginBtn.disabled = false;
-                        console.log('[微信登录] 按钮已启用');
             stopBtn.style.display = 'none';
             loginStatus.textContent = '已取消';
             loginStatus.style.color = 'var(--text-secondary)';
@@ -1385,36 +1328,15 @@
          * 更新微信二维码
          */
         function updateWeixinQrcode(url) {
-            console.log('[微信登录] updateWeixinQrcode 被调用，URL:', url ? url.substring(0, 50) + '...' : 'null');
-            
+            console.log('[微信登录] 获取到二维码链接:', url);
             const qrcodeLoading = document.getElementById('weixinQrcodeLoading');
             const qrcodeImage = document.getElementById('weixinQrcodeImage');
-            
-            if (!qrcodeLoading || !qrcodeImage) {
-                console.error('[微信登录] 找不到二维码容器元素');
-                return;
-            }
-            
-            console.log('[微信登录] 找到容器元素，准备生成二维码');
             
             // 清空旧的二维码
             qrcodeImage.innerHTML = '';
             
-            // 检查 QRCode 库
-            if (typeof QRCode === 'undefined') {
-                console.error('[微信登录] QRCode 库未加载，尝试从 window 获取');
-                // 尝试从 window 获取
-                if (window.QRCode) {
-                    console.log('[微信登录] 从 window.QRCode 获取成功');
-                } else {
-                    console.error('[微信登录] window.QRCode 也不存在');
-                    return;
-                }
-            }
-            
-            console.log('[微信登录] 开始生成二维码 canvas...');
-            
-            try {
+            // 生成新的二维码
+            if (typeof QRCode !== 'undefined') {
                 QRCode.toCanvas(url, { 
                     width: 160,
                     margin: 2,
@@ -1423,22 +1345,19 @@
                         light: '#ffffff'
                     }
                 }, function(error, canvas) {
-                    console.log('[微信登录] QRCode.toCanvas 回调执行');
                     if (error) {
-                        console.error('[微信登录] 生成二维码失败:', error);
+                        console.error('生成二维码失败:', error);
                         return;
                     }
-                    
-                    console.log('[微信登录] 二维码 canvas 生成成功');
                     
                     // 隐藏 loading，显示二维码
                     qrcodeLoading.style.display = 'none';
                     qrcodeImage.style.display = 'block';
                     qrcodeImage.appendChild(canvas);
-                    console.log('[微信登录] 二维码已添加到页面');
+                    console.log('[微信登录] 二维码已更新');
                 });
-            } catch (e) {
-                console.error('[微信登录] QRCode.toCanvas 执行异常:', e);
+            } else {
+                console.error('QRCode 库未加载');
             }
         }
 
@@ -1692,8 +1611,7 @@
 
             // 加载配置状态（用于更新各渠道状态）
             await loadConfigStatus();
-        
-    });
+        });
 
         /**
          * 加载配置数据
@@ -1865,13 +1783,12 @@
                 }
 
                 // 个人微信
-                const weixinBound = config.im?.weixin?.bound === true;
-                if (weixinBound) {
-                    document.getElementById('weixinBindStatus').style.display = 'inline-flex';
-                    document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
-                    document.getElementById('weixinStatus').textContent = '已绑定';
-                    document.getElementById('weixinStatus').classList.remove('incomplete');
-                    document.getElementById('weixinStatus').classList.add('complete');
+                if (config.im.weixin) {
+                    document.getElementById('weixinEnabled').checked = config.im.weixin.enabled;
+                    document.getElementById('weixinToken').value = config.im.weixin.token || '';
+                    if (config.im.weixin.enabled) {
+                        document.getElementById('weixinConfig').style.display = 'block';
+                    }
                 }
             }
 
@@ -1889,26 +1806,38 @@
          * 切换 IM 配置面板显示
          */
         function toggleImConfig(platform) {
-            console.log("[微信登录] toggleImConfig 被调用，平台:", platform);
             const enabled = document.getElementById(`${platform}Enabled`).checked;
-            
-            // 微信没有 configPanel，特殊处理
-            if (platform !== 'weixin') {
-                const configPanel = document.getElementById(`${platform}Config`);
-                if (enabled) {
-                    configPanel.classList.add('active');
-                } else {
-                    configPanel.classList.remove('active');
-                    clearChannelErrors(platform);
-                }
+            const configPanel = document.getElementById(`${platform}Config`);
+
+            if (enabled) {
+                configPanel.classList.add('active');
+            } else {
+                configPanel.classList.remove('active');
+                // 清除错误提示
+                clearChannelErrors(platform);
             }
 
             // 更新状态
             updateChannelStatusUI(platform);
 
-            
+            // 微信特殊处理：启用/禁用扫码登录按钮
+            if (platform === 'weixin') {
+                const loginBtn = document.getElementById('weixinLoginBtn');
+                const status = document.getElementById('weixinStatus');
+                if (enabled) {
+                    loginBtn.disabled = false;
+                    status.textContent = '已启动';
+                    status.classList.remove('incomplete');
+                    status.classList.add('complete');
+                } else {
+                    loginBtn.disabled = true;
+                    status.textContent = '未启动';
+                    status.classList.remove('complete');
+                    status.classList.add('incomplete');
+                }
+            }
 
-            // 重新计算进度
+            // 重新计算进度（启用/禁用渠道会影响总字段数）
             calculateProgress();
         }
 
@@ -2546,7 +2475,5 @@
         });
     </script>
     </div>
-    <!-- QRCode 库 -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 </body>
 </html>
