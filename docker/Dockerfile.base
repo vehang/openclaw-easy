@@ -27,11 +27,13 @@ RUN apt-get update && \
     locale-gen && \
     printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale && \
     git config --system url."https://github.com/".insteadOf ssh://git@github.com/ && \
-    npm config set registry https://registry.npmjs.org && \
+    npm config set registry https://registry.npmmirror.com && \
     # 安装通用工具（多源 fallback）
     npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird || \
+    (npm config set registry https://registry.npmmirror.com && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) || \
     (npm config set registry https://mirrors.cloud.tencent.com/npm && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) || \
-    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) && \
+    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) || \
+    (npm config set registry https://registry.npmjs.org && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) && \
     # 安装 bun
     curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash && \
     # 安装 uv
@@ -41,8 +43,10 @@ RUN apt-get update && \
     /usr/local/bin/python3 -m pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple websockify && \
     # 安装 qmd
     npm install -g @tobilu/qmd@1.1.6 || \
+    (npm config set registry https://registry.npmmirror.com && npm install -g @tobilu/qmd@1.1.6) || \
     (npm config set registry https://mirrors.cloud.tencent.com/npm && npm install -g @tobilu/qmd@1.1.6) || \
-    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g @tobilu/qmd@1.1.6) && \
+    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g @tobilu/qmd@1.1.6) || \
+    (npm config set registry https://registry.npmjs.org && npm install -g @tobilu/qmd@1.1.6) && \
     # 安装 Playwright Chromium（约 170MB）
     npx playwright install chromium --with-deps && \
     # 清理
@@ -74,7 +78,7 @@ ENV HOMEBREW_API_DOMAIN=https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebr
 RUN cd /root/.openclaw/extensions && \
     git clone --depth 1 -b v4.17.25 https://github.com/Daiyimo/openclaw-napcat.git napcat && \
     cd napcat && \
-    (npm install --production || npm install --production --registry https://mirrors.cloud.tencent.com/npm || npm install --production --registry https://repo.huaweicloud.com/repository/npm) && \
+    (npm install --production || npm install --production --registry https://registry.npmmirror.com || npm install --production --registry https://mirrors.cloud.tencent.com/npm || npm install --production --registry https://repo.huaweicloud.com/repository/npm || npm install --production --registry https://registry.npmjs.org) && \
     cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install -l . || true && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
