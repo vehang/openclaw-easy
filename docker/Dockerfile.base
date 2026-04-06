@@ -27,7 +27,7 @@ RUN apt-get update && \
     locale-gen && \
     printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale && \
     git config --system url."https://github.com/".insteadOf ssh://git@github.com/ && \
-    npm config set registry https://registry.npmmirror.com && \
+    npm config set registry https://registry.npmjs.org && \
     # 安装通用工具（不安装 openclaw，留给版本镜像）
     npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird && \
     # 安装 bun
