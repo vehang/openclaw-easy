@@ -22,8 +22,17 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # 构建基础镜像
 build_base() {
-    log_info "构建基础镜像 openclaw-base:latest ..."
-    docker build -f docker/Dockerfile.base -t openclaw-base:latest .
+    local arch="${1:-x86}"
+    local dockerfile="docker/Dockerfile.base"
+    
+    if [ "$arch" = "arm64" ]; then
+        dockerfile="docker/Dockerfile.base-arm64"
+        log_info "构建 ARM64 基础镜像 openclaw-base:latest ..."
+    else
+        log_info "构建 x86 基础镜像 openclaw-base:latest ..."
+    fi
+    
+    docker build -f "$dockerfile" -t openclaw-base:latest .
     log_success "基础镜像构建完成!"
     docker images openclaw-base:latest
 }
@@ -41,7 +50,7 @@ build_version() {
     # 检查基础镜像是否存在
     if ! docker images openclaw-base:latest | grep -q "openclaw-base"; then
         log_warn "基础镜像不存在，先构建基础镜像..."
-        build_base
+        build_base "$3"
     fi
 
     docker build \
@@ -122,7 +131,8 @@ show_help() {
     echo "  help                  显示此帮助信息"
     echo ""
     echo "示例:"
-    echo "  ./build.sh base                    # 只构建基础镜像"
+    echo "  ./build.sh base                    # 只构建基础镜像 (x86)"
+    echo "  ./build.sh base arm64              # 只构建基础镜像 (ARM64)"
     echo "  ./build.sh version 2026.4.1        # 构建 2026.4.1 版本"
     echo "  ./build.sh integrated 2026.3.13    # 构建整合版 (2026.3.13)"
     echo "  ./build.sh integrated              # 构建整合版 (默认 2026.4.1)"
@@ -132,7 +142,7 @@ show_help() {
 # 主入口
 case "${1:-help}" in
     base)
-        build_base
+        build_base "$3"
         ;;
     version)
         build_version "$2"

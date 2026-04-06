@@ -1,5 +1,5 @@
-# OpenClaw 基础镜像 - ROOT 版本 (国内加速)
-# 此镜像包含所有共同的依赖，各版本只需在此基础上安装对应版本的 openclaw
+# OpenClaw 基础镜像 - ARM64 专用版本
+# 此镜像包含多源 fallback 逻辑，解决 ARM64 平台部分 npm 包下载失败的问题
 FROM node:22-slim
 
 # 从 Python 官方镜像拷贝 Python 3.12
@@ -28,8 +28,10 @@ RUN apt-get update && \
     printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale && \
     git config --system url."https://github.com/".insteadOf ssh://git@github.com/ && \
     npm config set registry https://registry.npmmirror.com && \
-    # 安装通用工具（不安装 openclaw，留给版本镜像）
-    npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird && \
+    # 安装通用工具（ARM64 多源 fallback）
+    for pkg in opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird; do \
+        npm install -g "$pkg" || npm install -g "$pkg" --registry https://registry.npmjs.org || echo "Warning: $pkg install may have issues"; \
+    done && \
     # 安装 bun
     curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash && \
     # 安装 uv
@@ -38,7 +40,7 @@ RUN apt-get update && \
     ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
     /usr/local/bin/python3 -m pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple websockify && \
     # 安装 qmd
-    npm install -g @tobilu/qmd@1.1.6 && \
+    npm install -g @tobilu/qmd@1.1.6 || npm install -g @tobilu/qmd@1.1.6 --registry https://registry.npmjs.org && \
     # 安装 Playwright Chromium（约 170MB）
     npx playwright install chromium --with-deps && \
     # 清理
@@ -70,7 +72,7 @@ ENV HOMEBREW_API_DOMAIN=https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebr
 RUN cd /root/.openclaw/extensions && \
     git clone --depth 1 -b v4.17.25 https://github.com/Daiyimo/openclaw-napcat.git napcat && \
     cd napcat && \
-    npm install --production && \
+    npm install --production || npm install --production --registry https://registry.npmjs.org && \
     cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install -l . || true && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
