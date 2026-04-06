@@ -1317,17 +1317,21 @@
          */
         async function saveWeixinBoundStatus() {
             try {
+                // 获取当前配置并更新微信绑定状态
+                const configResponse = await fetch('/api/config');
+                const currentConfig = await configResponse.json();
+                
+                // 更新微信绑定状态
+                if (!currentConfig.im) currentConfig.im = {};
+                if (!currentConfig.im.weixin) currentConfig.im.weixin = {};
+                currentConfig.im.weixin.enabled = true;
+                currentConfig.im.weixin.bound = true;
+                
+                // 保存完整配置
                 const response = await fetch('/api/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        im: {
-                            weixin: {
-                                enabled: true,
-                                bound: true
-                            }
-                        }
-                    })
+                    body: JSON.stringify(currentConfig)
                 });
                 if (response.ok) {
                     console.log('[微信登录] 绑定状态已保存');
