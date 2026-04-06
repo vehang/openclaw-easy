@@ -1429,6 +1429,9 @@
                     if (allFilled) step2Complete = true;
                 }
             });
+            // 检查微信绑定状态
+            const weixinBound = document.getElementById('weixinBindStatus').style.display !== 'none';
+            if (weixinBound) step2Complete = true;
             if (step2Complete) completedSteps++;
 
             // 检查步骤3：配置已保存
@@ -1509,6 +1512,9 @@
                 channels.forEach(channel => {
                     if (document.getElementById(`${channel}Enabled`).checked) count++;
                 });
+                // 加上微信绑定状态
+                const weixinBound = document.getElementById('weixinBindStatus').style.display !== 'none';
+                if (weixinBound) count++;
                 channelsText.textContent = `IM: ${count} 个`;
             } else {
                 channelsDot.className = 'dot warning';
