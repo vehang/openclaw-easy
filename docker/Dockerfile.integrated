@@ -73,6 +73,9 @@ ENV HOME=/root \
 
 # ========== 端口 ==========
 # 18780 - openclaw-easy Web 界面
+
+# ========== 端口 ==========
+# 18780 - openclaw-easy Web 界面
 # 18789 - OpenClaw Gateway
 # 18790 - OpenClaw Node
 EXPOSE 18780 18789 18790
@@ -80,6 +83,9 @@ EXPOSE 18780 18789 18790
 # ========== 健康检查 ==========
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
+
+# ========== 设置默认工作目录 ==========
+WORKDIR /root/.openclaw
 
 # ========== 启动 ==========
 ENTRYPOINT []
