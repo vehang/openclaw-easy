@@ -27,13 +27,15 @@ RUN apt-get update && \
     locale-gen && \
     printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale && \
     git config --system url."https://github.com/".insteadOf ssh://git@github.com/ && \
+    # npm 多源 fallback 安装函数
+    npm_fallback() { local pkg="$1"; npm install -g "$pkg" || npm install -g "$pkg" --registry https://registry.npmmirror.com || npm install -g "$pkg" --registry https://mirrors.cloud.tencent.com/npm || npm install -g "$pkg" --registry https://repo.huaweicloud.com/repository/npm || npm install -g "$pkg" --registry https://registry.npmjs.org; }; \
     npm config set registry https://registry.npmmirror.com && \
-    # 安装通用工具（多源 fallback）
-    npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird || \
-    (npm config set registry https://registry.npmmirror.com && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) || \
-    (npm config set registry https://mirrors.cloud.tencent.com/npm && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) || \
-    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) || \
-    (npm config set registry https://registry.npmjs.org && npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird) && \
+    npm_fallback opencode-ai@latest && \
+    npm_fallback clawhub && \
+    npm_fallback playwright && \
+    npm_fallback playwright-extra && \
+    npm_fallback puppeteer-extra-plugin-stealth && \
+    npm_fallback @steipete/bird && \
     # 安装 bun
     curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash && \
     # 安装 uv
@@ -42,11 +44,8 @@ RUN apt-get update && \
     ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
     /usr/local/bin/python3 -m pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple websockify && \
     # 安装 qmd
-    npm install -g @tobilu/qmd@1.1.6 || \
-    (npm config set registry https://registry.npmmirror.com && npm install -g @tobilu/qmd@1.1.6) || \
-    (npm config set registry https://mirrors.cloud.tencent.com/npm && npm install -g @tobilu/qmd@1.1.6) || \
-    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g @tobilu/qmd@1.1.6) || \
-    (npm config set registry https://registry.npmjs.org && npm install -g @tobilu/qmd@1.1.6) && \
+    npm_fallback_qmd() { npm install -g @tobilu/qmd@1.1.6 || npm install -g @tobilu/qmd@1.1.6 --registry https://registry.npmmirror.com || npm install -g @tobilu/qmd@1.1.6 --registry https://mirrors.cloud.tencent.com/npm || npm install -g @tobilu/qmd@1.1.6 --registry https://repo.huaweicloud.com/repository/npm || npm install -g @tobilu/qmd@1.1.6 --registry https://registry.npmjs.org; }; \
+    npm_fallback_qmd && \
     # 安装 Playwright Chromium（约 170MB）
     npx playwright install chromium --with-deps && \
     # 清理
