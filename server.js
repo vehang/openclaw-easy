@@ -514,6 +514,25 @@ function getConfigStatus(config) {
     // 渠道配置状态
     const channelsValidation = validateAllChannels(formConfig.im);
 
+    // 检查微信绑定状态
+    let weixinBound = false;
+    try {
+        const boundFile = path.join(OPENCLAW_DIR, '.weixin-bound');
+        if (fs.existsSync(boundFile)) {
+            const data = fs.readFileSync(boundFile, 'utf8');
+            const boundState = JSON.parse(data);
+            weixinBound = boundState.bound === true;
+        }
+    } catch (e) {
+        // 忽略错误
+    }
+
+    // 如果微信已绑定，增加计数
+    let enabledCount = channelsValidation.enabledCount;
+    if (weixinBound) {
+        enabledCount++;
+    }
+
     // 计算完成百分比
     let completedItems = 0;
     let totalItems = 1; // AI 配置
@@ -532,6 +551,12 @@ function getConfigStatus(config) {
         }
     }
 
+    // 如果微信已绑定，加入计数
+    if (weixinBound) {
+        totalItems++;
+        completedItems++;
+    }
+
     const percentage = Math.round((completedItems / totalItems) * 100);
 
     return {
@@ -540,10 +565,13 @@ function getConfigStatus(config) {
             errors: aiValidation.errors
         },
         channels: channelsValidation.results,
-        hasEnabledChannels: channelsValidation.hasEnabledChannels,
-        enabledChannelsCount: channelsValidation.enabledCount,
+        weixin: {
+            bound: weixinBound
+        },
+        hasEnabledChannels: enabledCount > 0,
+        enabledChannelsCount: enabledCount,
         percentage,
-        isComplete: aiValidation.valid && (channelsValidation.hasEnabledChannels ? channelsValidation.allErrors.length === 0 : true),
+        isComplete: aiValidation.valid && (enabledCount > 0),
         allErrors: [...aiValidation.errors, ...channelsValidation.allErrors]
     };
 }
