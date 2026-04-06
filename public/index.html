@@ -1244,15 +1244,27 @@
                     loginStatus.style.color = 'var(--success-color)';
                     appendWeixinOutput('\n✅ 登录成功！\n');
 
-                    // 显示配置区域
-                    document.getElementById('weixinConfig').style.display = 'block';
-                    document.getElementById('weixinEnabled').checked = true;
-                    // 更新状态为已启动
+                    loginStatus.textContent = '已绑定';
+                    loginStatus.style.color = 'var(--success-color)';
+                    appendWeixinOutput('\n✅ 登录成功！\n');
+
+                    // 隐藏二维码和控制台区域
+                    document.getElementById('weixinConsoleWrapper').style.display = 'none';
+
+                    // 显示绑定成功状态
+                    document.getElementById('weixinBindStatus').style.display = 'inline-flex';
+
+                    // 更新状态为已绑定
                     const status = document.getElementById('weixinStatus');
-                    status.textContent = '已启动';
+                    status.textContent = '已绑定';
                     status.classList.remove('incomplete');
                     status.classList.add('complete');
-                    updateChannelStatusUI('weixin');
+
+                    // 更新按钮文字
+                    document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
+
+                    // 保存绑定状态
+                    saveWeixinBoundStatus();
                 } else {
                     loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
@@ -1303,6 +1315,31 @@
         /**
          * 停止个人微信登录
          */
+        /**
+         * 保存微信绑定状态
+         */
+        async function saveWeixinBoundStatus() {
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        im: {
+                            weixin: {
+                                enabled: true,
+                                bound: true
+                            }
+                        }
+                    })
+                });
+                if (response.ok) {
+                    console.log('[微信登录] 绑定状态已保存');
+                }
+            } catch (error) {
+                console.error('[微信登录] 保存绑定状态失败:', error);
+            }
+        }
+
         function stopWeixinLogin() {
             if (weixinEventSource) {
                 weixinEventSource.close();
@@ -1780,12 +1817,13 @@
                 }
 
                 // 个人微信
-                if (config.im.weixin) {
-                    document.getElementById('weixinEnabled').checked = config.im.weixin.enabled;
-                    document.getElementById('weixinToken').value = config.im.weixin.token || '';
-                    if (config.im.weixin.enabled) {
-                        document.getElementById('weixinConfig').style.display = 'block';
-                    }
+                const weixinBound = config.im?.weixin?.bound === true;
+                if (weixinBound) {
+                    document.getElementById('weixinBindStatus').style.display = 'inline-flex';
+                    document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
+                    document.getElementById('weixinStatus').textContent = '已绑定';
+                    document.getElementById('weixinStatus').classList.remove('incomplete');
+                    document.getElementById('weixinStatus').classList.add('complete');
                 }
             }
 
@@ -1960,8 +1998,8 @@
                         encodingAesKey: document.getElementById('wecomEncodingAesKey').value.trim()
                     },
                     weixin: {
-                        enabled: document.getElementById('weixinEnabled').checked,
-                        token: document.getElementById('weixinToken').value.trim()
+                        enabled: true,
+                        bound: document.getElementById('weixinBindStatus').style.display !== 'none'
                     }
                 },
                 gateway: {
