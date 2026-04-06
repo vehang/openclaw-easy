@@ -64,14 +64,11 @@ const CHANNEL_REQUIRED_FIELDS = {
             { key: 'token', label: 'Token' },
             { key: 'encodingAesKey', label: 'Encoding AES Key' }
         ]
-    },
-    nim: {
-        name: '网易云信',
-        fields: [
-            { key: 'appId', label: 'App ID' },
-            { key: 'appSecret', label: 'App Secret' }
-        ]
     }
+    // 注意：nim (网易云信) 有两种认证方式：
+    // 1. appId + appSecret
+    // 2. authToken
+    // 两组数据有一组即可，不在此处验证
 };
 
 // ==================== Express 应用初始化 ====================
@@ -469,6 +466,31 @@ function validateAllChannels(im) {
                     errors: []
                 };
             }
+        }
+    }
+
+    // 特殊处理 nim (网易云信) - 有两种认证方式
+    if (im.nim && im.nim.enabled) {
+        const hasAppCredentials = im.nim.appId && im.nim.appSecret;
+        const hasAuthToken = im.nim.authToken;
+        
+        if (!hasAppCredentials && !hasAuthToken) {
+            // 缺少必要的认证信息，自动禁用
+            console.log('[配置验证] 网易云信 缺少认证信息，自动禁用');
+            im.nim.enabled = false;
+            results.nim = {
+                enabled: false,
+                valid: true,
+                errors: [],
+                autoDisabled: true
+            };
+        } else {
+            enabledCount++;
+            results.nim = {
+                enabled: true,
+                valid: true,
+                errors: []
+            };
         }
     }
 
