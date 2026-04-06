@@ -605,7 +605,10 @@
                         <div class="card-body">
                             <!-- IM 渠道标签页 -->
                             <div class="im-tabs">
-                                <button class="im-tab active" data-tab="feishu" onclick="switchImTab('feishu')">
+                                <button class="im-tab active" data-tab="weixin" onclick="switchImTab('weixin')">
+                                    <span class="im-tab-icon"><span class="iconify" data-icon="mdi:cellphone"></span></span>个人微信
+                                </button>
+                                <button class="im-tab" data-tab="feishu" onclick="switchImTab('feishu')">
                                     <span class="im-tab-icon"><span class="iconify" data-icon="mdi:feather"></span></span>飞书
                                 </button>
                                 <button class="im-tab" data-tab="dingtalk" onclick="switchImTab('dingtalk')">
@@ -617,13 +620,67 @@
                                 <button class="im-tab" data-tab="wecom" onclick="switchImTab('wecom')">
                                     <span class="im-tab-icon"><span class="iconify" data-icon="mdi:wechat"></span></span>企微
                                 </button>
-                                <button class="im-tab" data-tab="weixin" onclick="switchImTab('weixin')">
-                                    <span class="im-tab-icon"><span class="iconify" data-icon="mdi:cellphone"></span></span>个人微信
-                                </button>
                             </div>
 
                             <!-- 飞书配置 -->
-                            <div class="im-tab-content active" id="feishuTab">
+                            <div class="im-tab-content active" id="weixinTab">
+                                <div class="switch-wrapper" style="padding-top: 0;">
+                                    <div class="switch-label">
+                                        <div class="switch-text">
+                                            <h4>个人微信机器人</h4>
+                                            <p>点击扫码登录个人微信，接入机器人功能</p>
+                                        </div>
+                                    </div>
+                                    <div class="channel-status complete" id="weixinStatus">
+                                        已启用
+                                    </div>
+                                </div>
+                                
+                                <div id="weixinInstallPanel" style="margin-top: 16px;">
+                                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
+                                            <span class="iconify" data-icon="mdi:qrcode-scan"></span>
+                                            <span id="weixinLoginBtnText">点击扫码登录</span>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
+                                            <span class="iconify" data-icon="mdi:stop"></span> 取消
+                                        </button>
+                                        <span id="weixinBindStatus" style="display: none; flex-direction: column; align-items: flex-start; gap: 4px;">
+                                            <span style="color: #10b981; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
+                                                <span class="iconify" data-icon="mdi:check-circle"></span> 已成功绑定微信
+                                            </span>
+                                            <span style="color: #ef4444; font-size: 12px;">初次绑定，微信发消息，龙虾不回复，可以尝试重启设备！</span>
+                                        </span>
+                                    </div>
+                                    <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
+                                        <div style="display: flex; gap: 16px;">
+                                            <div style="flex: 0 0 200px; min-width: 200px;">
+                                                <div class="weixin-qrcode-panel">
+                                                    <div class="weixin-qrcode-title">微信扫码登录</div>
+                                                    <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
+                                                    <div id="weixinQrcodeLoading" class="weixin-qrcode-loading">
+                                                        <div class="spinner"></div>
+                                                        <div style="color: #666; font-size: 12px;">等待二维码...</div>
+                                                    </div>
+                                                    <div id="weixinQrcodeImage" class="weixin-qrcode-image" style="display: none;"></div>
+                                                    <div class="weixin-qrcode-tip">二维码会定期刷新</div>
+                                                </div>
+                                            </div>
+                                            <div style="flex: 2;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                    <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
+                                                    <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
+                                                </div>
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word; width: 100%; max-width: 100%;">
+                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-wrap: break-word;"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+                            </div>
+
+                            <div class="im-tab-content" id="feishuTab">
                                 <div class="switch-wrapper" style="padding-top: 0;">
                                     <div class="switch-label">
                                         <div class="switch-text">
@@ -789,63 +846,6 @@
                                         <div class="field-error" id="wecomEncodingAesKeyError">Encoding AES Key 不能为空</div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="im-tab-content" id="weixinTab">
-                                <div class="switch-wrapper" style="padding-top: 0;">
-                                    <div class="switch-label">
-                                        <div class="switch-text">
-                                            <h4>个人微信机器人</h4>
-                                            <p>点击扫码登录个人微信，接入机器人功能</p>
-                                        </div>
-                                    </div>
-                                    <div class="channel-status complete" id="weixinStatus">
-                                        已启用
-                                    </div>
-                                </div>
-                                
-                                <div id="weixinInstallPanel" style="margin-top: 16px;">
-                                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
-                                            <span class="iconify" data-icon="mdi:qrcode-scan"></span>
-                                            <span id="weixinLoginBtnText">点击扫码登录</span>
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
-                                            <span class="iconify" data-icon="mdi:stop"></span> 取消
-                                        </button>
-                                        <span id="weixinBindStatus" style="display: none; flex-direction: column; align-items: flex-start; gap: 4px;">
-                                            <span style="color: #10b981; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
-                                                <span class="iconify" data-icon="mdi:check-circle"></span> 已成功绑定微信
-                                            </span>
-                                            <span style="color: #ef4444; font-size: 12px;">初次绑定，微信发消息，龙虾不回复，可以尝试重启设备！</span>
-                                        </span>
-                                    </div>
-                                    <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
-                                        <div style="display: flex; gap: 16px;">
-                                            <div style="flex: 0 0 200px; min-width: 200px;">
-                                                <div class="weixin-qrcode-panel">
-                                                    <div class="weixin-qrcode-title">微信扫码登录</div>
-                                                    <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
-                                                    <div id="weixinQrcodeLoading" class="weixin-qrcode-loading">
-                                                        <div class="spinner"></div>
-                                                        <div style="color: #666; font-size: 12px;">等待二维码...</div>
-                                                    </div>
-                                                    <div id="weixinQrcodeImage" class="weixin-qrcode-image" style="display: none;"></div>
-                                                    <div class="weixin-qrcode-tip">二维码会定期刷新</div>
-                                                </div>
-                                            </div>
-                                            <div style="flex: 2;">
-                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                                    <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
-                                                    <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
-                                                </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word; width: 100%; max-width: 100%;">
-                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-wrap: break-word;"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                            </div>
                             </div>
 
                             <div class="step-navigation">
