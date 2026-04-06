@@ -1807,20 +1807,19 @@
                     }
                 }
 
-                // 个人微信绑定状态（从后端 API 获取）
-                try {
-                    const boundResponse = await fetch('/api/weixin/bound');
-                    const boundData = await boundResponse.json();
-                    if (boundData.bound) {
-                        document.getElementById('weixinBindStatus').style.display = 'inline-flex';
-                        document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
-                        document.getElementById('weixinStatus').textContent = '已绑定';
-                        document.getElementById('weixinStatus').classList.remove('incomplete');
-                        document.getElementById('weixinStatus').classList.add('complete');
-                    }
-                } catch (e) {
-                    console.log('[微信] 获取绑定状态失败:', e);
-                }
+                // 个人微信绑定状态（异步获取，不阻塞其他配置加载）
+                fetch('/api/weixin/bound')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.bound) {
+                            document.getElementById('weixinBindStatus').style.display = 'inline-flex';
+                            document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
+                            document.getElementById('weixinStatus').textContent = '已绑定';
+                            document.getElementById('weixinStatus').classList.remove('incomplete');
+                            document.getElementById('weixinStatus').classList.add('complete');
+                        }
+                    })
+                    .catch(e => console.log('[微信] 获取绑定状态失败:', e));
             }
 
             // Gateway 配置
