@@ -430,6 +430,7 @@ function validateChannelConfig(channelId, channelConfig) {
 
 /**
  * 验证所有启用的渠道配置
+ * 注意：如果渠道启用了但缺少必填字段，自动禁用该渠道而不是报错
  */
 function validateAllChannels(im) {
     const results = {};
@@ -438,7 +439,7 @@ function validateAllChannels(im) {
 
     for (const [channelId, channelDef] of Object.entries(CHANNEL_REQUIRED_FIELDS)) {
         const channelConfig = im[channelId] || {};
-        const enabled = channelConfig.enabled;
+        let enabled = channelConfig.enabled;
 
         results[channelId] = {
             enabled,
@@ -447,15 +448,26 @@ function validateAllChannels(im) {
         };
 
         if (enabled) {
-            enabledCount++;
             const validation = validateChannelConfig(channelId, channelConfig);
-            results[channelId] = {
-                enabled: true,
-                valid: validation.valid,
-                errors: validation.errors
-            };
+            
+            // 如果启用了但缺少必填字段，自动禁用该渠道而不是报错
             if (!validation.valid) {
-                allErrors.push(...validation.errors);
+                console.log(`[配置验证] ${channelDef.name} 缺少必填字段，自动禁用: ${validation.errors.join(', ')}`);
+                enabled = false;
+                im[channelId].enabled = false; // 自动禁用
+                results[channelId] = {
+                    enabled: false,
+                    valid: true, // 不再报错
+                    errors: [],
+                    autoDisabled: true
+                };
+            } else {
+                enabledCount++;
+                results[channelId] = {
+                    enabled: true,
+                    valid: true,
+                    errors: []
+                };
             }
         }
     }
