@@ -11,6 +11,6 @@ services:
       - "18789:18789"
       - "18790:18790"
     volumes:
-      - ./openclaw-data:/home/node/.openclaw
+      - ./openclaw-data:/root/.openclaw
     environment:
       - TZ=Asia/Shanghai
