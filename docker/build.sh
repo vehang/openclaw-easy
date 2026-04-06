@@ -50,7 +50,7 @@ build_version() {
     # 检查基础镜像是否存在
     if ! docker images openclaw-base:latest | grep -q "openclaw-base"; then
         log_warn "基础镜像不存在，先构建基础镜像..."
-        build_base "$3"
+        build_base "$2"
     fi
 
     docker build \
@@ -142,7 +142,7 @@ show_help() {
 # 主入口
 case "${1:-help}" in
     base)
-        build_base "$3"
+        build_base "$2"
         ;;
     version)
         build_version "$2"
