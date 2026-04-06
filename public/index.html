@@ -1316,10 +1316,19 @@
          * 保存微信绑定状态
          */
         async function saveWeixinBoundStatus() {
-            // 微信绑定状态保存到 localStorage，不保存到配置文件
-            // 避免生成 channels.weixin 导致 OpenClaw 配置错误
-            localStorage.setItem('weixin_bound', 'true');
-            console.log('[微信登录] 绑定状态已保存到本地存储');
+            // 保存微信绑定状态到后端
+            try {
+                const response = await fetch('/api/weixin/bound', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bound: true })
+                });
+                if (response.ok) {
+                    console.log('[微信登录] 绑定状态已保存');
+                }
+            } catch (error) {
+                console.error('[微信登录] 保存绑定状态失败:', error);
+            }
         }
 
         function stopWeixinLogin() {
@@ -1798,15 +1807,19 @@
                     }
                 }
 
-                // 个人微信
-                // 微信绑定状态从 localStorage 读取（不保存到配置文件，避免配置错误）
-                const weixinBound = localStorage.getItem('weixin_bound') === 'true';
-                if (weixinBound) {
-                    document.getElementById('weixinBindStatus').style.display = 'inline-flex';
-                    document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
-                    document.getElementById('weixinStatus').textContent = '已绑定';
-                    document.getElementById('weixinStatus').classList.remove('incomplete');
-                    document.getElementById('weixinStatus').classList.add('complete');
+                // 个人微信绑定状态（从后端 API 获取）
+                try {
+                    const boundResponse = await fetch('/api/weixin/bound');
+                    const boundData = await boundResponse.json();
+                    if (boundData.bound) {
+                        document.getElementById('weixinBindStatus').style.display = 'inline-flex';
+                        document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
+                        document.getElementById('weixinStatus').textContent = '已绑定';
+                        document.getElementById('weixinStatus').classList.remove('incomplete');
+                        document.getElementById('weixinStatus').classList.add('complete');
+                    }
+                } catch (e) {
+                    console.log('[微信] 获取绑定状态失败:', e);
                 }
             }
 
@@ -1981,8 +1994,7 @@
                         encodingAesKey: document.getElementById('wecomEncodingAesKey').value.trim()
                     },
                     weixin: {
-                        enabled: true,
-                        bound: localStorage.getItem('weixin_bound') === 'true'
+                        enabled: true
                     }
                 },
                 gateway: {

@@ -1544,6 +1544,42 @@ app.get('/api/weixin/login', authMiddleware, (req, res) => {
     });
 });
 
+
+/**
+ * 获取微信绑定状态
+ * GET /api/weixin/bound
+ */
+app.get('/api/weixin/bound', authMiddleware, (req, res) => {
+    const boundFile = path.join(OPENCLAW_DIR, '.weixin-bound');
+    try {
+        if (fs.existsSync(boundFile)) {
+            const data = fs.readFileSync(boundFile, 'utf8');
+            const boundState = JSON.parse(data);
+            res.json({ bound: boundState.bound === true });
+        } else {
+            res.json({ bound: false });
+        }
+    } catch (error) {
+        res.json({ bound: false });
+    }
+});
+
+/**
+ * 设置微信绑定状态
+ * POST /api/weixin/bound
+ */
+app.post('/api/weixin/bound', authMiddleware, (req, res) => {
+    const boundFile = path.join(OPENCLAW_DIR, '.weixin-bound');
+    try {
+        const { bound } = req.body;
+        fs.writeFileSync(boundFile, JSON.stringify({ bound: bound === true }));
+        res.json({ success: true });
+    } catch (error) {
+        console.error('[微信] 保存绑定状态失败:', error);
+        res.status(500).json({ error: '保存失败' });
+    }
+});
+
 // ==================== 页面路由 ====================
 
 // 首页重定向
