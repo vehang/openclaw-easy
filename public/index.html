@@ -818,8 +818,9 @@
                                             <span class="iconify" data-icon="mdi:check-circle"></span> 已成功绑定微信
                                         </span>
                                     </div>
+                                    <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
                                         <div style="display: flex; gap: 16px;">
-                                            <div style="flex: 1;">
+                                            <div style="flex: 0 0 200px; min-width: 200px;">
                                                 <div class="weixin-qrcode-panel">
                                                     <div class="weixin-qrcode-title">微信扫码登录</div>
                                                     <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
@@ -836,8 +837,8 @@
                                                     <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
                                                     <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                                 </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5;">
-                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-break: break-all;"></div>
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word; width: 100%; max-width: 100%;">
+                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-wrap: break-word;"></div>
                                                 </div>
                                             </div>
                                         </div>
