@@ -6,7 +6,7 @@
     <title>OpenClaw - 配置管理</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/npm/qrcode/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <style>
         /* 精致步骤导航 - 顶部细条 */
         .steps-nav {
@@ -792,37 +792,34 @@
                                 </div>
                             </div>
 
-                            <div class="im-tab-content" id="weixinTab">
+<div class="im-tab-content" id="weixinTab">
                                 <div class="switch-wrapper" style="padding-top: 0;">
                                     <div class="switch-label">
                                         <div class="switch-text">
-                                            <h4>启用个人微信机器人</h4>
-                                            <p>扫码登录个人微信，接入机器人功能</p>
+                                            <h4>个人微信机器人</h4>
+                                            <p>点击扫码登录个人微信，接入机器人功能</p>
                                         </div>
                                     </div>
-                                    <div class="channel-status incomplete" id="weixinStatus">
-                                        未启动
+                                    <div class="channel-status complete" id="weixinStatus">
+                                        已启用
                                     </div>
-                                    <label class="switch">
-                                        <input type="checkbox" id="weixinEnabled" onchange="toggleImConfig('weixin')">
-                                        <span class="switch-slider"></span>
-                                    </label>
                                 </div>
                                 
                                 <div id="weixinInstallPanel" style="margin-top: 16px;">
-                                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()" disabled style="display: inline-flex; align-items: center; gap: 8px;">
-                                        <span class="iconify" data-icon="mdi:qrcode-scan"></span>
-                                        点击扫码登录
-                                    </button>
+                                    <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+                                        <button type="button" class="btn btn-primary" id="weixinLoginBtn" onclick="startWeixinLogin()">
+                                            <span class="iconify" data-icon="mdi:qrcode-scan"></span>
+                                            <span id="weixinLoginBtnText">点击扫码登录</span>
+                                        </button>
                                         <button type="button" class="btn btn-secondary" id="weixinStopBtn" onclick="stopWeixinLogin()" style="display: none;">
                                             <span class="iconify" data-icon="mdi:stop"></span> 取消
                                         </button>
+                                        <span id="weixinBindStatus" style="display: none; color: #10b981; font-size: 14px; font-weight: 500;">
+                                            <span class="iconify" data-icon="mdi:check-circle"></span> 已成功绑定微信
+                                        </span>
                                     </div>
-                                    
-                                    <div id="weixinConsoleWrapper" style="display: none; margin-top: 16px;">
                                         <div style="display: flex; gap: 16px;">
-                                            <div style="flex: 0 0 200px; min-width: 200px;">
+                                            <div style="flex: 1;">
                                                 <div class="weixin-qrcode-panel">
                                                     <div class="weixin-qrcode-title">微信扫码登录</div>
                                                     <div class="weixin-qrcode-subtitle">请使用微信扫描下方二维码</div>
@@ -834,13 +831,13 @@
                                                     <div class="weixin-qrcode-tip">二维码会定期刷新</div>
                                                 </div>
                                             </div>
-                                            <div style="flex: 2; min-width: 0;">
+                                            <div style="flex: 2;">
                                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                                     <span style="font-size: 12px; color: var(--text-secondary);">控制台输出</span>
                                                     <span id="weixinLoginStatus" style="font-size: 12px; color: var(--warning-color);">正在登录...</span>
                                                 </div>
-                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow: auto; font-family: 'Courier New', Monaco, monospace; font-size: 11px; line-height: 1.2; white-space: pre-wrap; word-wrap: break-word; width: 100%; max-width: 100%;">
-                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-wrap: break-word;"></div>
+                                                <div id="weixinConsole" style="background: #1a1a2e; border-radius: 8px; padding: 16px; height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 11px; line-height: 1.5;">
+                                                    <div id="weixinConsoleOutput" style="color: #00ff88; white-space: pre-wrap; word-break: break-all;"></div>
                                                 </div>
                                             </div>
                                         </div>
