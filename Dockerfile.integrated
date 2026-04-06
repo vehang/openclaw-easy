@@ -53,7 +53,7 @@ RUN rm -rf /root/.openclaw/extensions/* 2>/dev/null || true
 
 # ========== 安装 openclaw-easy ==========
 COPY . /app/openclaw-easy
-WORKDIR /app/openclaw-easy
+WORKDIR /root/.openclaw
 RUN npm install --production && \
     echo "✅ openclaw-easy 安装完成"
 
@@ -80,6 +80,10 @@ EXPOSE 18780 18789 18790
 # ========== 健康检查 ==========
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
+
+
+# ========== 设置默认工作目录 ==========
+WORKDIR /root/.openclaw
 
 # ========== 启动 ==========
 ENTRYPOINT []
