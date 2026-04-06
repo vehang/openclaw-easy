@@ -27,11 +27,12 @@ RUN apt-get update && \
     locale-gen && \
     printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale && \
     git config --system url."https://github.com/".insteadOf ssh://git@github.com/ && \
-    npm config set registry https://registry.npmmirror.com && \
-    # 安装通用工具（ARM64 多源 fallback）
-    for pkg in opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird; do \
-        npm install -g "$pkg" || npm install -g "$pkg" --registry https://registry.npmjs.org || echo "Warning: $pkg install may have issues"; \
-    done && \
+    npm config set registry https://registry.npmjs.org && \
+    # 安装通用工具（ARM64 直接使用官方源，避免淘宝源子依赖缺失问题）
+    npm install -g opencode-ai@latest && \
+    npm install -g clawhub && \
+    npm install -g playwright playwright-extra puppeteer-extra-plugin-stealth && \
+    npm install -g @steipete/bird && \
     # 安装 bun
     curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash && \
     # 安装 uv
