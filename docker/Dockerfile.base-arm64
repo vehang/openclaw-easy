@@ -27,12 +27,9 @@ RUN apt-get update && \
     locale-gen && \
     printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale && \
     git config --system url."https://github.com/".insteadOf ssh://git@github.com/ && \
-    npm config set registry https://registry.npmjs.org && \
-    # 安装通用工具（ARM64 直接使用官方源，避免淘宝源子依赖缺失问题）
-    npm install -g opencode-ai@latest && \
-    npm install -g clawhub && \
-    npm install -g playwright playwright-extra puppeteer-extra-plugin-stealth && \
-    npm install -g @steipete/bird && \
+    npm config set registry https://mirrors.cloud.tencent.com/npm && \
+    # 安装通用工具（ARM64 使用腾讯云镜像，国内快且有完整包）
+    npm install -g opencode-ai@latest clawhub playwright playwright-extra puppeteer-extra-plugin-stealth @steipete/bird && \
     # 安装 bun
     curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash && \
     # 安装 uv
@@ -41,7 +38,7 @@ RUN apt-get update && \
     ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
     /usr/local/bin/python3 -m pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple websockify && \
     # 安装 qmd
-    npm install -g @tobilu/qmd@1.1.6 || npm install -g @tobilu/qmd@1.1.6 --registry https://registry.npmjs.org && \
+    npm install -g @tobilu/qmd@1.1.6 && \
     # 安装 Playwright Chromium（约 170MB）
     npx playwright install chromium --with-deps && \
     # 清理
@@ -73,7 +70,7 @@ ENV HOMEBREW_API_DOMAIN=https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebr
 RUN cd /root/.openclaw/extensions && \
     git clone --depth 1 -b v4.17.25 https://github.com/Daiyimo/openclaw-napcat.git napcat && \
     cd napcat && \
-    npm install --production || npm install --production --registry https://registry.npmjs.org && \
+    npm install --production && \
     cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install -l . || true && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
