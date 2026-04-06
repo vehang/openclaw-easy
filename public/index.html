@@ -2285,14 +2285,13 @@
          * 显示重启确认弹窗
          */
         async function showRestartConfirm() {
-            // 如果配置未保存，先自动保存
-            if (!configSaved) {
-                showToast('正在保存配置...', 'info');
+            // 重启前自动保存配置
+            showToast('正在保存配置...', 'info');
+            try {
                 await saveAllConfig();
-                if (!configSaved) {
-                    showToast('配置保存失败，请手动保存后再重启', 'error');
-                    return;
-                }
+            } catch (e) {
+                showToast('配置保存失败: ' + e.message, 'error');
+                return;
             }
             
             // 创建遮罩层
