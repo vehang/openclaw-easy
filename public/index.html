@@ -1346,6 +1346,9 @@
             loginStatus.textContent = '已取消';
             loginStatus.style.color = 'var(--text-secondary)';
 
+            // 隐藏二维码和控制台区域
+            document.getElementById('weixinConsoleWrapper').style.display = 'none';
+
             appendWeixinOutput('\n⚠️ 登录已取消\n');
         }
 
