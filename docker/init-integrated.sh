@@ -123,11 +123,6 @@ sync_config_with_env() {
     "sessions": { "visibility": "all" },
     "fs": { "workspaceOnly": true }
   },
-  "channels": {
-    "weixin": {
-      "enabled": true
-    }
-  },
   "plugins": { 
     "enabled": true,
     "allow": ["nim", "openclaw-weixin"],
