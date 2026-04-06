@@ -726,14 +726,10 @@ function formToConfig(formConfig) {
     }
     // 注意：如果 im.nim 不存在，保留现有 channels.nim 配置，不做修改
 
-    // 个人微信配置（只更新，不禁用 - 因为通过安装流程设置）
-    if (im.weixin && im.weixin.enabled) {
-        channels.weixin = {
-            enabled: true,
-            token: im.weixin.token || ''
-        };
-    }
-    // 注意：如果 im.weixin 不存在，保留现有 channels.weixin 配置，不做修改
+    // 个人微信配置
+    // 注意：微信是通过 openclaw-weixin 插件实现的，不作为独立的 channel 处理
+    // 绑定状态由 OpenClaw 自己管理（通过 openclaw channels login --channel openclaw-weixin）
+    // 这里不处理 im.weixin，避免生成 channels.weixin 导致配置错误
 
     // 构建 gateway 配置
     const gatewayConfig = {

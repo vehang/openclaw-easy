@@ -1316,29 +1316,10 @@
          * 保存微信绑定状态
          */
         async function saveWeixinBoundStatus() {
-            try {
-                // 获取当前配置并更新微信绑定状态
-                const configResponse = await fetch('/api/config');
-                const currentConfig = await configResponse.json();
-                
-                // 更新微信绑定状态
-                if (!currentConfig.im) currentConfig.im = {};
-                if (!currentConfig.im.weixin) currentConfig.im.weixin = {};
-                currentConfig.im.weixin.enabled = true;
-                currentConfig.im.weixin.bound = true;
-                
-                // 保存完整配置
-                const response = await fetch('/api/config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(currentConfig)
-                });
-                if (response.ok) {
-                    console.log('[微信登录] 绑定状态已保存');
-                }
-            } catch (error) {
-                console.error('[微信登录] 保存绑定状态失败:', error);
-            }
+            // 微信绑定状态保存到 localStorage，不保存到配置文件
+            // 避免生成 channels.weixin 导致 OpenClaw 配置错误
+            localStorage.setItem('weixin_bound', 'true');
+            console.log('[微信登录] 绑定状态已保存到本地存储');
         }
 
         function stopWeixinLogin() {
@@ -1818,7 +1799,8 @@
                 }
 
                 // 个人微信
-                const weixinBound = config.im?.weixin?.bound === true;
+                // 微信绑定状态从 localStorage 读取（不保存到配置文件，避免配置错误）
+                const weixinBound = localStorage.getItem('weixin_bound') === 'true';
                 if (weixinBound) {
                     document.getElementById('weixinBindStatus').style.display = 'inline-flex';
                     document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
@@ -2000,7 +1982,7 @@
                     },
                     weixin: {
                         enabled: true,
-                        bound: document.getElementById('weixinBindStatus').style.display !== 'none'
+                        bound: localStorage.getItem('weixin_bound') === 'true'
                     }
                 },
                 gateway: {
