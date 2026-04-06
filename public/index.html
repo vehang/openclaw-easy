@@ -1797,17 +1797,18 @@
                 document.getElementById('gatewayPort').value = config.gateway.port || 18789;
                 document.getElementById('gatewayBind').value = config.gateway.bind || '0.0.0.0';
                 document.getElementById('gatewayToken').value = config.gateway.token || '';
-            // 如果没有 token，自动生成一个随机 Token
-            if (!config.gateway.token) {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-                let autoToken = '';
-                for (let i = 0; i < 32; i++) {
-                    autoToken += chars.charAt(Math.floor(Math.random() * chars.length));
+                // 如果没有 token，自动生成一个随机 Token
+                if (!config.gateway.token) {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                    let autoToken = '';
+                    for (let i = 0; i < 32; i++) {
+                        autoToken += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    document.getElementById('gatewayToken').value = autoToken;
                 }
-                document.getElementById('gatewayToken').value = autoToken;
-            }
             }
         }
+
         // ==================== IM 配置切换 ====================
 
         /**
