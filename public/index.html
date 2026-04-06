@@ -843,6 +843,7 @@
                                         </div>
                                     </div>
                             </div>
+                            </div>
 
                             <div class="step-navigation">
                                 <div class="step-navigation-left">
@@ -1605,7 +1606,7 @@
             const baseUrl = document.getElementById('aiBaseUrl').value.trim();
             const apiKey = document.getElementById('aiApiKey').value.trim();
             const modelId = document.getElementById('aiModelId').value.trim();
-            return baseUrl && apiKey && modelId;
+            return !!(baseUrl && apiKey && modelId);
         }
 
         // ==================== IM 标签页切换 ====================
