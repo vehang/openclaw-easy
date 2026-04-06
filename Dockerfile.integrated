@@ -53,7 +53,7 @@ RUN rm -rf /root/.openclaw/extensions/* 2>/dev/null || true
 
 # ========== 安装 openclaw-easy ==========
 COPY . /app/openclaw-easy
-WORKDIR /root/.openclaw
+WORKDIR /app/openclaw-easy
 RUN npm install --production && \
     echo "✅ openclaw-easy 安装完成"
 
