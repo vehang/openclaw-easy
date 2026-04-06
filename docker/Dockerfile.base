@@ -40,7 +40,9 @@ RUN apt-get update && \
     ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
     /usr/local/bin/python3 -m pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple websockify && \
     # 安装 qmd
-    npm install -g @tobilu/qmd@1.1.6 || npm install -g @tobilu/qmd@1.1.6 --registry https://mirrors.cloud.tencent.com/npm && \
+    npm install -g @tobilu/qmd@1.1.6 || \
+    (npm config set registry https://mirrors.cloud.tencent.com/npm && npm install -g @tobilu/qmd@1.1.6) || \
+    (npm config set registry https://repo.huaweicloud.com/repository/npm && npm install -g @tobilu/qmd@1.1.6) && \
     # 安装 Playwright Chromium（约 170MB）
     npx playwright install chromium --with-deps && \
     # 清理
@@ -72,7 +74,7 @@ ENV HOMEBREW_API_DOMAIN=https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebr
 RUN cd /root/.openclaw/extensions && \
     git clone --depth 1 -b v4.17.25 https://github.com/Daiyimo/openclaw-napcat.git napcat && \
     cd napcat && \
-    npm install --production && \
+    (npm install --production || npm install --production --registry https://mirrors.cloud.tencent.com/npm || npm install --production --registry https://repo.huaweicloud.com/repository/npm) && \
     cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install -l . || true && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
