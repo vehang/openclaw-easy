@@ -12,5 +12,9 @@ services:
       - "18790:18790"
     volumes:
       - ./openclaw-data:/root/.openclaw
+      - openclaw-extensions:/root/.openclaw/extensions
     environment:
       - TZ=Asia/Shanghai
+
+volumes:
+  openclaw-extensions:
