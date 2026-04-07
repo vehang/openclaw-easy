@@ -23,18 +23,15 @@ RUN apt-get update && \
 # ========== 准备种子目录 ==========
 RUN mkdir -p /root/.openclaw-seed/extensions
 
-# ========== 拷贝/安装微信插件到种子目录 ==========
-RUN echo "=== 拷贝/安装微信插件 ===" && \
-    if [ -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
-        echo "✅ 微信插件已存在于 version 镜像，直接拷贝"; \
-        cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/; \
-    else \
-        echo "⚠️ 微信插件不存在，尝试安装..." && \
-        cd /root/.openclaw/extensions && \
-        npx -y @tencent-weixin/openclaw-weixin-cli@latest install && \
-        cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/; \
+# ========== 拷贝微信插件到种子目录（必须存在） ==========
+RUN echo "=== 拷贝微信插件 ===" && \
+    if [ ! -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
+        echo "❌ 微信插件不存在，请确保 version 镜像已正确构建"; \
+        echo "提示：先运行 ./build.sh version ${OPENCLAW_VERSION} <arch>"; \
+        exit 1; \
     fi && \
-    ls -la /root/.openclaw-seed/extensions/
+    cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
+    echo "✅ 微信插件拷贝完成"
 
 # ========== 安装 NIM YX Auth 插件到种子目录 ==========
 RUN echo "=== 安装 NIM YX Auth 插件 ===" && \
