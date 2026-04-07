@@ -21,16 +21,14 @@ RUN apt-get update && \
     mkdir -p /var/log/supervisor
 
 # ========== 准备种子目录 ==========
-# 将运行目录的插件复制到种子目录，确保启动时能同步
-RUN echo "=== 准备种子目录 ===" && \
-    mkdir -p /root/.openclaw-seed/extensions && \
-    # 复制已有的 napcat 插件（种子目录已有） \
-    # 复制微信插件到种子目录 \
-    if [ -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
-        cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
-        echo "✅ 微信插件已复制到种子目录"; \
-    fi && \
-    ls -la /root/.openclaw-seed/extensions/
+RUN mkdir -p /root/.openclaw-seed/extensions
+
+# ========== 安装微信插件到种子目录 ==========
+RUN echo "=== 安装微信插件 ===" && \
+    cd /root/.openclaw/extensions && \
+    npx -y @tencent-weixin/openclaw-weixin-cli@latest install && \
+    cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
+    echo "✅ 微信插件安装完成"
 
 # ========== 安装 NIM YX Auth 插件到种子目录 ==========
 RUN echo "=== 安装 NIM YX Auth 插件 ===" && \
@@ -66,13 +64,9 @@ RUN chmod +x /usr/local/bin/init-integrated.sh
 RUN rm -rf /root/.npm /tmp/* /root/.cache
 
 # ========== 环境变量 ==========
-# 注意：OPENCLAW_HOME 应该是用户主目录，OpenClaw 会在其下创建 .openclaw/ 目录
 ENV HOME=/root \
     OPENCLAW_HOME=/root \
     SYNC_MODEL_CONFIG=false
-
-# ========== 端口 ==========
-# 18780 - openclaw-easy Web 界面
 
 # ========== 端口 ==========
 # 18780 - openclaw-easy Web 界面
