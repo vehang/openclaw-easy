@@ -13,13 +13,14 @@ RUN npm install -g openclaw@${OPENCLAW_VERSION}
 RUN mkdir -p /root/.openclaw/extensions && \
     cp -a /root/.openclaw-seed/extensions/. /root/.openclaw/extensions/
 
-# ========== 安装微信插件（必须成功） ==========
-# 增加超时时间到 300 秒，失败则构建失败
+# ========== 安装微信插件 ==========
+# || true 允许命令本身有错误，但安装后必须验证成功
 RUN echo "=== 安装微信插件 ===" && \
-    timeout 300 npx -y @tencent-weixin/openclaw-weixin-cli@latest install && \
-    # 验证安装是否成功
+    timeout 300 npx -y @tencent-weixin/openclaw-weixin-cli@latest install || true && \
+    # 验证安装是否成功（这一步必须成功）
     if [ ! -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
         echo "❌ 微信插件安装失败：目录不存在"; \
+        echo "请检查网络连接或手动重试"; \
         exit 1; \
     fi && \
     # 复制到种子目录
