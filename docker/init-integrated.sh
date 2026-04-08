@@ -87,9 +87,9 @@ sync_config_with_env() {
     # 如果文件不存在，创建基础骨架
     if [ ! -f "$config_file" ]; then
         echo "创建基础配置文件..."
-        cat > "$config_file" << 'EOF'
+        cat > "$config_file" << EOF
 {
-  "meta": { "lastTouchedVersion": "2026.4.1" },
+  "meta": { "lastTouchedVersion": "${OPENCLAW_VERSION}" },
   "update": { "checkOnStart": false },
   "browser": {
     "headless": true,

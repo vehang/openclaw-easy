@@ -69,7 +69,8 @@ RUN rm -rf /root/.npm /tmp/* /root/.cache
 # ========== 环境变量 ==========
 ENV HOME=/root \
     OPENCLAW_HOME=/root \
-    SYNC_MODEL_CONFIG=false
+    SYNC_MODEL_CONFIG=false \
+    OPENCLAW_VERSION=${OPENCLAW_VERSION}
 
 # ========== 端口 ==========
 # 18780 - openclaw-easy Web 界面

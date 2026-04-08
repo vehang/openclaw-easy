@@ -28,12 +28,11 @@ const SESSION_EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24小时
 const OPENCLAW_DIR = path.join(os.homedir(), '.openclaw');
 const CONFIG_FILE = path.join(OPENCLAW_DIR, 'openclaw.json');
 const PASSWORD_FILE = path.join(OPENCLAW_DIR, '.passwd');
+const SIMPLE_CACHE_FILE = path.join(OPENCLAW_DIR, '.simple-config.json');
 
 // Session 存储（内存中）
 const sessions = new Map();
 
-// Simple 接口配置缓存（内存中）
-let simpleConfigCache = null;
 
 // ==================== 渠道必填字段定义 ====================
 const CHANNEL_REQUIRED_FIELDS = {
@@ -1404,24 +1403,22 @@ app.post('/api/config/simple', async (req, res) => {
         // 保存配置
         saveConfig(newConfig);
 
-        // 缓存 simple 接口的原始参数（只缓存有效值，空串不缓存）
-        simpleConfigCache = {
+        // 缓存 simple 接口的原始参数到文件（设置什么就返回什么）
+        const cacheData = {
             apiUrl: apiUrl.trim(),
             apiKey: apiKey.trim(),
             modelName: modelName.trim(),
             updatedAt: Math.floor(Date.now() / 1000)
         };
-
-        // 只缓存有效值（非空串）
         if (hasAppCredentialsGroup) {
-            simpleConfigCache.appId = appId.trim();
-            simpleConfigCache.appSecret = appSecret.trim();
+            cacheData.appId = appId.trim();
+            cacheData.appSecret = appSecret.trim();
         }
-        
         if (hasAuthTokenGroup) {
-            simpleConfigCache.nickName = nickName.trim();
-            simpleConfigCache.authToken = authToken.trim();
+            cacheData.nickName = nickName.trim();
+            cacheData.authToken = authToken.trim();
         }
+        fs.writeFileSync(SIMPLE_CACHE_FILE, JSON.stringify(cacheData, null, 2), "utf8");
 
         res.json({
             code: 0,
@@ -1443,18 +1440,19 @@ app.post('/api/config/simple', async (req, res) => {
  */
 app.get('/api/config/simple', (req, res) => {
     try {
-        if (!simpleConfigCache) {
+        if (!fs.existsSync(SIMPLE_CACHE_FILE)) {
             return res.json({
                 code: 1001,
                 msg: '暂无缓存配置',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
+        const cachedData = JSON.parse(fs.readFileSync(SIMPLE_CACHE_FILE, "utf8"));
 
         res.json({
             code: 0,
             msg: '成功',
-            data: simpleConfigCache,
+            data: cachedData,
             currentTime: Math.floor(Date.now() / 1000)
         });
     } catch (error) {
