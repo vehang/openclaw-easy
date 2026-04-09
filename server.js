@@ -1491,8 +1491,7 @@ app.post('/api/fix', async (req, res) => {
         res.json({
             code: 0,
             msg: '修复完成',
-            currentTime: Math.floor(Date.now() / 1000),
-            data: output
+            currentTime: Math.floor(Date.now() / 1000)
         });
     } catch (error) {
         console.error('修复失败:', error);
