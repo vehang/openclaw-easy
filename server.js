@@ -1469,6 +1469,12 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
  * 修复 OpenClaw 运行环境
  * POST /api/fix
  * 无需登录验证，供外部调用
+ * 
+ * 返回格式：
+ * - code: 0 成功，1000 执行异常
+ * - msg: 结果描述
+ * - currentTime: 当前时间戳
+ * - output: 命令输出内容（可选）
  */
 app.post('/api/fix', async (req, res) => {
     try {
@@ -1483,8 +1489,9 @@ app.post('/api/fix', async (req, res) => {
         console.log('修复输出:', output);
         
         res.json({
-            success: true,
-            message: '修复完成',
+            code: 0,
+            msg: '修复完成',
+            currentTime: Math.floor(Date.now() / 1000),
             output: output
         });
     } catch (error) {
@@ -1494,9 +1501,9 @@ app.post('/api/fix', async (req, res) => {
         const output = error.stdout || error.stderr || '';
         
         res.json({
-            success: false,
-            message: '修复执行完成（有警告）',
-            error: error.message,
+            code: 1000,
+            msg: error.message || '修复执行失败',
+            currentTime: Math.floor(Date.now() / 1000),
             output: output
         });
     }
