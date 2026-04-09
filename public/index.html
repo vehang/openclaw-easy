@@ -1673,7 +1673,8 @@
                     throw new Error('获取配置失败');
                 }
 
-                const config = await response.json();
+                const result = await response.json();
+                const config = result.data;
                 populateConfig(config);
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
@@ -1835,8 +1836,8 @@
                 // 个人微信绑定状态（异步获取，不阻塞其他配置加载）
                 fetch('/api/weixin/bound')
                     .then(res => res.json())
-                    .then(data => {
-                        if (data.bound) {
+                    .then(result => {
+                        if (result.code === 0 && result.data && result.data.bound) {
                             document.getElementById('weixinBindStatus').style.display = 'inline-flex';
                             document.getElementById('weixinLoginBtnText').textContent = '重新扫码绑定';
                             document.getElementById('weixinStatus').textContent = '已绑定';
