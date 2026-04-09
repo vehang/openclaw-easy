@@ -83,7 +83,7 @@ RUN cd /root/.openclaw/extensions && \
     rm -rf /tmp/* /root/.npm /root/.cache
 
 # 复制初始化脚本
-COPY ./init.sh /usr/local/bin/init.sh
+COPY docker/init.sh /usr/local/bin/init.sh
 RUN sed -i 's/\r$//' /usr/local/bin/init.sh && \
     chmod +x /usr/local/bin/init.sh
 

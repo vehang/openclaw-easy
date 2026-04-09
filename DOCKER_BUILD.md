@@ -254,7 +254,7 @@ npm install nim-web-sdk-ng@10.9.77-alpha.3
 
 **原因**：docker-compose volume 挂载覆盖了镜像中的内容
 
-**解决**：init-fixed.sh 会在启动时自动安装插件
+**解决**：init.sh 会在启动时自动安装插件
 
 ### 问题 3: 构建速度慢
 

@@ -8,7 +8,7 @@ openclaw-easy/
 ├── public/                # 前端静态文件
 ├── package.json           # Node.js 依赖
 ├── Dockerfile             # Docker 镜像定义
-├── init-fixed.sh          # 修复后的启动脚本（关键修复）
+├── init.sh          # 修复后的启动脚本（关键修复）
 ├── supervisord.conf       # 进程管理配置
 └── .dockerignore          # Docker 构建忽略文件
 ```
@@ -28,7 +28,7 @@ openclaw gateway run \
 **问题：** 如果环境变量为空，会传递空值导致 Gateway 启动失败。
 
 ### 修复方案
-在 `init-fixed.sh` 中实现三级优先级配置：
+在 `init.sh` 中实现三级优先级配置：
 ```bash
 # ✅ 修复后的代码
 GATEWAY_BIND="${OPENCLAW_GATEWAY_BIND:-$(jq -r '.gateway.bind // "lan"' ~/.openclaw/openclaw.json)}"
@@ -101,7 +101,7 @@ docker-compose up -d
 ## 📋 验证清单
 
 - ✅ Dockerfile 正确引用当前目录
-- ✅ init-fixed.sh 包含关键修复
+- ✅ init.sh 包含关键修复
 - ✅ supervisord.conf 配置正确
 - ✅ .dockerignore 排除不必要的文件
 - ✅ 所有脚本有执行权限
