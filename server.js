@@ -95,7 +95,7 @@ app.use((req, res, next) => {
     // 密码未设置，强制跳转到设置页面
     if (!isPasswordSet()) {
         if (req.path.startsWith('/api/')) {
-            return res.status(403).json({ error: '请先设置管理密码', needSetup: true });
+            return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
         }
         return res.redirect('/setup.html');
     }
@@ -113,7 +113,7 @@ app.use((req, res, next) => {
     
     // 未登录，重定向到登录页
     if (req.path.startsWith('/api/')) {
-        return res.status(401).json({ error: '未授权访问' });
+        return res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
     }
     res.redirect('/login.html');
 });
@@ -955,7 +955,7 @@ function authMiddleware(req, res, next) {
         }
         // 其他路由重定向到 setup.html
         if (req.path.startsWith('/api/')) {
-            return res.status(403).json({ error: '请先设置管理密码', needSetup: true });
+            return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
         }
         return res.redirect('/setup.html');
     }
@@ -968,7 +968,7 @@ function authMiddleware(req, res, next) {
 
     // API 请求返回 401
     if (req.path.startsWith('/api/')) {
-        return res.status(401).json({ error: '未授权访问' });
+        return res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
     }
 
     // 页面请求重定向到登录页
@@ -983,8 +983,13 @@ function authMiddleware(req, res, next) {
  */
 app.get('/api/status', (req, res) => {
     res.json({
-        passwordSet: isPasswordSet(),
-        authenticated: validateSession(req.cookies.session_token)
+        code: 0,
+        msg: '成功',
+        data: {
+            passwordSet: isPasswordSet(),
+            authenticated: validateSession(req.cookies.session_token)
+        },
+        currentTime: Math.floor(Date.now() / 1000)
     });
 });
 
@@ -996,7 +1001,7 @@ app.post('/api/setup/password', async (req, res) => {
     try {
         // 如果密码已设置，拒绝再次设置
         if (isPasswordSet()) {
-            return res.status(400).json({ error: '密码已设置，请使用修改密码功能' });
+            return res.json({ code: 1000, msg: '密码已设置，请使用修改密码功能', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         const { password, confirmPassword } = req.body;
@@ -1004,11 +1009,11 @@ app.post('/api/setup/password', async (req, res) => {
         // 验证密码强度
         const strengthValidation = validatePasswordStrength(password);
         if (!strengthValidation.valid) {
-            return res.status(400).json({ error: strengthValidation.errors.join('，') });
+            return res.json({ code: 1000, msg: strengthValidation.errors.join('，'), currentTime: Math.floor(Date.now() / 1000) });
         }
 
         if (password !== confirmPassword) {
-            return res.status(400).json({ error: '两次输入的密码不一致' });
+            return res.json({ code: 1000, msg: '两次输入的密码不一致', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 保存密码
@@ -1023,10 +1028,10 @@ app.post('/api/setup/password', async (req, res) => {
             sameSite: 'strict'
         });
 
-        res.json({ success: true, message: '密码设置成功' });
+        res.json({ code: 0, msg: '密码设置成功', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('设置密码失败:', error);
-        res.status(500).json({ error: '设置密码失败' });
+        res.json({ code: 1000, msg: '设置密码失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1039,14 +1044,14 @@ app.post('/api/login', async (req, res) => {
         const { password } = req.body;
 
         if (!password) {
-            return res.status(400).json({ error: '请输入密码' });
+            return res.json({ code: 1000, msg: '请输入密码', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 验证密码
         const valid = await verifyPassword(password);
 
         if (!valid) {
-            return res.status(401).json({ error: '密码错误' });
+            return res.json({ code: 1001, msg: '密码错误', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 创建 Session
@@ -1058,10 +1063,10 @@ app.post('/api/login', async (req, res) => {
             sameSite: 'strict'
         });
 
-        res.json({ success: true, message: '登录成功' });
+        res.json({ code: 0, msg: '登录成功', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('登录失败:', error);
-        res.status(500).json({ error: '登录失败' });
+        res.json({ code: 1000, msg: '登录失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1075,7 +1080,7 @@ app.post('/api/logout', (req, res) => {
         sessions.delete(token);
     }
     res.clearCookie('session_token');
-    res.json({ success: true, message: '已退出登录' });
+    res.json({ code: 0, msg: '已退出登录', currentTime: Math.floor(Date.now() / 1000) });
 });
 
 /**
@@ -1089,26 +1094,26 @@ app.post('/api/password/change', authMiddleware, async (req, res) => {
         // 验证旧密码
         const valid = await verifyPassword(oldPassword);
         if (!valid) {
-            return res.status(401).json({ error: '原密码错误' });
+            return res.json({ code: 1001, msg: '原密码错误', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 验证新密码强度
         const strengthValidation = validatePasswordStrength(newPassword);
         if (!strengthValidation.valid) {
-            return res.status(400).json({ error: '新' + strengthValidation.errors.join('，') });
+            return res.json({ code: 1000, msg: '新' + strengthValidation.errors.join('，'), currentTime: Math.floor(Date.now() / 1000) });
         }
 
         if (newPassword !== confirmPassword) {
-            return res.status(400).json({ error: '两次输入的密码不一致' });
+            return res.json({ code: 1000, msg: '两次输入的密码不一致', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 保存新密码
         await savePassword(newPassword);
 
-        res.json({ success: true, message: '密码修改成功' });
+        res.json({ code: 0, msg: '密码修改成功', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('修改密码失败:', error);
-        res.status(500).json({ error: '修改密码失败' });
+        res.json({ code: 1000, msg: '修改密码失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1120,10 +1125,15 @@ app.get('/api/config', authMiddleware, (req, res) => {
     try {
         const config = readConfig();
         const formConfig = configToFormFormat(config);
-        res.json(formConfig);
+        res.json({
+            code: 0,
+            msg: '成功',
+            data: formConfig,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
     } catch (error) {
         console.error('获取配置失败:', error);
-        res.status(500).json({ error: '获取配置失败' });
+        res.json({ code: 1000, msg: '获取配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1134,10 +1144,15 @@ app.get('/api/config', authMiddleware, (req, res) => {
 app.get('/api/config/raw', authMiddleware, (req, res) => {
     try {
         const config = readConfig();
-        res.json(config);
+        res.json({
+            code: 0,
+            msg: '成功',
+            data: config,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
     } catch (error) {
         console.error('获取配置失败:', error);
-        res.status(500).json({ error: '获取配置失败' });
+        res.json({ code: 1000, msg: '获取配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1149,10 +1164,15 @@ app.get('/api/config/status', authMiddleware, (req, res) => {
     try {
         const config = readConfig();
         const status = getConfigStatus(config);
-        res.json(status);
+        res.json({
+            code: 0,
+            msg: '成功',
+            data: status,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
     } catch (error) {
         console.error('获取配置状态失败:', error);
-        res.status(500).json({ error: '获取配置状态失败' });
+        res.json({ code: 1000, msg: '获取配置状态失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1165,7 +1185,7 @@ app.post('/api/config/validate', authMiddleware, (req, res) => {
         const formConfig = req.body;
 
         if (!formConfig) {
-            return res.status(400).json({ valid: false, errors: ['配置不能为空'] });
+            return res.json({ code: 1000, msg: '配置不能为空', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         const errors = [];
@@ -1187,12 +1207,14 @@ app.post('/api/config/validate', authMiddleware, (req, res) => {
         }
 
         res.json({
-            valid: errors.length === 0,
-            errors
+            code: errors.length === 0 ? 0 : 1000,
+            msg: errors.length === 0 ? '验证通过' : errors.join('; '),
+            data: { valid: errors.length === 0, errors },
+            currentTime: Math.floor(Date.now() / 1000)
         });
     } catch (error) {
         console.error('验证配置失败:', error);
-        res.status(500).json({ valid: false, errors: ['验证配置失败'] });
+        res.json({ code: 1000, msg: '验证配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1206,20 +1228,20 @@ app.post('/api/config', authMiddleware, async (req, res) => {
 
         // 验证配置结构
         if (!formConfig || !formConfig.ai) {
-            return res.status(400).json({ error: '配置格式不正确' });
+            return res.json({ code: 1000, msg: '配置格式不正确', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 验证配置
         const aiValidation = validateAiConfig(formConfig.ai);
         if (!aiValidation.valid) {
-            return res.status(400).json({ error: aiValidation.errors.join('; ') });
+            return res.json({ code: 1000, msg: aiValidation.errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 验证启用的渠道
         if (formConfig.im) {
             const channelsValidation = validateAllChannels(formConfig.im);
             if (channelsValidation.allErrors.length > 0) {
-                return res.status(400).json({ error: channelsValidation.allErrors.join('; ') });
+                return res.json({ code: 1000, msg: channelsValidation.allErrors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
             }
         }
 
@@ -1229,12 +1251,13 @@ app.post('/api/config', authMiddleware, async (req, res) => {
 
 
         res.json({
-            success: true,
-            message: '配置保存成功'
+            code: 0,
+            msg: '配置保存成功',
+            currentTime: Math.floor(Date.now() / 1000)
         });
     } catch (error) {
         console.error('保存配置失败:', error);
-        res.status(500).json({ error: '保存配置失败' });
+        res.json({ code: 1000, msg: '保存配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1519,14 +1542,14 @@ app.post('/api/test/ai', authMiddleware, async (req, res) => {
         // 这里可以实现实际的连接测试
         // 目前只做基本的参数验证
         if (!apiKey || !modelId) {
-            return res.status(400).json({ error: 'API Key 和模型ID不能为空' });
+            return res.json({ code: 1000, msg: 'API Key 和模型ID不能为空', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 模拟测试成功
-        res.json({ success: true, message: 'AI 配置验证通过' });
+        res.json({ code: 0, msg: 'AI 配置验证通过', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('测试 AI 连接失败:', error);
-        res.status(500).json({ error: '测试连接失败' });
+        res.json({ code: 1000, msg: '测试连接失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1614,12 +1637,12 @@ app.get('/api/weixin/bound', authMiddleware, (req, res) => {
         if (fs.existsSync(boundFile)) {
             const data = fs.readFileSync(boundFile, 'utf8');
             const boundState = JSON.parse(data);
-            res.json({ bound: boundState.bound === true });
+            res.json({ code: 0, msg: '成功', data: { bound: boundState.bound === true }, currentTime: Math.floor(Date.now() / 1000) });
         } else {
-            res.json({ bound: false });
+            res.json({ code: 0, msg: '成功', data: { bound: false }, currentTime: Math.floor(Date.now() / 1000) });
         }
     } catch (error) {
-        res.json({ bound: false });
+        res.json({ code: 0, msg: '成功', data: { bound: false }, currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1632,10 +1655,10 @@ app.post('/api/weixin/bound', authMiddleware, (req, res) => {
     try {
         const { bound } = req.body;
         fs.writeFileSync(boundFile, JSON.stringify({ bound: bound === true }));
-        res.json({ success: true });
+        res.json({ code: 0, msg: '保存成功', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('[微信] 保存绑定状态失败:', error);
-        res.status(500).json({ error: '保存失败' });
+        res.json({ code: 1000, msg: '保存失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -1656,7 +1679,7 @@ app.use((req, res) => {
 // 全局错误处理
 app.use((err, req, res, next) => {
     console.error('服务器错误:', err);
-    res.status(500).json({ error: '服务器内部错误' });
+    res.json({ code: 1000, msg: '服务器内部错误', currentTime: Math.floor(Date.now() / 1000) });
 });
 
 // ==================== 启动服务器 ====================

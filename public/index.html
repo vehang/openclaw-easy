@@ -2179,7 +2179,7 @@
                     // 刷新配置状态
                     await loadConfigStatus();
                 } else {
-                    showToast(data.error || '保存失败', 'error');
+                    showToast(data.msg || '保存失败', 'error');
                 }
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
@@ -2262,9 +2262,9 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showToast(data.message || '连接测试成功', 'success');
+                    showToast(data.msg || '连接测试成功', 'success');
                 } else {
-                    showToast(data.error || '连接测试失败', 'error');
+                    showToast(data.msg || '连接测试失败', 'error');
                 }
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
@@ -2586,14 +2586,14 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    showToast('密码修改成功', 'success');
+                if (response.ok && data.code === 0) {
+                    showToast(data.msg || '密码修改成功', 'success');
                     passwordModal.style.display = 'none';
                     document.getElementById('changePasswordForm').reset();
                     // 重置密码强度指示器
                     resetChangePasswordStrength();
                 } else {
-                    showToast(data.error || '修改失败', 'error');
+                    showToast(data.msg || '修改失败', 'error');
                 }
             } catch (error) {
                 console.error('修改密码失败:', error);
