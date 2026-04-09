@@ -1433,9 +1433,20 @@ app.post('/api/config/simple', async (req, res) => {
         }
         fs.writeFileSync(SIMPLE_CACHE_FILE, JSON.stringify(cacheData, null, 2), "utf8");
 
+        // ==================== 异步重启（不阻塞响应）====================
+        setImmediate(async () => {
+            try {
+                console.log('[配置保存] 开始异步重启 Gateway...');
+                const result = await restartGateway();
+                console.log('[配置保存] 异步重启结果:', result);
+            } catch (error) {
+                console.error('[配置保存] 异步重启失败:', error);
+            }
+        });
+
         res.json({
             code: 0,
-            msg: '成功',
+            msg: '配置已保存，服务正在自动重启中，请稍等一会儿后再使用',
             currentTime: Math.floor(Date.now() / 1000)
         });
     } catch (error) {
@@ -1655,7 +1666,25 @@ app.post('/api/weixin/bound', authMiddleware, (req, res) => {
     try {
         const { bound } = req.body;
         fs.writeFileSync(boundFile, JSON.stringify({ bound: bound === true }));
-        res.json({ code: 0, msg: '保存成功', currentTime: Math.floor(Date.now() / 1000) });
+        
+        // ==================== 异步重启（仅绑定成功时）====================
+        if (bound === true) {
+            setImmediate(async () => {
+                try {
+                    console.log('[微信绑定] 开始异步重启 Gateway...');
+                    const result = await restartGateway();
+                    console.log('[微信绑定] 异步重启结果:', result);
+                } catch (error) {
+                    console.error('[微信绑定] 异步重启失败:', error);
+                }
+            });
+        }
+        
+        res.json({ 
+            code: 0, 
+            msg: bound === true ? '绑定成功，服务正在自动重启中，请稍等一会儿后再使用' : '保存成功', 
+            currentTime: Math.floor(Date.now() / 1000) 
+        });
     } catch (error) {
         console.error('[微信] 保存绑定状态失败:', error);
         res.json({ code: 1000, msg: '保存失败', currentTime: Math.floor(Date.now() / 1000) });

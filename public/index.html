@@ -1343,8 +1343,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ bound: true })
                 });
-                if (response.ok) {
+                const result = await response.json();
+                if (response.ok && result.code === 0) {
                     console.log('[微信登录] 绑定状态已保存');
+                    // 显示后端返回的提示信息（如：服务正在自动重启中）
+                    if (result.msg) {
+                        showToast(result.msg, 'info');
+                    }
+                } else {
+                    showToast(result.msg || '保存失败', 'error');
                 }
             } catch (error) {
                 console.error('[微信登录] 保存绑定状态失败:', error);
