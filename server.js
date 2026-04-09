@@ -2129,8 +2129,10 @@ async function performAutoUpdateCheck() {
  * 改进内容：
  * 1. 完整备份所有关键文件
  * 2. 清理已删除的旧依赖
- * 3. 自动回滚机制
- * 4. 清理旧备份目录
+ * 3. 先重启服务，成功后再清理临时文件
+ * 4. 重启失败时保留备份，方便回滚
+ * 5. 自动回滚机制
+ * 6. 清理旧备份目录（保留最近3个）
  */
 async function performUpdate(downloadUrl) {
     if (!downloadUrl) {
@@ -2288,9 +2290,23 @@ async function performUpdate(downloadUrl) {
             }
         }
         
-        // ==================== 步骤7: 清理临时文件 ====================
-        console.log('[自动更新] [7/8] 清理临时文件...');
-        fs.rmSync(updateDir, { recursive: true, force: true });
+        // ==================== 步骤7: 重启服务 ====================
+        console.log('[自动更新] [7/8] 重启 openclaw-easy 服务...');
+        
+        try {
+            await restartEasy();
+            console.log('[自动更新] 服务重启成功');
+        } catch (restartError) {
+            throw new Error('服务重启失败: ' + restartError.message);
+        }
+        
+        // ==================== 步骤8: 清理临时文件（仅在重启成功后）====================
+        console.log('[自动更新] [8/8] 清理临时文件...');
+        
+        // 清理更新目录
+        if (fs.existsSync(updateDir)) {
+            fs.rmSync(updateDir, { recursive: true, force: true });
+        }
         
         // 清理旧备份（保留最近3个）
         const tmpDir = '/tmp';
@@ -2307,10 +2323,6 @@ async function performUpdate(downloadUrl) {
             fs.rmSync(allBackups[i].path, { recursive: true, force: true });
         }
         console.log('[自动更新] 清理完成');
-        
-        // ==================== 步骤8: 重启服务 ====================
-        console.log('[自动更新] [8/8] 重启 openclaw-easy 服务...');
-        await restartEasy();
         
         console.log('[自动更新] ========== 更新完成 ==========');
         
