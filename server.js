@@ -1474,7 +1474,7 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
  * - code: 0 成功，1000 执行异常
  * - msg: 结果描述
  * - currentTime: 当前时间戳
- * - output: 命令输出内容（可选）
+ *  - data: 命令输出内容
  */
 app.post('/api/fix', async (req, res) => {
     try {
@@ -1492,7 +1492,7 @@ app.post('/api/fix', async (req, res) => {
             code: 0,
             msg: '修复完成',
             currentTime: Math.floor(Date.now() / 1000),
-            output: output
+            data: output
         });
     } catch (error) {
         console.error('修复失败:', error);
@@ -1504,7 +1504,7 @@ app.post('/api/fix', async (req, res) => {
             code: 1000,
             msg: error.message || '修复执行失败',
             currentTime: Math.floor(Date.now() / 1000),
-            output: output
+            data: output
         });
     }
 });
