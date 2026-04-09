@@ -1195,6 +1195,13 @@
             const consoleWrapper = document.getElementById('weixinConsoleWrapper');
             const consoleOutput = document.getElementById('weixinConsoleOutput');
             const loginStatus = document.getElementById('weixinLoginStatus');
+            const qrcodeLoading = document.getElementById('weixinQrcodeLoading');
+            const qrcodeImage = document.getElementById('weixinQrcodeImage');
+
+            // 重置二维码区域状态（每次点击扫码登录时重置）
+            qrcodeLoading.style.display = 'flex';
+            qrcodeImage.style.display = 'none';
+            qrcodeImage.innerHTML = '';
 
             // 显示控制台区域
             consoleWrapper.style.display = 'block';
@@ -1282,11 +1289,8 @@
                     loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
                     appendWeixinOutput(`\n❌ ${result.msg}\n`);
-                    // 登录失败时，如果已有二维码链接，继续显示二维码
-                    if (currentQrcodeUrl) {
-                        document.getElementById('weixinQrcodeLoading').style.display = 'none';
-                        document.getElementById('weixinQrcodeImage').style.display = 'block';
-                    }
+                    // 登录失败时，隐藏二维码区域和控制台区域
+                    document.getElementById('weixinConsoleWrapper').style.display = 'none';
                 }
             });
 
