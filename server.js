@@ -2000,7 +2000,7 @@ app.listen(PORT, () => {
 const AUTO_UPDATE_CONFIG = {
     enabled: process.env.AUTO_UPDATE !== 'false',  // 默认启用，设置 AUTO_UPDATE=false 可禁用
     checkOnStart: process.env.AUTO_UPDATE_ON_START !== 'false',  // 启动时检查
-    checkIntervalHours: parseInt(process.env.AUTO_UPDATE_INTERVAL) || 24,  // 检查间隔（小时）
+    checkIntervalHours: parseInt(process.env.AUTO_UPDATE_INTERVAL) || 6,  // 检查间隔（小时）
     autoInstall: process.env.AUTO_UPDATE_INSTALL !== 'false'  // 自动安装
 };
 
