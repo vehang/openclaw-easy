@@ -2124,15 +2124,12 @@ async function performAutoUpdateCheck() {
  * 执行更新
  */
 /**
- * 执行更新（改进版）
+ * 执行更新（调用独立 shell 脚本）
  * 
- * 改进内容：
- * 1. 完整备份所有关键文件
- * 2. 清理已删除的旧依赖
- * 3. 先重启服务，成功后再清理临时文件
- * 4. 重启失败时保留备份，方便回滚
- * 5. 自动回滚机制
- * 6. 清理旧备份目录（保留最近3个）
+ * 设计说明：
+ * - 使用独立的 shell 脚本执行更新，不依赖 Node.js 进程
+ * - 如果服务重启失败，shell 脚本仍可继续执行
+ * - 下次启动时通过 start-check.sh 检测并回滚失败的更新
  */
 async function performUpdate(downloadUrl) {
     if (!downloadUrl) {
@@ -2140,230 +2137,38 @@ async function performUpdate(downloadUrl) {
         return { success: false, error: '下载地址不存在' };
     }
     
-    const updateId = Date.now();
-    const appDir = __dirname;
-    const updateDir = path.join('/tmp', `openclaw-easy-update-${updateId}`);
-    const backupDir = path.join('/tmp', `openclaw-easy-backup-${updateId}`);
+    const { execSync } = require('child_process');
+    const updateScript = path.join(__dirname, 'docker', 'update.sh');
     
     try {
-        console.log('[自动更新] ========== 开始更新 ==========');
-        console.log('[自动更新] 更新ID:', updateId);
+        console.log('[自动更新] 调用更新脚本...');
+        console.log('[自动更新] 下载地址:', downloadUrl);
         
-        // ==================== 步骤1: 创建目录 ====================
-        console.log('[自动更新] [1/8] 创建临时目录...');
-        fs.mkdirSync(updateDir, { recursive: true });
-        fs.mkdirSync(backupDir, { recursive: true });
+        // 调用 shell 脚本执行更新
+        const output = execSync(`bash "${updateScript}" update "${downloadUrl}"`, {
+            encoding: 'utf8',
+            timeout: 300000  // 5分钟超时
+        });
         
-        // ==================== 步骤2: 完整备份 ====================
-        console.log('[自动更新] [2/8] 备份当前版本...');
+        console.log('[自动更新] 更新脚本输出:');
+        console.log(output);
         
-        // 需要备份的文件和目录
-        const itemsToBackup = [
-            'server.js',
-            'version.json',
-            'package.json',
-            'package-lock.json',
-            'public'
-        ];
+        // 重启服务
+        console.log('[自动更新] 更新完成，重启服务...');
+        await restartEasy();
         
-        for (const item of itemsToBackup) {
-            const srcPath = path.join(appDir, item);
-            if (fs.existsSync(srcPath)) {
-                const destPath = path.join(backupDir, item);
-                if (fs.statSync(srcPath).isDirectory()) {
-                    fs.cpSync(srcPath, destPath, { recursive: true });
-                } else {
-                    fs.copyFileSync(srcPath, destPath);
-                }
-            }
-        }
-        
-        console.log('[自动更新] 备份完成:', backupDir);
-        
-        // ==================== 步骤3: 下载更新包 ====================
-        console.log('[自动更新] [3/8] 下载更新包...');
-        const tarFile = path.join(updateDir, 'update.tar.gz');
-        
-        const downloadResponse = await fetch(downloadUrl);
-        if (!downloadResponse.ok) {
-            throw new Error(`下载失败: HTTP ${downloadResponse.status}`);
-        }
-        const buffer = await downloadResponse.buffer();
-        fs.writeFileSync(tarFile, buffer);
-        console.log('[自动更新] 下载完成, 大小:', (buffer.length / 1024).toFixed(2), 'KB');
-        
-        // ==================== 步骤4: 解压更新包 ====================
-        console.log('[自动更新] [4/8] 解压更新包...');
-        const extractDir = path.join(updateDir, 'extracted');
-        fs.mkdirSync(extractDir, { recursive: true });
-        
-        const { execSync } = require('child_process');
-        execSync(`tar -xzf "${tarFile}" -C "${extractDir}"`, { stdio: 'pipe' });
-        
-        // 确定源目录
-        let sourceDir = extractDir;
-        const extractedItems = fs.readdirSync(extractDir);
-        if (extractedItems.length === 1 && fs.statSync(path.join(extractDir, extractedItems[0])).isDirectory()) {
-            sourceDir = path.join(extractDir, extractedItems[0]);
-        }
-        console.log('[自动更新] 解压完成');
-        
-        // ==================== 步骤5: 增量更新文件 ====================
-        console.log('[自动更新] [5/8] 更新文件...');
-        
-        // 读取新版本的 package.json
-        const newPackagePath = path.join(sourceDir, 'package.json');
-        let newPackage = {};
-        if (fs.existsSync(newPackagePath)) {
-            newPackage = JSON.parse(fs.readFileSync(newPackagePath, 'utf8'));
-        }
-        
-        // 需要排除的项目
-        const excludeItems = ['node_modules', 'tmp', '.git'];
-        
-        const newItems = fs.readdirSync(sourceDir);
-        let updatedFiles = 0;
-        let updatedDirs = 0;
-        
-        for (const item of newItems) {
-            if (excludeItems.includes(item)) continue;
-            
-            const srcPath = path.join(sourceDir, item);
-            const destPath = path.join(appDir, item);
-            
-            try {
-                if (fs.statSync(srcPath).isDirectory()) {
-                    if (fs.existsSync(destPath)) {
-                        fs.rmSync(destPath, { recursive: true });
-                    }
-                    fs.cpSync(srcPath, destPath, { recursive: true });
-                    updatedDirs++;
-                } else {
-                    fs.copyFileSync(srcPath, destPath);
-                    updatedFiles++;
-                }
-            } catch (itemError) {
-                console.warn(`[自动更新] 警告: 更新 ${item} 失败:`, itemError.message);
-            }
-        }
-        
-        console.log(`[自动更新] 文件更新完成: ${updatedFiles} 个文件, ${updatedDirs} 个目录`);
-        
-        // ==================== 步骤6: 更新依赖 ====================
-        console.log('[自动更新] [6/8] 更新依赖...');
-        
-        const newDeps = newPackage.dependencies || {};
-        
-        if (Object.keys(newDeps).length > 0) {
-            try {
-                // 清理已删除的依赖
-                const oldPackagePath = path.join(backupDir, 'package.json');
-                if (fs.existsSync(oldPackagePath)) {
-                    const oldPackage = JSON.parse(fs.readFileSync(oldPackagePath, 'utf8'));
-                    const oldDeps = oldPackage.dependencies || {};
-                    
-                    const removedDeps = Object.keys(oldDeps).filter(dep => !newDeps[dep]);
-                    
-                    if (removedDeps.length > 0) {
-                        console.log('[自动更新] 清理已删除的依赖:', removedDeps.join(', '));
-                        const nodeModulesPath = path.join(appDir, 'node_modules');
-                        for (const dep of removedDeps) {
-                            const depPath = path.join(nodeModulesPath, dep);
-                            if (fs.existsSync(depPath)) {
-                                fs.rmSync(depPath, { recursive: true });
-                            }
-                        }
-                    }
-                }
-                
-                // 安装依赖
-                console.log('[自动更新] 执行 npm install...');
-                execSync('npm install --production --no-audit --no-fund', {
-                    cwd: appDir,
-                    stdio: 'pipe',
-                    timeout: 180000
-                });
-                console.log('[自动更新] 依赖更新完成');
-                
-            } catch (npmError) {
-                console.warn('[自动更新] 警告: npm install 失败:', npmError.message);
-            }
-        }
-        
-        // ==================== 步骤7: 重启服务 ====================
-        console.log('[自动更新] [7/8] 重启 openclaw-easy 服务...');
-        
-        try {
-            await restartEasy();
-            console.log('[自动更新] 服务重启成功');
-        } catch (restartError) {
-            throw new Error('服务重启失败: ' + restartError.message);
-        }
-        
-        // ==================== 步骤8: 清理临时文件（仅在重启成功后）====================
-        console.log('[自动更新] [8/8] 清理临时文件...');
-        
-        // 清理更新目录
-        if (fs.existsSync(updateDir)) {
-            fs.rmSync(updateDir, { recursive: true, force: true });
-        }
-        
-        // 清理旧备份（保留最近3个）
-        const tmpDir = '/tmp';
-        const allBackups = fs.readdirSync(tmpDir)
-            .filter(name => name.startsWith('openclaw-easy-backup-'))
-            .map(name => ({
-                name,
-                path: path.join(tmpDir, name),
-                time: parseInt(name.replace('openclaw-easy-backup-', '')) || 0
-            }))
-            .sort((a, b) => b.time - a.time);
-        
-        for (let i = 3; i < allBackups.length; i++) {
-            fs.rmSync(allBackups[i].path, { recursive: true, force: true });
-        }
-        console.log('[自动更新] 清理完成');
-        
-        console.log('[自动更新] ========== 更新完成 ==========');
-        
-        return { success: true, backupPath: backupDir };
+        return { success: true };
         
     } catch (error) {
         console.error('[自动更新] 更新失败:', error.message);
         
-        // ==================== 自动回滚 ====================
-        console.log('[自动更新] 开始自动回滚...');
-        
-        try {
-            if (fs.existsSync(backupDir)) {
-                const backupItems = fs.readdirSync(backupDir);
-                for (const item of backupItems) {
-                    const srcPath = path.join(backupDir, item);
-                    const destPath = path.join(appDir, item);
-                    
-                    if (fs.statSync(srcPath).isDirectory()) {
-                        if (fs.existsSync(destPath)) {
-                            fs.rmSync(destPath, { recursive: true });
-                        }
-                        fs.cpSync(srcPath, destPath, { recursive: true });
-                    } else {
-                        fs.copyFileSync(srcPath, destPath);
-                    }
-                }
-                console.log('[自动更新] 回滚完成');
-            }
-        } catch (rollbackError) {
-            console.error('[自动更新] 回滚失败:', rollbackError.message);
-        }
-        
-        // 清理临时文件
-        try {
-            if (fs.existsSync(updateDir)) {
-                fs.rmSync(updateDir, { recursive: true, force: true });
-            }
-        } catch (e) {}
-        
-        return { success: false, error: error.message };
+        // 如果脚本执行失败，服务可能已停止
+        // 下次启动时会通过 start-check.sh 检测并回滚
+        return { 
+            success: false, 
+            error: error.message,
+            note: '如果服务无法启动，将在下次启动时自动回滚'
+        };
     }
 }
 
