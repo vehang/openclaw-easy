@@ -892,7 +892,7 @@ async function restartGateway() {
         const tryRestart = (index) => {
             if (index >= restartMethods.length) {
                 if (successCount > 0) {
-                    resolve({ success: true, message: '重启命令已执行' });
+                    resolve({ code: 0, msg: '重启命令已执行', currentTime: Math.floor(Date.now() / 1000) });
                 } else {
                     // 所有方法都失败了，提供手动重启指南
                     const manualCommands = [
@@ -928,7 +928,7 @@ async function restartGateway() {
                     tryRestart(index + 1);
                 } else {
                     successCount++;
-                    resolve({ success: true, message: '重启命令已执行', output: stdout });
+                    resolve({ code: 0, msg: '重启命令已执行', currentTime: Math.floor(Date.now() / 1000) });
                 }
             });
         };
@@ -1461,7 +1461,7 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('重启服务失败:', error);
-        res.status(500).json({ error: error.message || '重启服务失败' });
+        res.json({ code: 1000, msg: error.message || '重启服务失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 

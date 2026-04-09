@@ -2395,17 +2395,17 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    showToast(data.message || '重启命令已执行', 'success');
+                if (response.ok && data.code === 0) {
+                    showToast(data.msg || '重启命令已执行', 'success');
                 } else {
-                    showToast(data.error || '重启失败', 'error');
+                    showToast(data.msg || '重启失败', 'error');
                 }
             } catch (error) {
                 console.error('重启服务失败:', error);
                 showToast('重启服务失败', 'error');
             } finally {
                 restartBtn.disabled = false;
-                restartBtn.innerHTML = '<span class="iconify" data-icon="mdi:refresh"></span> 重启 Gateway 服务';
+                restartBtn.innerHTML = '<span class="iconify" data-icon="mdi:refresh"></span> 重启服务';
             }
         }
 
