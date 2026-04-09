@@ -2419,6 +2419,16 @@
          * 显示修复确认弹窗
          */
         async function showFixConfirm() {
+            // 修复前自动保存配置
+            showToast('正在保存配置...', 'info');
+            try {
+                await saveAllConfig();
+            } catch (e) {
+                showToast('配置保存失败: ' + e.message, 'error');
+                return;
+            }
+            
+            // 创建遮罩层
             const overlay = document.createElement('div');
             overlay.style.cssText = `
                 position: fixed;
@@ -2427,9 +2437,10 @@
                 right: 0;
                 bottom: 0;
                 background: rgba(0,0,0,0.5);
-                z-index: 1000;
+                z-index: 1999;
             `;
 
+            // 创建弹窗
             const modal = document.createElement('div');
             modal.style.cssText = `
                 position: fixed;
@@ -2450,15 +2461,13 @@
                     <span class="iconify" data-icon="mdi:wrench" style="color: var(--primary-color);"></span>
                     修复运行环境
                 </h3>
-                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                    <p style="margin: 0 0 12px; color: #1d4ed8; font-weight: 500; font-size: 14px;">
-                        ℹ️ 功能说明
+                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px; line-height: 1.6;">
+                    将执行 openclaw doctor --fix 命令，检查并修复 OpenClaw 运行环境问题。
+                </p>
+                <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <p style="margin: 0; color: #1d4ed8; font-size: 13px;">
+                        ℹ️ 修复过程中服务可能短暂响应缓慢，请耐心等待。
                     </p>
-                    <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
-                        <li>将执行 openclaw doctor --fix 命令</li>
-                        <li>检查并修复 OpenClaw 运行环境问题</li>
-                        <li>修复过程中服务可能短暂响应缓慢</li>
-                    </ul>
                 </div>
                 <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;">
                     确定要执行修复操作吗？
@@ -2499,6 +2508,7 @@
             fixBtn.disabled = true;
             fixBtn.innerHTML = '<span class="loading"></span> 修复中...';
 
+            // 显示等待提示
             showToast('正在执行修复，请稍候...', 'info');
 
             try {
@@ -2508,10 +2518,10 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    showToast(data.message || '修复完成', 'success');
+                if (response.ok && data.code === 0) {
+                    showToast(data.msg || '修复完成', 'success');
                 } else {
-                    showToast(data.error || '修复失败', 'error');
+                    showToast(data.msg || '修复失败', 'error');
                 }
             } catch (error) {
                 console.error('修复失败:', error);
