@@ -1724,6 +1724,7 @@ app.listen(PORT, () => {
     console.log('');
 });
 
+
 // ==================== 版本更新相关 ====================
 
 const VERSION_FILE = path.join(__dirname, 'version.json');
@@ -1792,252 +1793,98 @@ app.get('/api/update/check', async (req, res) => {
 });
 
 /**
- * 下载更新包
- * POST /api/update/download
- */
-app.post('/api/update/download', async (req, res) => {
-    try {
-        const { downloadUrl } = req.body;
-        
-        if (!downloadUrl) {
-            return res.json({ code: 1001, msg: '下载地址不能为空', currentTime: Math.floor(Date.now() / 1000) });
-        }
-        
-        console.log('[下载更新] 开始下载:', downloadUrl);
-        
-        // 创建更新目录
-        if (!fs.existsSync(UPDATE_DIR)) {
-            fs.mkdirSync(UPDATE_DIR, { recursive: true });
-        }
-        
-        const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
-        
-        // 下载文件
-        const response = await fetch(downloadUrl);
-        if (!response.ok) {
-            throw new Error(`下载失败: ${response.status}`);
-        }
-        
-        const buffer = await response.buffer();
-        fs.writeFileSync(tarFile, buffer);
-        
-        const fileSize = fs.statSync(tarFile).size;
-        console.log('[下载更新] 完成, 文件大小:', fileSize);
-        
-        res.json({
-            code: 0,
-            msg: '下载成功',
-            data: {
-                filePath: tarFile,
-                fileSize: fileSize
-            },
-            currentTime: Math.floor(Date.now() / 1000)
-        });
-    } catch (error) {
-        console.error('[下载更新] 失败:', error);
-        res.json({
-            code: 1000,
-            msg: '下载失败: ' + error.message,
-            currentTime: Math.floor(Date.now() / 1000)
-        });
-    }
-});
-
-/**
- * 应用更新
- * POST /api/update/apply
- */
-app.post('/api/update/apply', async (req, res) => {
-    try {
-        const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
-        
-        if (!fs.existsSync(tarFile)) {
-            return res.json({ code: 1001, msg: '更新包不存在，请先下载', currentTime: Math.floor(Date.now() / 1000) });
-        }
-        
-        console.log('[应用更新] 开始应用更新...');
-        
-        const appDir = __dirname;
-        const timestamp = Date.now();
-        
-        // 1. 备份当前版本（排除 node_modules）
-        console.log('[应用更新] 备份当前版本...');
-        if (!fs.existsSync(BACKUP_DIR)) {
-            fs.mkdirSync(BACKUP_DIR, { recursive: true });
-        }
-        const backupPath = path.join(BACKUP_DIR, `backup-${timestamp}`);
-        
-        // 复制关键文件作为备份
-        const filesToBackup = ['server.js', 'version.json', 'package.json'];
-        fs.mkdirSync(backupPath, { recursive: true });
-        for (const file of filesToBackup) {
-            const src = path.join(appDir, file);
-            if (fs.existsSync(src)) {
-                fs.copyFileSync(src, path.join(backupPath, file));
-            }
-        }
-        console.log('[应用更新] 备份完成:', backupPath);
-        
-        // 2. 解压新版本
-        console.log('[应用更新] 解压新版本...');
-        const extractDir = path.join(UPDATE_DIR, 'extracted');
-        if (fs.existsSync(extractDir)) {
-            fs.rmSync(extractDir, { recursive: true });
-        }
-        fs.mkdirSync(extractDir, { recursive: true });
-        
-        const { execSync } = require('child_process');
-        execSync(`tar -xzf "${tarFile}" -C "${extractDir}"`, { stdio: 'inherit' });
-        
-        // 3. 复制新文件（排除 node_modules）
-        console.log('[应用更新] 复制新文件...');
-        const extractedFiles = fs.readdirSync(extractDir);
-        let sourceDir = extractDir;
-        
-        // 如果解压后有一个子目录，进入该目录
-        if (extractedFiles.length === 1 && fs.statSync(path.join(extractDir, extractedFiles[0])).isDirectory()) {
-            sourceDir = path.join(extractDir, extractedFiles[0]);
-        }
-        
-        const newFiles = fs.readdirSync(sourceDir);
-        for (const file of newFiles) {
-            if (file === 'node_modules') continue; // 跳过 node_modules
-            
-            const srcPath = path.join(sourceDir, file);
-            const destPath = path.join(appDir, file);
-            
-            if (fs.statSync(srcPath).isDirectory()) {
-                if (fs.existsSync(destPath)) {
-                    fs.rmSync(destPath, { recursive: true });
-                }
-                fs.cpSync(srcPath, destPath, { recursive: true });
-            } else {
-                fs.copyFileSync(srcPath, destPath);
-            }
-        }
-        
-        // 4. 更新依赖
-        console.log('[应用更新] 更新依赖...');
-        try {
-            execSync('npm install --production', { cwd: appDir, stdio: 'inherit' });
-        } catch (npmError) {
-            console.warn('[应用更新] npm install 警告:', npmError.message);
-        }
-        
-        // 5. 清理临时文件
-        console.log('[应用更新] 清理临时文件...');
-        fs.rmSync(UPDATE_DIR, { recursive: true, force: true });
-        
-        // 6. 读取新版本信息
-        const newVersion = getVersionInfo();
-        console.log('[应用更新] 完成, 新版本:', newVersion.versionName);
-        
-        res.json({
-            code: 0,
-            msg: '更新成功，服务即将重启...',
-            data: {
-                newVersion: newVersion,
-                backupPath: backupPath
-            },
-            currentTime: Math.floor(Date.now() / 1000)
-        });
-        
-        // 7. 异步重启服务
-        setImmediate(async () => {
-            try {
-                console.log('[应用更新] 开始重启服务...');
-                await restartGateway();
-            } catch (error) {
-                console.error('[应用更新] 重启失败:', error);
-            }
-        });
-        
-    } catch (error) {
-        console.error('[应用更新] 失败:', error);
-        res.json({
-            code: 1000,
-            msg: '更新失败: ' + error.message,
-            currentTime: Math.floor(Date.now() / 1000)
-        });
-    }
-});
-
-/**
- * 一键更新（检查 + 下载 + 应用）
+ * 一键更新
  * POST /api/update
+ * 请求体: { downloadUrl: "xxx" } (可选，不传则自动检查获取)
  */
 app.post('/api/update', async (req, res) => {
     try {
-        // 1. 检查更新
         const currentVersion = getVersionInfo();
-        const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+        let downloadUrl = req.body?.downloadUrl;
+        let newVersionInfo = null;
         
-        console.log('[一键更新] 检查更新...');
-        const checkResponse = await fetch(checkUrl);
-        const checkResult = await checkResponse.json();
+        // 如果没有传下载地址，先检查更新获取
+        if (!downloadUrl) {
+            console.log('[一键更新] 检查更新...');
+            const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+            const checkResponse = await fetch(checkUrl);
+            const checkResult = await checkResponse.json();
+            
+            if (!checkResult.data) {
+                return res.json({
+                    code: 0,
+                    msg: '当前已经是最新版本',
+                    currentTime: Math.floor(Date.now() / 1000)
+                });
+            }
+            
+            newVersionInfo = checkResult.data;
+            downloadUrl = newVersionInfo.dlUrl;
+        }
         
-        if (!checkResult.data) {
+        if (!downloadUrl) {
             return res.json({
-                code: 0,
-                msg: '当前已经是最新版本',
+                code: 1001,
+                msg: '下载地址不存在',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
         
-        const newVersion = checkResult.data;
-        console.log('[一键更新] 发现新版本:', newVersion.versionName);
+        console.log('[一键更新] 下载地址:', downloadUrl);
         
-        // 2. 下载更新包
-        if (!newVersion.dlUrl) {
-            return res.json({ code: 1001, msg: '下载地址不存在', currentTime: Math.floor(Date.now() / 1000) });
-        }
-        
-        console.log('[一键更新] 下载更新包...');
-        if (!fs.existsSync(UPDATE_DIR)) {
-            fs.mkdirSync(UPDATE_DIR, { recursive: true });
-        }
-        const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
-        
-        const downloadResponse = await fetch(newVersion.dlUrl);
-        if (!downloadResponse.ok) {
-            throw new Error(`下载失败: ${downloadResponse.status}`);
-        }
-        const buffer = await downloadResponse.buffer();
-        fs.writeFileSync(tarFile, buffer);
-        console.log('[一键更新] 下载完成');
-        
-        // 3. 立即返回响应，后台执行更新
+        // 立即返回响应
         res.json({
             code: 0,
             msg: '已开始更新，请稍候...',
-            data: {
-                newVersion: newVersion.versionName,
-                upgradeContents: newVersion.upgradeContents
-            },
+            data: newVersionInfo ? {
+                newVersion: newVersionInfo.versionName,
+                upgradeContents: newVersionInfo.upgradeContents
+            } : null,
             currentTime: Math.floor(Date.now() / 1000)
         });
         
-        // 4. 后台执行更新（异步）
+        // 后台执行更新
         setImmediate(async () => {
             try {
-                console.log('[一键更新] 后台开始应用更新...');
+                console.log('[一键更新] 开始下载更新包...');
                 
-                const appDir = __dirname;
-                const timestamp = Date.now();
-                
-                // 备份
+                // 创建目录
+                if (!fs.existsSync(UPDATE_DIR)) {
+                    fs.mkdirSync(UPDATE_DIR, { recursive: true });
+                }
                 if (!fs.existsSync(BACKUP_DIR)) {
                     fs.mkdirSync(BACKUP_DIR, { recursive: true });
                 }
+                
+                const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
+                
+                // 下载
+                const downloadResponse = await fetch(downloadUrl);
+                if (!downloadResponse.ok) {
+                    throw new Error(`下载失败: ${downloadResponse.status}`);
+                }
+                const buffer = await downloadResponse.buffer();
+                fs.writeFileSync(tarFile, buffer);
+                console.log('[一键更新] 下载完成, 大小:', buffer.length);
+                
+                // 备份
+                const appDir = __dirname;
+                const timestamp = Date.now();
                 const backupPath = path.join(BACKUP_DIR, `backup-${timestamp}`);
                 fs.mkdirSync(backupPath, { recursive: true });
-                const filesToBackup = ['server.js', 'version.json', 'package.json'];
+                
+                const filesToBackup = ['server.js', 'version.json', 'package.json', 'public'];
                 for (const file of filesToBackup) {
                     const src = path.join(appDir, file);
                     if (fs.existsSync(src)) {
-                        fs.copyFileSync(src, path.join(backupPath, file));
+                        if (fs.statSync(src).isDirectory()) {
+                            fs.cpSync(src, path.join(backupPath, file), { recursive: true });
+                        } else {
+                            fs.copyFileSync(src, path.join(backupPath, file));
+                        }
                     }
                 }
+                console.log('[一键更新] 备份完成:', backupPath);
                 
                 // 解压
                 const extractDir = path.join(UPDATE_DIR, 'extracted');
@@ -2047,20 +1894,24 @@ app.post('/api/update', async (req, res) => {
                 fs.mkdirSync(extractDir, { recursive: true });
                 
                 const { execSync } = require('child_process');
-                execSync(`tar -xzf "${tarFile}" -C "${extractDir}"`, { stdio: 'inherit' });
+                execSync(`tar -xzf "${tarFile}" -C "${extractDir}"`, { stdio: 'pipe' });
+                console.log('[一键更新] 解压完成');
                 
-                // 复制文件
+                // 确定源目录
                 let sourceDir = extractDir;
                 const extractedFiles = fs.readdirSync(extractDir);
                 if (extractedFiles.length === 1 && fs.statSync(path.join(extractDir, extractedFiles[0])).isDirectory()) {
                     sourceDir = path.join(extractDir, extractedFiles[0]);
                 }
                 
+                // 复制文件（跳过 node_modules）
                 const newFiles = fs.readdirSync(sourceDir);
                 for (const file of newFiles) {
                     if (file === 'node_modules') continue;
+                    
                     const srcPath = path.join(sourceDir, file);
                     const destPath = path.join(appDir, file);
+                    
                     if (fs.statSync(srcPath).isDirectory()) {
                         if (fs.existsSync(destPath)) {
                             fs.rmSync(destPath, { recursive: true });
@@ -2070,20 +1921,22 @@ app.post('/api/update', async (req, res) => {
                         fs.copyFileSync(srcPath, destPath);
                     }
                 }
+                console.log('[一键更新] 文件复制完成');
                 
-                // npm install
+                // 更新依赖
                 try {
-                    execSync('npm install --production', { cwd: appDir, stdio: 'inherit' });
-                } catch (e) {
-                    console.warn('[一键更新] npm install 警告:', e.message);
+                    execSync('npm install --production', { cwd: appDir, stdio: 'pipe', timeout: 120000 });
+                    console.log('[一键更新] 依赖更新完成');
+                } catch (npmError) {
+                    console.warn('[一键更新] npm install 警告:', npmError.message);
                 }
                 
-                // 清理
+                // 清理临时文件
                 fs.rmSync(UPDATE_DIR, { recursive: true, force: true });
-                
-                console.log('[一键更新] 更新完成，准备重启...');
+                console.log('[一键更新] 临时文件清理完成');
                 
                 // 重启
+                console.log('[一键更新] 准备重启服务...');
                 await restartGateway();
                 
             } catch (updateError) {
@@ -2099,4 +1952,37 @@ app.post('/api/update', async (req, res) => {
             currentTime: Math.floor(Date.now() / 1000)
         });
     }
+});
+
+// ==================== 页面路由 ====================
+
+// 首页重定向
+app.get('/', authMiddleware, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ==================== 错误处理 ====================
+
+// 404 处理
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+// 全局错误处理
+app.use((err, req, res, next) => {
+    console.error('服务器错误:', err);
+    res.json({ code: 1000, msg: '服务器内部错误', currentTime: Math.floor(Date.now() / 1000) });
+});
+
+// ==================== 启动服务器 ====================
+
+app.listen(PORT, () => {
+    console.log('');
+    console.log('╔════════════════════════════════════════════╗');
+    console.log('║       OpenClaw Easy 配置管理系统           ║');
+    console.log('╠════════════════════════════════════════════╣');
+    console.log(`║  服务地址: http://localhost:${PORT}          ║`);
+    console.log(`║  配置文件: ${CONFIG_FILE.padEnd(24)}║`);
+    console.log('╚════════════════════════════════════════════╝');
+    console.log('');
 });
