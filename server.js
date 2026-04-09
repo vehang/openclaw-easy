@@ -1793,9 +1793,16 @@ app.get('/api/update/check', async (req, res) => {
 });
 
 /**
- * 一键更新
+ * 一键更新（无参数调用）
  * POST /api/update
- * 请求体: { downloadUrl: "xxx" } (可选，不传则自动检查获取)
+ * 
+ * 流程：
+ * 1. 自动调用版本检查接口获取最新版本信息
+ * 2. 下载更新包
+ * 3. 备份当前版本
+ * 4. 解压并安装新版本
+ * 5. 更新依赖 (npm install)
+ * 6. 重启服务
  */
 app.post('/api/update', async (req, res) => {
     try {
