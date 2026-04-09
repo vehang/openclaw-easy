@@ -1993,3 +1993,184 @@ app.listen(PORT, () => {
     console.log('╚════════════════════════════════════════════╝');
     console.log('');
 });
+
+// ==================== 自动更新任务 ====================
+
+// 自动更新配置
+const AUTO_UPDATE_CONFIG = {
+    enabled: process.env.AUTO_UPDATE !== 'false',  // 默认启用，设置 AUTO_UPDATE=false 可禁用
+    checkOnStart: process.env.AUTO_UPDATE_ON_START !== 'false',  // 启动时检查
+    checkIntervalHours: parseInt(process.env.AUTO_UPDATE_INTERVAL) || 24,  // 检查间隔（小时）
+    autoInstall: process.env.AUTO_UPDATE_INSTALL !== 'false'  // 自动安装
+};
+
+let updateCheckTimer = null;
+
+/**
+ * 执行自动更新检查
+ */
+async function performAutoUpdateCheck() {
+    try {
+        console.log('[自动更新] 开始检查更新...');
+        
+        const currentVersion = getVersionInfo();
+        const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+        
+        const response = await fetch(checkUrl);
+        const result = await response.json();
+        
+        if (result.data) {
+            console.log(`[自动更新] 发现新版本: ${result.data.versionName} (当前: ${currentVersion.versionName})`);
+            
+            if (AUTO_UPDATE_CONFIG.autoInstall) {
+                console.log('[自动更新] 开始自动更新...');
+                await performUpdate(result.data.dlUrl);
+            } else {
+                console.log('[自动更新] AUTO_UPDATE_INSTALL=false，跳过自动安装');
+            }
+        } else {
+            console.log('[自动更新] 当前已是最新版本');
+        }
+    } catch (error) {
+        console.error('[自动更新] 检查更新失败:', error.message);
+    }
+}
+
+/**
+ * 执行更新
+ */
+async function performUpdate(downloadUrl) {
+    if (!downloadUrl) {
+        console.error('[自动更新] 下载地址不存在');
+        return;
+    }
+    
+    try {
+        console.log('[自动更新] 下载地址:', downloadUrl);
+        
+        // 创建目录
+        if (!fs.existsSync(UPDATE_DIR)) {
+            fs.mkdirSync(UPDATE_DIR, { recursive: true });
+        }
+        if (!fs.existsSync(BACKUP_DIR)) {
+            fs.mkdirSync(BACKUP_DIR, { recursive: true });
+        }
+        
+        const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
+        
+        // 下载
+        console.log('[自动更新] 下载更新包...');
+        const downloadResponse = await fetch(downloadUrl);
+        if (!downloadResponse.ok) {
+            throw new Error(`下载失败: ${downloadResponse.status}`);
+        }
+        const buffer = await downloadResponse.buffer();
+        fs.writeFileSync(tarFile, buffer);
+        console.log('[自动更新] 下载完成');
+        
+        // 备份
+        const appDir = __dirname;
+        const timestamp = Date.now();
+        const backupPath = path.join(BACKUP_DIR, `backup-${timestamp}`);
+        fs.mkdirSync(backupPath, { recursive: true });
+        
+        const filesToBackup = ['server.js', 'version.json', 'package.json', 'public'];
+        for (const file of filesToBackup) {
+            const src = path.join(appDir, file);
+            if (fs.existsSync(src)) {
+                if (fs.statSync(src).isDirectory()) {
+                    fs.cpSync(src, path.join(backupPath, file), { recursive: true });
+                } else {
+                    fs.copyFileSync(src, path.join(backupPath, file));
+                }
+            }
+        }
+        console.log('[自动更新] 备份完成');
+        
+        // 解压
+        const extractDir = path.join(UPDATE_DIR, 'extracted');
+        if (fs.existsSync(extractDir)) {
+            fs.rmSync(extractDir, { recursive: true });
+        }
+        fs.mkdirSync(extractDir, { recursive: true });
+        
+        const { execSync } = require('child_process');
+        execSync(`tar -xzf "${tarFile}" -C "${extractDir}"`, { stdio: 'pipe' });
+        console.log('[自动更新] 解压完成');
+        
+        // 确定源目录
+        let sourceDir = extractDir;
+        const extractedFiles = fs.readdirSync(extractDir);
+        if (extractedFiles.length === 1 && fs.statSync(path.join(extractDir, extractedFiles[0])).isDirectory()) {
+            sourceDir = path.join(extractDir, extractedFiles[0]);
+        }
+        
+        // 复制文件
+        const newFiles = fs.readdirSync(sourceDir);
+        for (const file of newFiles) {
+            if (file === 'node_modules') continue;
+            
+            const srcPath = path.join(sourceDir, file);
+            const destPath = path.join(appDir, file);
+            
+            if (fs.statSync(srcPath).isDirectory()) {
+                if (fs.existsSync(destPath)) {
+                    fs.rmSync(destPath, { recursive: true });
+                }
+                fs.cpSync(srcPath, destPath, { recursive: true });
+            } else {
+                fs.copyFileSync(srcPath, destPath);
+            }
+        }
+        console.log('[自动更新] 文件更新完成');
+        
+        // 更新依赖
+        try {
+            execSync('npm install --production', { cwd: appDir, stdio: 'pipe', timeout: 120000 });
+            console.log('[自动更新] 依赖更新完成');
+        } catch (npmError) {
+            console.warn('[自动更新] npm install 警告:', npmError.message);
+        }
+        
+        // 清理
+        fs.rmSync(UPDATE_DIR, { recursive: true, force: true });
+        console.log('[自动更新] 清理完成');
+        
+        // 重启
+        console.log('[自动更新] 准备重启服务...');
+        await restartGateway();
+        
+    } catch (error) {
+        console.error('[自动更新] 更新失败:', error);
+    }
+}
+
+/**
+ * 启动自动更新任务
+ */
+function startAutoUpdateTask() {
+    if (!AUTO_UPDATE_CONFIG.enabled) {
+        console.log('[自动更新] 已禁用 (AUTO_UPDATE=false)');
+        return;
+    }
+    
+    console.log(`[自动更新] 任务已启动，检查间隔: ${AUTO_UPDATE_CONFIG.checkIntervalHours}小时`);
+    
+    // 启动时延迟30秒检查
+    if (AUTO_UPDATE_CONFIG.checkOnStart) {
+        setTimeout(() => {
+            console.log('[自动更新] 启动时检查更新...');
+            performAutoUpdateCheck();
+        }, 30 * 1000);  // 30秒后
+    }
+    
+    // 定时检查
+    const intervalMs = AUTO_UPDATE_CONFIG.checkIntervalHours * 60 * 60 * 1000;
+    updateCheckTimer = setInterval(() => {
+        console.log('[自动更新] 定时检查更新...');
+        performAutoUpdateCheck();
+    }, intervalMs);
+}
+
+// 启动自动更新任务
+startAutoUpdateTask();
