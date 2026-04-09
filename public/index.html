@@ -1693,7 +1693,8 @@
                     throw new Error('获取配置状态失败');
                 }
 
-                const status = await response.json();
+                const result = await response.json();
+                const status = result.data;
                 updateConfigStatusUI(status);
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
@@ -2157,25 +2158,14 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.code === 0) {
                     // 标记配置已保存（步骤3完成）
                     configSaved = true;
 
                     // 立即更新进度到100%（不等待 loadConfigStatus）
                     calculateProgress();
 
-                    // 显示重启状态
-                    if (data.restart) {
-                        if (data.restart.success) {
-                            showToast('配置已保存，Gateway 服务正在重启...', 'success');
-                        } else {
-                            // 显示详细的重启失败信息和手动命令
-                            const errorMsg = data.restart.message || '未知错误';
-                            showRestartError(errorMsg);
-                        }
-                    } else {
-                        showToast('配置保存成功', 'success');
-                    }
+                    showToast(data.msg || '配置保存成功', 'success');
                     // 刷新配置状态
                     await loadConfigStatus();
                 } else {
@@ -2261,7 +2251,7 @@
 
                 const data = await response.json();
 
-                if (response.ok) {
+                if (response.ok && data.code === 0) {
                     showToast(data.msg || '连接测试成功', 'success');
                 } else {
                     showToast(data.msg || '连接测试失败', 'error');
