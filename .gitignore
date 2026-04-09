@@ -32,3 +32,6 @@ coverage/
 # Misc
 *.bak
 *.tmp
+-e 
+# Legacy/archived files
+tmp/
