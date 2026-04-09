@@ -937,6 +937,90 @@ async function restartGateway() {
     });
 }
 
+/**
+ * 重启 openclaw-easy 服务
+ * 用于更新后重启自身服务
+ */
+async function restartEasy() {
+    const { exec } = require('child_process');
+
+    return new Promise((resolve, reject) => {
+        const restartMethods = [];
+
+        // 优先级 1: supervisorctl（容器环境）
+        if (isCommandAvailable('supervisorctl')) {
+            restartMethods.push({
+                name: 'supervisorctl',
+                cmd: 'supervisorctl restart openclaw-easy'
+            });
+        }
+
+        // 优先级 2: pm2
+        if (isCommandAvailable('pm2')) {
+            restartMethods.push({
+                name: 'pm2',
+                cmd: 'pm2 restart openclaw-easy'
+            });
+        }
+
+        // 优先级 3: systemctl
+        if (isCommandAvailable('systemctl')) {
+            restartMethods.push({
+                name: 'systemctl',
+                cmd: 'systemctl restart openclaw-easy'
+            });
+        }
+
+        // 优先级 4: service
+        if (isCommandAvailable('service')) {
+            restartMethods.push({
+                name: 'service',
+                cmd: 'service openclaw-easy restart'
+            });
+        }
+
+        // 优先级 5: kill 自身进程（supervisord 会自动重启）
+        restartMethods.push({
+            name: 'kill-self',
+            cmd: 'pkill -f "node.*server.js"'
+        });
+
+        if (restartMethods.length === 0) {
+            reject(new Error('没有可用的重启方式'));
+            return;
+        }
+
+        let lastError = null;
+        let success = false;
+
+        const tryRestart = (index) => {
+            if (index >= restartMethods.length) {
+                if (!success) {
+                    reject(new Error('所有重启方式都失败: ' + lastError));
+                }
+                return;
+            }
+
+            const { name, cmd } = restartMethods[index];
+            console.log(`[重启Easy] 尝试: ${name}`);
+
+            exec(cmd, (error, stdout, stderr) => {
+                if (error) {
+                    console.warn(`[重启Easy] ${name} 失败:`, error.message);
+                    lastError = error.message;
+                    tryRestart(index + 1);
+                } else {
+                    console.log(`[重启Easy] ${name} 成功`);
+                    success = true;
+                    resolve({ success: true, method: name });
+                }
+            });
+        };
+
+        tryRestart(0);
+    });
+}
+
 // ==================== 认证中间件 ====================
 
 /**
@@ -1942,9 +2026,9 @@ app.post('/api/update', async (req, res) => {
                 fs.rmSync(UPDATE_DIR, { recursive: true, force: true });
                 console.log('[一键更新] 临时文件清理完成');
                 
-                // 重启
-                console.log('[一键更新] 准备重启服务...');
-                await restartGateway();
+                // 重启 openclaw-easy 服务
+                console.log('[一键更新] 准备重启 openclaw-easy 服务...');
+                await restartEasy();
                 
             } catch (updateError) {
                 console.error('[一键更新] 后台更新失败:', updateError);
@@ -2225,8 +2309,8 @@ async function performUpdate(downloadUrl) {
         console.log('[自动更新] 清理完成');
         
         // ==================== 步骤8: 重启服务 ====================
-        console.log('[自动更新] [8/8] 重启服务...');
-        await restartGateway();
+        console.log('[自动更新] [8/8] 重启 openclaw-easy 服务...');
+        await restartEasy();
         
         console.log('[自动更新] ========== 更新完成 ==========');
         
