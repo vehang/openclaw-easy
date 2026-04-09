@@ -445,6 +445,11 @@
                     <span class="logo-text">OpenClaw</span>
                 </a>
                 <div class="header-actions">
+                    <span id="versionInfo" style="color: var(--text-secondary); font-size: 12px; margin-right: 12px;">v1.0.0</span>
+                    <button class="btn btn-outline btn-sm" id="checkUpdateBtn">
+                        <span class="iconify btn-icon" data-icon="mdi:cloud-download-outline" style="font-size: 16px;"></span>
+                        <span class="btn-text">检查更新</span>
+                    </button>
                     <button class="btn btn-outline btn-sm" id="changePasswordBtn">
                         <span class="iconify btn-icon" data-icon="mdi:key-outline" style="font-size: 16px;"></span>
                         <span class="btn-text">修改密码</span>
@@ -2672,3 +2677,159 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 </body>
 </html>
+
+        // ==================== 版本更新 ====================
+
+        let currentVersionInfo = null;
+
+        // 加载当前版本信息
+        async function loadVersionInfo() {
+            try {
+                const response = await fetch('/api/version');
+                const result = await response.json();
+                if (result.code === 0 && result.data) {
+                    currentVersionInfo = result.data;
+                    document.getElementById('versionInfo').textContent = `v${result.data.versionName}`;
+                }
+            } catch (error) {
+                console.error('加载版本信息失败:', error);
+            }
+        }
+
+        // 检查更新
+        async function checkUpdate() {
+            const btn = document.getElementById('checkUpdateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 检查中...';
+            
+            try {
+                const response = await fetch('/api/update/check');
+                const result = await response.json();
+                
+                if (result.data) {
+                    // 有新版本
+                    showUpdateModal(result.data);
+                } else {
+                    // 无新版本
+                    showToast(result.tipMsg || '当前已经是最新版本', 'success');
+                }
+            } catch (error) {
+                console.error('检查更新失败:', error);
+                showToast('检查更新失败', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="iconify btn-icon" data-icon="mdi:cloud-download-outline" style="font-size: 16px;"></span><span class="btn-text">检查更新</span>';
+            }
+        }
+
+        // 显示更新弹窗
+        function showUpdateModal(updateInfo) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 1999;
+            `;
+
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                max-width: 500px;
+                width: 90%;
+                z-index: 2000;
+            `;
+
+            const changelogHtml = updateInfo.upgradeContents 
+                ? updateInfo.upgradeContents.map(item => `<li>${item}</li>`).join('') 
+                : '<li>版本更新</li>';
+
+            modal.innerHTML = `
+                <h3 style="margin: 0 0 16px; color: var(--text-primary); font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <span class="iconify" data-icon="mdi:cloud-download" style="color: var(--primary-color);"></span>
+                    发现新版本 ${updateInfo.versionName}
+                </h3>
+                <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <p style="margin: 0 0 8px; color: var(--text-secondary); font-size: 13px;">当前版本: ${currentVersionInfo ? currentVersionInfo.versionName : '未知'}</p>
+                    <p style="margin: 0; color: #1d4ed8; font-size: 14px; font-weight: 500;">新版本: ${updateInfo.versionName}</p>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <p style="margin: 0 0 8px; color: var(--text-primary); font-size: 14px; font-weight: 500;">更新内容：</p>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+                        ${changelogHtml}
+                    </ul>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">
+                    ℹ️ 更新过程中服务将短暂不可用，请稍候片刻。
+                </p>
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button class="btn btn-secondary" id="cancelUpdateBtn">稍后更新</button>
+                    <button class="btn btn-primary" id="confirmUpdateBtn">
+                        <span class="iconify" data-icon="mdi:download"></span> 立即更新
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+
+            const closeModal = () => {
+                overlay.remove();
+                modal.remove();
+            };
+
+            document.getElementById('cancelUpdateBtn').addEventListener('click', closeModal);
+            overlay.addEventListener('click', closeModal);
+
+            document.getElementById('confirmUpdateBtn').addEventListener('click', async () => {
+                closeModal();
+                await doUpdate(updateInfo.dlUrl);
+            });
+        }
+
+        // 执行更新
+        async function doUpdate(downloadUrl) {
+            const btn = document.getElementById('checkUpdateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> 更新中...';
+            
+            showToast('正在下载更新包...', 'info');
+            
+            try {
+                const response = await fetch('/api/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ downloadUrl })
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 0) {
+                    showToast(result.msg || '更新成功，服务正在重启...', 'success');
+                } else {
+                    showToast(result.msg || '更新失败', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="iconify btn-icon" data-icon="mdi:cloud-download-outline" style="font-size: 16px;"></span><span class="btn-text">检查更新</span>';
+                }
+            } catch (error) {
+                console.error('更新失败:', error);
+                showToast('更新失败', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<span class="iconify btn-icon" data-icon="mdi:cloud-download-outline" style="font-size: 16px;"></span><span class="btn-text">检查更新</span>';
+            }
+        }
+
+        document.getElementById('checkUpdateBtn').addEventListener('click', checkUpdate);
+        
+        // 页面加载时获取版本信息
+        loadVersionInfo();
