@@ -1575,8 +1575,8 @@ app.get('/api/weixin/login', authMiddleware, (req, res) => {
     };
 
     // 发送初始状态
-    sendEvent('status', { message: '正在启动微信登录...' });
-    sendEvent('output', { text: '$ openclaw channels login --channel openclaw-weixin\n\n' });
+    sendEvent('status', { code: 0, msg: '正在启动微信登录...' });
+    sendEvent('output', { code: 0, msg: '', data: { text: '$ openclaw channels login --channel openclaw-weixin\n\n' } });
 
     // 执行登录命令
     const child = spawn('openclaw', ['channels', 'login', '--channel', 'openclaw-weixin'], {
@@ -1590,23 +1590,23 @@ app.get('/api/weixin/login', authMiddleware, (req, res) => {
     child.stdout.on('data', (data) => {
         const output = data.toString();
         console.log('[微信登录] stdout:', output);
-        sendEvent('output', { text: output });
+        sendEvent('output', { code: 0, msg: '', data: { text: output } });
     });
 
     // 捕获错误输出
     child.stderr.on('data', (data) => {
         const output = data.toString();
         console.log('[微信登录] stderr:', output);
-        sendEvent('output', { text: output });
+        sendEvent('output', { code: 0, msg: '', data: { text: output } });
     });
 
     // 进程结束
     child.on('close', (code) => {
         console.log('[微信登录] 进程结束，退出码:', code);
         if (code === 0) {
-            sendEvent('complete', { success: true, message: '登录成功' });
+            sendEvent('complete', { code: 0, msg: '登录成功' });
         } else {
-            sendEvent('complete', { success: false, message: `登录失败，退出码: ${code}` });
+            sendEvent('complete', { code: 1000, msg: `登录失败，退出码: ${code}` });
         }
         res.end();
     });
@@ -1614,7 +1614,7 @@ app.get('/api/weixin/login', authMiddleware, (req, res) => {
     // 进程错误
     child.on('error', (error) => {
         console.error('[微信登录] 进程错误:', error);
-        sendEvent('error', { message: `启动失败: ${error.message}` });
+        sendEvent('error', { code: 1000, msg: `启动失败: ${error.message}` });
         res.end();
     });
 

@@ -1215,15 +1215,16 @@
 
             // 监听输出事件
             weixinEventSource.addEventListener('output', (e) => {
-                const data = JSON.parse(e.data);
-                appendWeixinOutput(data.text);
+                const result = JSON.parse(e.data);
+                const text = result.data?.text || '';
+                appendWeixinOutput(text);
                 
                 // 累积所有输出
-                allOutput += data.text;
+                allOutput += text;
                 
                 // 从累积的输出中提取最后一个二维码链接
                 const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s\]\n]+/g);
-                console.log('[微信登录] 输出内容:', data.text.substring(0, 100));
+                console.log('[微信登录] 输出内容:', text.substring(0, 100));
                 
                 if (qrcodeMatches && qrcodeMatches.length > 0) {
                     const newUrl = qrcodeMatches[qrcodeMatches.length - 1];  // 取最后一个
@@ -1241,13 +1242,13 @@
 
             // 监听状态事件
             weixinEventSource.addEventListener('status', (e) => {
-                const data = JSON.parse(e.data);
-                appendWeixinOutput(`[状态] ${data.message}\n`);
+                const result = JSON.parse(e.data);
+                appendWeixinOutput(`[状态] ${result.msg}\n`);
             });
 
             // 监听完成事件
             weixinEventSource.addEventListener('complete', (e) => {
-                const data = JSON.parse(e.data);
+                const result = JSON.parse(e.data);
                 weixinEventSource.close();
                 weixinEventSource = null;
 
@@ -1255,10 +1256,10 @@
                 stopBtn.style.display = 'none';
                 // 二维码区域保留
 
-                if (data.success) {
+                if (result.code === 0) {
                     loginStatus.textContent = '已绑定';
                     loginStatus.style.color = 'var(--success-color)';
-                    appendWeixinOutput('\n✅ 登录成功！\n');
+                    appendWeixinOutput(`\n✅ ${result.msg}\n`);
 
                     // 隐藏二维码和控制台区域
                     document.getElementById('weixinConsoleWrapper').style.display = 'none';
@@ -1280,7 +1281,7 @@
                 } else {
                     loginStatus.textContent = '登录失败，请重新扫码';
                     loginStatus.style.color = 'var(--danger-color)';
-                    appendWeixinOutput(`\n❌ ${data.message}\n`);
+                    appendWeixinOutput(`\n❌ ${result.msg}\n`);
                     // 登录失败时，如果已有二维码链接，继续显示二维码
                     if (currentQrcodeUrl) {
                         document.getElementById('weixinQrcodeLoading').style.display = 'none';
