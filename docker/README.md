@@ -8,7 +8,6 @@
 openclaw-easy/
 ├── server.js                    # Web 配置界面主程序
 ├── public/                       # 前端静态文件
-├── Dockerfile.integrated        # 整合版镜像构建文件（根目录）
 ├── docker/
 │   ├── Dockerfile.base              # 基础镜像构建文件
 │   ├── Dockerfile.version-template  # 版本镜像模板

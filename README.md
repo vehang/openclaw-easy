@@ -28,36 +28,30 @@ npm install
 npm start
 ```
 
-### 方式二：Docker 运行（独立模式）
+### 方式二：Docker 运行（整合版）
+
+> 详细构建说明见 [docker/README.md](docker/README.md)
 
 ```bash
-# 构建镜像
-docker build -f Dockerfile.standalone -t openclaw-easy .
+# 克隆仓库
+git clone -b root-version https://github.com/vehang/openclaw-easy.git
+cd openclaw-easy
+
+# 一键构建整合版镜像（包含 Gateway + Web 配置界面）
+./docker/build.sh integrated 2026.3.13
 
 # 运行容器
 docker run -d \
-  --name openclaw-easy \
+  --name openclaw \
   -p 18780:18780 \
-  -v ~/.openclaw:/root/.openclaw \
-  openclaw-easy
+  -p 18789:18789 \
+  -p 18790:18790 \
+  openclaw:2026.3.13-integrated
 ```
 
-### 方式三：Docker Compose
-
-**独立模式（仅配置管理服务）：**
-```bash
-docker-compose --profile standalone up -d
-```
-
-**整合模式（Gateway + 配置管理）：**
-```bash
-docker-compose --profile integrated up -d
-```
-
-> **提示**：容器以 root 运行，挂载目录无需手动设置权限。
->   ```bash
->   sudo chown -R 1000:1000 ./data/openclaw-config
->   ```
+**访问地址：**
+- Web 配置界面: http://localhost:18780
+- Gateway WebSocket: ws://localhost:18789
 
 ## 访问地址
 
