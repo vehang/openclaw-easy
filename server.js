@@ -1227,20 +1227,10 @@ app.post('/api/config', authMiddleware, async (req, res) => {
         const openclawConfig = formToConfig(formConfig);
         saveConfig(openclawConfig);
 
-        // 自动重启 Gateway 服务
-        let restartResult = null;
-        try {
-            restartResult = await restartGateway();
-        } catch (restartError) {
-            console.error('自动重启失败:', restartError);
-            // 重启失败不影响配置保存成功的响应
-            restartResult = { success: false, message: restartError.message };
-        }
 
         res.json({
             success: true,
-            message: '配置保存成功',
-            restart: restartResult
+            message: '配置保存成功'
         });
     } catch (error) {
         console.error('保存配置失败:', error);
