@@ -2039,110 +2039,238 @@ async function performAutoUpdateCheck() {
 /**
  * 执行更新
  */
+/**
+ * 执行更新（改进版）
+ * 
+ * 改进内容：
+ * 1. 完整备份所有关键文件
+ * 2. 清理已删除的旧依赖
+ * 3. 自动回滚机制
+ * 4. 清理旧备份目录
+ */
 async function performUpdate(downloadUrl) {
     if (!downloadUrl) {
         console.error('[自动更新] 下载地址不存在');
-        return;
+        return { success: false, error: '下载地址不存在' };
     }
     
+    const updateId = Date.now();
+    const appDir = __dirname;
+    const updateDir = path.join('/tmp', `openclaw-easy-update-${updateId}`);
+    const backupDir = path.join('/tmp', `openclaw-easy-backup-${updateId}`);
+    
     try {
-        console.log('[自动更新] 下载地址:', downloadUrl);
+        console.log('[自动更新] ========== 开始更新 ==========');
+        console.log('[自动更新] 更新ID:', updateId);
         
-        // 创建目录
-        if (!fs.existsSync(UPDATE_DIR)) {
-            fs.mkdirSync(UPDATE_DIR, { recursive: true });
-        }
-        if (!fs.existsSync(BACKUP_DIR)) {
-            fs.mkdirSync(BACKUP_DIR, { recursive: true });
-        }
+        // ==================== 步骤1: 创建目录 ====================
+        console.log('[自动更新] [1/8] 创建临时目录...');
+        fs.mkdirSync(updateDir, { recursive: true });
+        fs.mkdirSync(backupDir, { recursive: true });
         
-        const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
+        // ==================== 步骤2: 完整备份 ====================
+        console.log('[自动更新] [2/8] 备份当前版本...');
         
-        // 下载
-        console.log('[自动更新] 下载更新包...');
-        const downloadResponse = await fetch(downloadUrl);
-        if (!downloadResponse.ok) {
-            throw new Error(`下载失败: ${downloadResponse.status}`);
-        }
-        const buffer = await downloadResponse.buffer();
-        fs.writeFileSync(tarFile, buffer);
-        console.log('[自动更新] 下载完成');
+        // 需要备份的文件和目录
+        const itemsToBackup = [
+            'server.js',
+            'version.json',
+            'package.json',
+            'package-lock.json',
+            'public'
+        ];
         
-        // 备份
-        const appDir = __dirname;
-        const timestamp = Date.now();
-        const backupPath = path.join(BACKUP_DIR, `backup-${timestamp}`);
-        fs.mkdirSync(backupPath, { recursive: true });
-        
-        const filesToBackup = ['server.js', 'version.json', 'package.json', 'public'];
-        for (const file of filesToBackup) {
-            const src = path.join(appDir, file);
-            if (fs.existsSync(src)) {
-                if (fs.statSync(src).isDirectory()) {
-                    fs.cpSync(src, path.join(backupPath, file), { recursive: true });
+        for (const item of itemsToBackup) {
+            const srcPath = path.join(appDir, item);
+            if (fs.existsSync(srcPath)) {
+                const destPath = path.join(backupDir, item);
+                if (fs.statSync(srcPath).isDirectory()) {
+                    fs.cpSync(srcPath, destPath, { recursive: true });
                 } else {
-                    fs.copyFileSync(src, path.join(backupPath, file));
+                    fs.copyFileSync(srcPath, destPath);
                 }
             }
         }
-        console.log('[自动更新] 备份完成');
         
-        // 解压
-        const extractDir = path.join(UPDATE_DIR, 'extracted');
-        if (fs.existsSync(extractDir)) {
-            fs.rmSync(extractDir, { recursive: true });
+        console.log('[自动更新] 备份完成:', backupDir);
+        
+        // ==================== 步骤3: 下载更新包 ====================
+        console.log('[自动更新] [3/8] 下载更新包...');
+        const tarFile = path.join(updateDir, 'update.tar.gz');
+        
+        const downloadResponse = await fetch(downloadUrl);
+        if (!downloadResponse.ok) {
+            throw new Error(`下载失败: HTTP ${downloadResponse.status}`);
         }
+        const buffer = await downloadResponse.buffer();
+        fs.writeFileSync(tarFile, buffer);
+        console.log('[自动更新] 下载完成, 大小:', (buffer.length / 1024).toFixed(2), 'KB');
+        
+        // ==================== 步骤4: 解压更新包 ====================
+        console.log('[自动更新] [4/8] 解压更新包...');
+        const extractDir = path.join(updateDir, 'extracted');
         fs.mkdirSync(extractDir, { recursive: true });
         
         const { execSync } = require('child_process');
         execSync(`tar -xzf "${tarFile}" -C "${extractDir}"`, { stdio: 'pipe' });
-        console.log('[自动更新] 解压完成');
         
         // 确定源目录
         let sourceDir = extractDir;
-        const extractedFiles = fs.readdirSync(extractDir);
-        if (extractedFiles.length === 1 && fs.statSync(path.join(extractDir, extractedFiles[0])).isDirectory()) {
-            sourceDir = path.join(extractDir, extractedFiles[0]);
+        const extractedItems = fs.readdirSync(extractDir);
+        if (extractedItems.length === 1 && fs.statSync(path.join(extractDir, extractedItems[0])).isDirectory()) {
+            sourceDir = path.join(extractDir, extractedItems[0]);
+        }
+        console.log('[自动更新] 解压完成');
+        
+        // ==================== 步骤5: 增量更新文件 ====================
+        console.log('[自动更新] [5/8] 更新文件...');
+        
+        // 读取新版本的 package.json
+        const newPackagePath = path.join(sourceDir, 'package.json');
+        let newPackage = {};
+        if (fs.existsSync(newPackagePath)) {
+            newPackage = JSON.parse(fs.readFileSync(newPackagePath, 'utf8'));
         }
         
-        // 复制文件
-        const newFiles = fs.readdirSync(sourceDir);
-        for (const file of newFiles) {
-            if (file === 'node_modules') continue;
+        // 需要排除的项目
+        const excludeItems = ['node_modules', 'tmp', '.git'];
+        
+        const newItems = fs.readdirSync(sourceDir);
+        let updatedFiles = 0;
+        let updatedDirs = 0;
+        
+        for (const item of newItems) {
+            if (excludeItems.includes(item)) continue;
             
-            const srcPath = path.join(sourceDir, file);
-            const destPath = path.join(appDir, file);
+            const srcPath = path.join(sourceDir, item);
+            const destPath = path.join(appDir, item);
             
-            if (fs.statSync(srcPath).isDirectory()) {
-                if (fs.existsSync(destPath)) {
-                    fs.rmSync(destPath, { recursive: true });
+            try {
+                if (fs.statSync(srcPath).isDirectory()) {
+                    if (fs.existsSync(destPath)) {
+                        fs.rmSync(destPath, { recursive: true });
+                    }
+                    fs.cpSync(srcPath, destPath, { recursive: true });
+                    updatedDirs++;
+                } else {
+                    fs.copyFileSync(srcPath, destPath);
+                    updatedFiles++;
                 }
-                fs.cpSync(srcPath, destPath, { recursive: true });
-            } else {
-                fs.copyFileSync(srcPath, destPath);
+            } catch (itemError) {
+                console.warn(`[自动更新] 警告: 更新 ${item} 失败:`, itemError.message);
             }
         }
-        console.log('[自动更新] 文件更新完成');
         
-        // 更新依赖
-        try {
-            execSync('npm install --production', { cwd: appDir, stdio: 'pipe', timeout: 120000 });
-            console.log('[自动更新] 依赖更新完成');
-        } catch (npmError) {
-            console.warn('[自动更新] npm install 警告:', npmError.message);
+        console.log(`[自动更新] 文件更新完成: ${updatedFiles} 个文件, ${updatedDirs} 个目录`);
+        
+        // ==================== 步骤6: 更新依赖 ====================
+        console.log('[自动更新] [6/8] 更新依赖...');
+        
+        const newDeps = newPackage.dependencies || {};
+        
+        if (Object.keys(newDeps).length > 0) {
+            try {
+                // 清理已删除的依赖
+                const oldPackagePath = path.join(backupDir, 'package.json');
+                if (fs.existsSync(oldPackagePath)) {
+                    const oldPackage = JSON.parse(fs.readFileSync(oldPackagePath, 'utf8'));
+                    const oldDeps = oldPackage.dependencies || {};
+                    
+                    const removedDeps = Object.keys(oldDeps).filter(dep => !newDeps[dep]);
+                    
+                    if (removedDeps.length > 0) {
+                        console.log('[自动更新] 清理已删除的依赖:', removedDeps.join(', '));
+                        const nodeModulesPath = path.join(appDir, 'node_modules');
+                        for (const dep of removedDeps) {
+                            const depPath = path.join(nodeModulesPath, dep);
+                            if (fs.existsSync(depPath)) {
+                                fs.rmSync(depPath, { recursive: true });
+                            }
+                        }
+                    }
+                }
+                
+                // 安装依赖
+                console.log('[自动更新] 执行 npm install...');
+                execSync('npm install --production --no-audit --no-fund', {
+                    cwd: appDir,
+                    stdio: 'pipe',
+                    timeout: 180000
+                });
+                console.log('[自动更新] 依赖更新完成');
+                
+            } catch (npmError) {
+                console.warn('[自动更新] 警告: npm install 失败:', npmError.message);
+            }
         }
         
-        // 清理
-        fs.rmSync(UPDATE_DIR, { recursive: true, force: true });
+        // ==================== 步骤7: 清理临时文件 ====================
+        console.log('[自动更新] [7/8] 清理临时文件...');
+        fs.rmSync(updateDir, { recursive: true, force: true });
+        
+        // 清理旧备份（保留最近3个）
+        const tmpDir = '/tmp';
+        const allBackups = fs.readdirSync(tmpDir)
+            .filter(name => name.startsWith('openclaw-easy-backup-'))
+            .map(name => ({
+                name,
+                path: path.join(tmpDir, name),
+                time: parseInt(name.replace('openclaw-easy-backup-', '')) || 0
+            }))
+            .sort((a, b) => b.time - a.time);
+        
+        for (let i = 3; i < allBackups.length; i++) {
+            fs.rmSync(allBackups[i].path, { recursive: true, force: true });
+        }
         console.log('[自动更新] 清理完成');
         
-        // 重启
-        console.log('[自动更新] 准备重启服务...');
+        // ==================== 步骤8: 重启服务 ====================
+        console.log('[自动更新] [8/8] 重启服务...');
         await restartGateway();
         
+        console.log('[自动更新] ========== 更新完成 ==========');
+        
+        return { success: true, backupPath: backupDir };
+        
     } catch (error) {
-        console.error('[自动更新] 更新失败:', error);
+        console.error('[自动更新] 更新失败:', error.message);
+        
+        // ==================== 自动回滚 ====================
+        console.log('[自动更新] 开始自动回滚...');
+        
+        try {
+            if (fs.existsSync(backupDir)) {
+                const backupItems = fs.readdirSync(backupDir);
+                for (const item of backupItems) {
+                    const srcPath = path.join(backupDir, item);
+                    const destPath = path.join(appDir, item);
+                    
+                    if (fs.statSync(srcPath).isDirectory()) {
+                        if (fs.existsSync(destPath)) {
+                            fs.rmSync(destPath, { recursive: true });
+                        }
+                        fs.cpSync(srcPath, destPath, { recursive: true });
+                    } else {
+                        fs.copyFileSync(srcPath, destPath);
+                    }
+                }
+                console.log('[自动更新] 回滚完成');
+            }
+        } catch (rollbackError) {
+            console.error('[自动更新] 回滚失败:', rollbackError.message);
+        }
+        
+        // 清理临时文件
+        try {
+            if (fs.existsSync(updateDir)) {
+                fs.rmSync(updateDir, { recursive: true, force: true });
+            }
+        } catch (e) {}
+        
+        return { success: false, error: error.message };
     }
+}
+
 }
 
 /**
