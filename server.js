@@ -1466,6 +1466,43 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
 });
 
 /**
+ * 修复 OpenClaw 运行环境
+ * POST /api/fix
+ * 无需登录验证，供外部调用
+ */
+app.post('/api/fix', async (req, res) => {
+    try {
+        console.log('执行 openclaw doctor --fix...');
+        
+        const { execSync } = require('child_process');
+        const output = execSync('openclaw doctor --fix', {
+            encoding: 'utf8',
+            timeout: 120000  // 2分钟超时
+        });
+        
+        console.log('修复输出:', output);
+        
+        res.json({
+            success: true,
+            message: '修复完成',
+            output: output
+        });
+    } catch (error) {
+        console.error('修复失败:', error);
+        
+        // 即使有错误，也可能包含有用的输出信息
+        const output = error.stdout || error.stderr || '';
+        
+        res.json({
+            success: false,
+            message: '修复执行完成（有警告）',
+            error: error.message,
+            output: output
+        });
+    }
+});
+
+/**
  * 测试 AI 连接
  * POST /api/test/ai
  */

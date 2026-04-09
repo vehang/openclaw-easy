@@ -548,6 +548,30 @@ select.form-control {
     box-shadow: var(--shadow-primary-lg);
 }
 
+/* 警告按钮 - 渐变效果 */
+.btn-warning {
+    background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2), 0 4px 12px rgba(245, 158, 11, 0.12);
+}
+
+.btn-warning:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.25), 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+/* 信息按钮 - 渐变效果 */
+.btn-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+
+.btn-info:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25), 0 8px 24px rgba(59, 130, 246, 0.15);
+}
+
 /* 轮廓按钮 */
 .btn-outline {
     background: transparent;
