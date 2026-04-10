@@ -1096,6 +1096,7 @@ app.post('/api/setup/password', async (req, res) => {
             sameSite: 'strict'
         });
 
+        console.log('[操作] 设置密码成功');
         res.json({ code: 0, msg: '密码设置成功', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('设置密码失败:', error);
@@ -1131,6 +1132,7 @@ app.post('/api/login', async (req, res) => {
             sameSite: 'strict'
         });
 
+        console.log('[操作] 用户登录成功');
         res.json({ code: 0, msg: '登录成功', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('登录失败:', error);
@@ -1148,6 +1150,7 @@ app.post('/api/logout', (req, res) => {
         sessions.delete(token);
     }
     res.clearCookie('session_token');
+    console.log('[操作] 用户退出登录');
     res.json({ code: 0, msg: '已退出登录', currentTime: Math.floor(Date.now() / 1000) });
 });
 
@@ -1558,8 +1561,14 @@ app.get('/api/config/simple', (req, res) => {
  * POST /api/gateway/restart
  */
 app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
+    console.log('[操作] 开始重启网关...');
     try {
         const result = await restartGateway();
+        if (result.success) {
+            console.log('[操作] 网关重启成功');
+        } else {
+            console.log('[操作] 网关重启失败:', result.error);
+        }
         res.json(result);
     } catch (error) {
         console.error('重启服务失败:', error);
@@ -1573,6 +1582,7 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
  * 无需登录验证
  */
 app.post('/api/fix', async (req, res) => {
+    console.log('[操作] 修复任务已触发');
     // 立即返回响应
     res.json({
         code: 0,
