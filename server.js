@@ -1538,17 +1538,50 @@ app.post('/api/config/simple', async (req, res) => {
  * 返回之前通过 POST /api/config/simple 保存的参数缓存
  * 无需鉴权
  */
+/**
+ * 查询缓存的 Simple 配置参数
+ * GET /api/config/simple?barCode=xxx
+ * 
+ * 参数：
+ * - barCode: 设备标识（必传），用于验证设备绑定
+ * 
+ * 返回之前通过 POST /api/config/simple 保存的参数缓存
+ */
 app.get('/api/config/simple', (req, res) => {
     try {
-        if (!fs.existsSync(SIMPLE_CACHE_FILE)) {
+        const { barCode } = req.query;
+        
+        // barCode 必传
+        if (!barCode || barCode.trim() === '') {
             return res.json({
-                code: 1001,
-                msg: '暂无缓存配置',
+                code: 1002,
+                msg: 'barCode参数必传',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
+        
+        // 检查缓存文件是否存在
+        if (!fs.existsSync(SIMPLE_CACHE_FILE)) {
+            return res.json({
+                code: 1001,
+                msg: '设备未配置',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+        
+        // 读取缓存数据
         const cachedData = JSON.parse(fs.readFileSync(SIMPLE_CACHE_FILE, "utf8"));
-
+        
+        // 验证 barCode 是否匹配
+        if (cachedData.barCode !== barCode.trim()) {
+            return res.json({
+                code: 1003,
+                msg: '设备未配置',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+        
+        // barCode 匹配，返回完整配置数据
         res.json({
             code: 0,
             msg: '成功',
