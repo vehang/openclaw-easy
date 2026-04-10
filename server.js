@@ -1584,46 +1584,45 @@ app.post('/api/gateway/restart', authMiddleware, async (req, res) => {
 });
 
 /**
- * 修复 OpenClaw 运行环境
+ * 修复 OpenClaw 运行环境（异步执行）
  * POST /api/fix
- * 无需登录验证，供外部调用
- * 
- * 返回格式：
- * - code: 0 成功，1000 执行异常
- * - msg: 结果描述
- * - currentTime: 当前时间戳
- *  - data: 命令输出内容
+ * 无需登录验证
  */
 app.post('/api/fix', async (req, res) => {
-    try {
-        console.log('执行 openclaw doctor --fix...');
-        
-        const { execSync } = require('child_process');
-        const output = execSync('openclaw doctor --fix', {
-            encoding: 'utf8',
-            timeout: 120000  // 2分钟超时
-        });
-        
-        console.log('修复输出:', output);
-        
-        res.json({
-            code: 0,
-            msg: '修复完成',
-            currentTime: Math.floor(Date.now() / 1000)
-        });
-    } catch (error) {
-        console.error('修复失败:', error);
-        
-        // 即使有错误，也可能包含有用的输出信息
-        const output = error.stdout || error.stderr || '';
-        
-        res.json({
-            code: 1000,
-            msg: error.message || '修复执行失败',
-            currentTime: Math.floor(Date.now() / 1000),
-            data: output
-        });
-    }
+    // 立即返回响应
+    res.json({
+        code: 0,
+        msg: '修复任务已启动',
+        currentTime: Math.floor(Date.now() / 1000)
+    });
+    
+    // 后台异步执行
+    setImmediate(async () => {
+        try {
+            console.log('[修复] 开始执行 openclaw doctor --fix...');
+            const { spawn } = require('child_process');
+            
+            const child = spawn('openclaw', ['doctor', '--fix'], { shell: true });
+            
+            child.stdout.on('data', (data) => {
+                console.log('[修复]', data.toString().trim());
+            });
+            
+            child.stderr.on('data', (data) => {
+                console.log('[修复]', data.toString().trim());
+            });
+            
+            child.on('close', (code) => {
+                console.log('[修复] 执行完成，退出码:', code);
+            });
+            
+            child.on('error', (err) => {
+                console.error('[修复] 执行错误:', err);
+            });
+        } catch (error) {
+            console.error('[修复] 启动失败:', error);
+        }
+    });
 });
 
 /**
@@ -2172,7 +2171,6 @@ async function performUpdate(downloadUrl) {
     }
 }
 
-}
 
 /**
  * 启动自动更新任务
