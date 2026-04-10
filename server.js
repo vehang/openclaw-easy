@@ -79,47 +79,62 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // HTML 文件访问控制（必须在静态文件服务之前）
+// ========== 全局中间件 - 版本标识: V20260410-1700 ==========
 app.use((req, res, next) => {
+    const startTime = Date.now();
+    const requestId = Math.random().toString(36).substr(2, 8);
+    
     // 只拦截 HTML 文件和根路径
     const isHtmlRequest = req.path.endsWith('.html') || req.path === '/' || req.path === '';
     
+    console.log('[中间件-V20260410-1700] [' + requestId + '] 请求开始:', req.path, 'isHtml:', isHtmlRequest);
+    
     if (!isHtmlRequest) {
-        return next(); // 非HTML请求，继续到静态文件服务
+        console.log('[中间件] [' + requestId + '] 非HTML请求，放行');
+        return next();
     }
     
-    console.log('[中间件] 路径:', req.path, '密码已设置:', isPasswordSet());
+    const passwordSet = isPasswordSet();
+    const hasSession = !!req.cookies.session_token && validateSession(req.cookies.session_token);
+    
+    console.log('[中间件] [' + requestId + '] 状态检查 - 路径:', req.path, '密码已设置:', passwordSet, '有Session:', hasSession);
     
     // ========== login.html 逻辑 ==========
-    // 密码未设置→跳转setup，密码已设置→停留
     if (req.path === '/login.html') {
-        if (!isPasswordSet()) {
+        console.log('[中间件] [' + requestId + '] 进入 login.html 处理分支');
+        if (!passwordSet) {
+            console.log('[中间件] [' + requestId + '] 密码未设置，重定向到 setup.html');
             return res.set('Cache-Control', 'no-store').redirect('/setup.html');
         }
-        return next(); // 密码已设置，停留在login页面
+        console.log('[中间件] [' + requestId + '] 密码已设置，放行 login.html');
+        return next();
     }
     
     // ========== setup.html 逻辑 ==========
-    // 密码已设置→跳转login，密码未设置→停留
     if (req.path === '/setup.html') {
-        if (isPasswordSet()) {
+        console.log('[中间件] [' + requestId + '] 进入 setup.html 处理分支');
+        if (passwordSet) {
+            console.log('[中间件] [' + requestId + '] 密码已设置，重定向到 login.html');
             return res.set('Cache-Control', 'no-store').redirect('/login.html');
         }
-        return next(); // 密码未设置，停留在setup页面
+        console.log('[中间件] [' + requestId + '] 密码未设置，放行 setup.html');
+        return next();
     }
     
     // ========== 其他页面逻辑 ==========
-    // 密码未设置→跳转setup
-    if (!isPasswordSet()) {
+    console.log('[中间件] [' + requestId + '] 进入其他页面处理分支');
+    
+    if (!passwordSet) {
+        console.log('[中间件] [' + requestId + '] 密码未设置，重定向到 setup.html');
         return res.set('Cache-Control', 'no-store').redirect('/setup.html');
     }
     
-    // 检查是否已登录
-    const token = req.cookies.session_token;
-    if (validateSession(token)) {
-        return next(); // 已登录，继续
+    if (hasSession) {
+        console.log('[中间件] [' + requestId + '] 有Session，放行');
+        return next();
     }
     
-    // 已设置密码但未登录→跳转login
+    console.log('[中间件] [' + requestId + '] 无Session，重定向到 login.html');
     res.set('Cache-Control', 'no-store').redirect('/login.html');
 });
 
