@@ -2044,42 +2044,6 @@ app.post('/api/update', async (req, res) => {
     }
 });
 
-// ==================== 页面路由 ====================
-
-// 首页重定向
-app.get('/', authMiddleware, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ==================== 错误处理 ====================
-
-// 404 处理
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
-});
-
-// 全局错误处理
-app.use((err, req, res, next) => {
-    console.error('服务器错误:', err);
-    res.json({ code: 1000, msg: '服务器内部错误', currentTime: Math.floor(Date.now() / 1000) });
-});
-
-// ==================== 启动服务器 ====================
-
-app.listen(PORT, () => {
-    console.log('');
-    console.log('╔════════════════════════════════════════════╗');
-    console.log('║       OpenClaw Easy 配置管理系统           ║');
-    console.log('╠════════════════════════════════════════════╣');
-    console.log(`║  服务地址: http://localhost:${PORT}          ║`);
-    console.log(`║  配置文件: ${CONFIG_FILE.padEnd(24)}║`);
-    console.log('╚════════════════════════════════════════════╝');
-    console.log('');
-});
-
-// ==================== 自动更新任务 ====================
-
-// 自动更新配置
 const AUTO_UPDATE_CONFIG = {
     enabled: process.env.AUTO_UPDATE !== 'false',  // 默认启用，设置 AUTO_UPDATE=false 可禁用
     checkOnStart: process.env.AUTO_UPDATE_ON_START !== 'false',  // 启动时检查
