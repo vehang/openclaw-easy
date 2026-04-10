@@ -7,50 +7,13 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
     <style>
-        .password-requirements {
-            margin-top: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        .password-requirements li {
-            margin: 4px 0;
-            padding-left: 20px;
-            position: relative;
-            list-style: none;
-        }
-        .password-requirements li::before {
-            content: '○';
-            position: absolute;
-            left: 0;
-            color: var(--text-muted);
-        }
-        .password-requirements li.valid {
-            color: #16a34a;
-        }
-        .password-requirements li.valid::before {
-            content: '●';
-            color: #16a34a;
-        }
-        .password-requirements li.invalid {
-            color: var(--primary-color);
-        }
-        .password-requirements li.invalid::before {
-            content: '○';
-            color: var(--primary-color);
-        }
-        .strength-bar {
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            margin-top: 8px;
-            overflow: hidden;
-        }
-        .strength-bar-fill {
-            height: 100%;
-            width: 0;
-            transition: width 0.3s, background 0.3s;
-            border-radius: 2px;
-        }
+        .password-requirements { margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
+        .password-requirements li { margin: 4px 0; padding-left: 20px; position: relative; list-style: none; }
+        .password-requirements li::before { content: '○'; position: absolute; left: 0; color: var(--text-muted); }
+        .password-requirements li.valid { color: #16a34a; }
+        .password-requirements li.valid::before { content: '●'; color: #16a34a; }
+        .strength-bar { height: 4px; background: var(--border-color); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .strength-bar-fill { height: 100%; width: 0; transition: width 0.3s, background 0.3s; border-radius: 2px; }
         .strength-bar-fill.weak { width: 25%; background: #ef4444; }
         .strength-bar-fill.fair { width: 50%; background: #f97316; }
         .strength-bar-fill.good { width: 75%; background: #eab308; }
@@ -72,14 +35,10 @@
                 <div class="card-body">
                     <form id="setupForm">
                         <div class="form-group">
-                            <label class="form-label">
-                                设置管理密码 <span class="required">*</span>
-                            </label>
+                            <label class="form-label">设置管理密码 <span class="required">*</span></label>
                             <input type="password" class="form-control" id="password"
                                    placeholder="请输入密码" required autofocus>
-                            <div class="strength-bar">
-                                <div class="strength-bar-fill" id="strengthBar"></div>
-                            </div>
+                            <div class="strength-bar"><div class="strength-bar-fill" id="strengthBar"></div></div>
                             <div id="passwordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
                                 <div style="display: flex; gap: 16px;">
                                     <span id="req-length" style="flex: 1;">至少 8 个字符</span>
@@ -91,33 +50,80 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="form-group">
-                            <label class="form-label">
-                                确认密码 <span class="required">*</span>
-                            </label>
+                            <label class="form-label">确认密码 <span class="required">*</span></label>
                             <input type="password" class="form-control" id="confirmPassword"
                                    placeholder="请再次输入密码" required>
                         </div>
-
                         <button type="submit" class="btn btn-primary btn-block btn-lg" id="setupBtn">
                             完成设置
                         </button>
                     </form>
                 </div>
             </div>
-
             <p style="text-align: center; margin-top: 16px; color: var(--text-secondary); font-size: 13px;">
                 设置完成后将自动进入配置管理界面
             </p>
         </div>
     </div>
 
-    <!-- Toast 容器 -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="/js/app.js"></script>
     <script>
+        /**
+         * Token 验证（自动登录）
+         * 检测 URL 参数中是否有 token 和 barCode
+         * 如果有，调用验证接口实现免登录
+         */
+        async function verifyTokenAndLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const barCode = urlParams.get('barCode');
+            
+            if (!token || !barCode) {
+                return false;
+            }
+            
+            console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
+            showToast('正在验证身份...', 'info');
+            
+            try {
+                const response = await fetch('/api/verify-token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, barCode })
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 0) {
+                    showToast('身份验证成功', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                    return true;
+                } else {
+                    showToast(data.msg || '身份验证失败', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('[Token验证] 请求失败:', error);
+                showToast('验证请求失败', 'error');
+                return false;
+            }
+        }
+        
+        /**
+         * 页面加载时先尝试 Token 验证
+         */
+        (async function init() {
+            const verified = await verifyTokenAndLogin();
+            if (!verified) {
+                document.getElementById('password').focus();
+            }
+        })();
+        
         /**
          * 密码强度检测
          */
@@ -128,8 +134,7 @@
                 upper: /[A-Z]/.test(password),
                 number: /[0-9]/.test(password)
             };
-
-            // 更新要求列表状态
+            
             const updateReq = (id, valid) => {
                 const el = document.getElementById(id);
                 el.style.color = password.length === 0 ? '' : (valid ? '#16a34a' : '#ef4444');
@@ -138,34 +143,26 @@
             updateReq('req-lower', checks.lower);
             updateReq('req-upper', checks.upper);
             updateReq('req-number', checks.number);
-
-            // 计算强度
+            
             const score = Object.values(checks).filter(Boolean).length;
             const strengthBar = document.getElementById('strengthBar');
-
+            
             strengthBar.className = 'strength-bar-fill';
-            if (password.length === 0) {
-                strengthBar.style.width = '0';
-            } else if (score === 1) {
-                strengthBar.classList.add('weak');
-            } else if (score === 2) {
-                strengthBar.classList.add('fair');
-            } else if (score === 3) {
-                strengthBar.classList.add('good');
-            } else if (score === 4) {
-                strengthBar.classList.add('strong');
-            }
-
+            if (password.length === 0) { strengthBar.style.width = '0'; }
+            else if (score === 1) { strengthBar.classList.add('weak'); }
+            else if (score === 2) { strengthBar.classList.add('fair'); }
+            else if (score === 3) { strengthBar.classList.add('good'); }
+            else if (score === 4) { strengthBar.classList.add('strong'); }
+            
             return checks;
         }
-
-        // 监听密码输入
+        
         document.getElementById('password').addEventListener('input', (e) => {
             checkPasswordStrength(e.target.value);
         });
-
+        
         /**
-         * 初始化设置页面逻辑
+         * 设置密码表单提交
          */
         document.getElementById('setupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -174,7 +171,6 @@
             const confirmPassword = document.getElementById('confirmPassword').value;
             const setupBtn = document.getElementById('setupBtn');
 
-            // 验证密码强度
             const checks = checkPasswordStrength(password);
             const allValid = Object.values(checks).every(Boolean);
 
@@ -188,7 +184,6 @@
                 return;
             }
 
-            // 显示加载状态
             setupBtn.disabled = true;
             setupBtn.innerHTML = '<span class="loading"></span> 设置中...';
 
@@ -203,7 +198,6 @@
 
                 if (response.ok && data.code === 0) {
                     showToast(data.msg || '密码设置成功', 'success');
-                    // 跳转到首页
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 500);

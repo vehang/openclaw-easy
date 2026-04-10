@@ -1152,6 +1152,105 @@ app.post('/api/logout', (req, res) => {
     res.clearCookie('session_token');
     console.log('[操作] 用户退出登录');
     res.json({ code: 0, msg: '已退出登录', currentTime: Math.floor(Date.now() / 1000) });
+/**
+ * 通过 token 验证用户身份（自动登录）
+ * POST /api/verify-token
+ * 
+ * 参数：
+ * - token: 授权 token
+ * - barCode: 设备标识
+ * 
+ * 调用远程验证接口验证用户身份
+ * 验证成功后创建 session，实现免登录
+ */
+app.post('/api/verify-token', async (req, res) => {
+    try {
+        const { token, barCode } = req.body;
+        
+        // 参数校验
+        if (!token || token.trim() === '') {
+            return res.json({
+                code: 1002,
+                msg: 'token参数必传',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+        
+        if (!barCode || barCode.trim() === '') {
+            return res.json({
+                code: 1002,
+                msg: 'barCode参数必传',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+        
+        console.log('[Token验证] 开始验证:', { token: token.substring(0, 10) + '...', barCode });
+        
+        // 调用远程验证接口
+        const verifyUrl = 'https://api.yun.tilldream.com/api/im/openClaw/verifyByAdmin';
+        
+        const response = await fetch(verifyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: token.trim(),
+                barCode: barCode.trim()
+            })
+        });
+        
+        const result = await response.json();
+        
+        console.log('[Token验证] 验证结果:', result);
+        
+        // 验证成功
+        if (result.code === 0 || result.success) {
+            // 创建 session
+            const sessionId = generateSessionId();
+            sessions.set(sessionId, {
+                createdAt: Date.now(),
+                verifiedByToken: true,
+                barCode: barCode.trim()
+            });
+            
+            // 设置 cookie
+            res.cookie('session_token', sessionId, {
+                httpOnly: true,
+                maxAge: SESSION_EXPIRE_TIME
+            });
+            
+            console.log('[Token验证] 验证成功，已创建 session:', sessionId);
+            
+            return res.json({
+                code: 0,
+                msg: '验证成功',
+                currentTime: Math.floor(Date.now() / 1000),
+                data: {
+                    verified: true,
+                    sessionCreated: true
+                }
+            });
+        }
+        
+        // 验证失败
+        console.log('[Token验证] 验证失败:', result.msg || result.message);
+        
+        return res.json({
+            code: 1003,
+            msg: result.msg || result.message || '验证失败',
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+        
+    } catch (error) {
+        console.error('[Token验证] 请求失败:', error);
+        return res.json({
+            code: 1000,
+            msg: '验证请求失败: ' + error.message,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    }
+});
+
+
 });
 
 /**
