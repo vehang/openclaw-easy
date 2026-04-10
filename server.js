@@ -93,7 +93,7 @@ app.use((req, res, next) => {
     // 密码未设置→跳转setup，密码已设置→停留
     if (req.path === '/login.html') {
         if (!isPasswordSet()) {
-            return res.redirect('/setup.html');
+            return res.set('Cache-Control', 'no-store').redirect('/setup.html');
         }
         return next(); // 密码已设置，停留在login页面
     }
@@ -102,7 +102,7 @@ app.use((req, res, next) => {
     // 密码已设置→跳转login，密码未设置→停留
     if (req.path === '/setup.html') {
         if (isPasswordSet()) {
-            return res.redirect('/login.html');
+            return res.set('Cache-Control', 'no-store').redirect('/login.html');
         }
         return next(); // 密码未设置，停留在setup页面
     }
@@ -110,7 +110,7 @@ app.use((req, res, next) => {
     // ========== 其他页面逻辑 ==========
     // 密码未设置→跳转setup
     if (!isPasswordSet()) {
-        return res.redirect('/setup.html');
+        return res.set('Cache-Control', 'no-store').redirect('/setup.html');
     }
     
     // 检查是否已登录
@@ -120,7 +120,7 @@ app.use((req, res, next) => {
     }
     
     // 已设置密码但未登录→跳转login
-    res.redirect('/login.html');
+    res.set('Cache-Control', 'no-store').redirect('/login.html');
 });
 
 // 静态文件服务
