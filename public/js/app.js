@@ -114,38 +114,5 @@ function formatDateTime(date, format = 'YYYY-MM-DD HH:mm:ss') {
         .replace('ss', seconds);
 }
 
-/**
- * 页面初始化时检查认证状态
- * （用于 setup.html 和 login.html）
- */
-async function checkAuthStatus() {
-    try {
-        const response = await fetch('/api/status');
-        const status = await response.json();
-
-        if (status.authenticated) {
-            // 已登录，跳转到首页
-            window.location.href = '/';
-            return;
-        }
-
-        if (status.passwordSet && window.location.pathname === '/setup.html') {
-            // 密码已设置，但访问的是设置页面，跳转到登录
-            window.location.href = '/login.html';
-            return;
-        }
-
-        if (!status.passwordSet && window.location.pathname === '/login.html') {
-            // 密码未设置，但访问的是登录页面，跳转到设置
-            window.location.href = '/setup.html';
-            return;
-        }
-    } catch (error) {
-        console.error('检查认证状态失败:', error);
-    }
-}
-
-// 在设置和登录页面自动检查状态
-if (window.location.pathname === '/setup.html' || window.location.pathname === '/login.html') {
-    checkAuthStatus();
-}
+// 注意：页面重定向由后端中间件统一处理
+// 前端不再自动检查状态，避免与后端冲突导致死循环
