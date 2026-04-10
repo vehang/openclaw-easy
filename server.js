@@ -33,6 +33,11 @@ const SIMPLE_CACHE_FILE = path.join(OPENCLAW_DIR, '.simple-config.json');
 // Session 存储（内存中）
 const sessions = new Map();
 
+// ==================== 微信登录任务管理 ====================
+// 全局变量：控制微信登录进程（SSE 和 QR API 共享）
+let currentWeixinTask = null;  // { taskId, childProcess, pid, startTime, startedBy }
+const WEIXIN_QR_STATE_FILE = path.join(OPENCLAW_DIR, '.weixin-qr-state.json');
+
 
 // ==================== 渠道必填字段定义 ====================
 const CHANNEL_REQUIRED_FIELDS = {
@@ -1847,6 +1852,10 @@ app.get('/api/weixin/login', authMiddleware, (req, res) => {
     req.on('close', () => {
         console.log('[微信登录] 客户端断开连接，终止进程');
         child.kill();
+        
+        // 清空共享任务
+        currentWeixinTask = null;
+        
         res.end();
     });
 });
@@ -1892,6 +1901,304 @@ app.post('/api/weixin/bound', authMiddleware, (req, res) => {
                     console.error('[微信绑定] 异步重启失败:', error);
                 }
             });
+
+/**
+ * ==================== 微信二维码登录（APP客户端）====================
+ */
+
+/**
+ * 启动微信二维码登录任务
+ * POST /api/weixin/qr/start
+ * 
+ * 异步任务，立即返回 taskId
+ * 自动停止已有任务，启动新任务
+ */
+app.post('/api/weixin/qr/start', async (req, res) => {
+    try {
+        console.log('[微信QR] 收到启动请求');
+        
+        // 检查是否已有任务运行
+        if (currentWeixinTask && currentWeixinTask.childProcess) {
+            console.log('[微信QR] 已有任务运行，自动停止:', currentWeixinTask.taskId);
+            
+            // 停止旧任务
+            currentWeixinTask.childProcess.kill();
+            currentWeixinTask = null;
+            
+            // 更新状态文件为已停止
+            updateWeixinQrState({ status: 'stopped', errorMsg: '被新任务替换' });
+        }
+        
+        // 生成任务ID
+        const taskId = 'weixin-qr-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+        
+        // 初始化状态文件
+        updateWeixinQrState({
+            taskId: taskId,
+            status: 'loading',
+            qrUrl: null,
+            updatedAt: Math.floor(Date.now() / 1000),
+            errorMsg: null
+        });
+        
+        // 立即返回响应
+        res.json({
+            code: 0,
+            msg: '任务已启动',
+            currentTime: Math.floor(Date.now() / 1000),
+            data: { taskId }
+        });
+        
+        // 后台异步执行登录任务
+        setImmediate(() => {
+            console.log('[微信QR] 开始执行登录命令...');
+            
+            const { spawn } = require('child_process');
+            
+            const child = spawn('openclaw', ['channels', 'login', '--channel', 'openclaw-weixin'], {
+                env: { ...process.env, TERM: 'xterm-256color' },
+                shell: true
+            });
+            
+            // 记录任务信息
+            currentWeixinTask = {
+                taskId: taskId,
+                childProcess: child,
+                pid: child.pid,
+                startTime: Date.now(),
+                startedBy: 'qr-api'
+            };
+            
+            // 累积输出用于解析二维码
+            let allOutput = '';
+            
+            // 捕获标准输出
+            child.stdout.on('data', (data) => {
+                const output = data.toString();
+                allOutput += output;
+                console.log('[微信QR] stdout:', output.substring(0, 100));
+                
+                // 解析二维码链接
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[\s\S]+/g);
+                
+                if (qrcodeMatches && qrcodeMatches.length > 0) {
+                    const qrUrl = qrcodeMatches[qrcodeMatches.length - 1];
+                    console.log('[微信QR] 解析到二维码:', qrUrl.substring(0, 50));
+                    
+                    // 更新状态
+                    updateWeixinQrState({
+                        taskId: taskId,
+                        status: 'waiting',
+                        qrUrl: qrUrl,
+                        updatedAt: Math.floor(Date.now() / 1000)
+                    });
+                }
+            });
+            
+            // 捕获错误输出
+            child.stderr.on('data', (data) => {
+                const output = data.toString();
+                allOutput += output;
+                console.log('[微信QR] stderr:', output.substring(0, 100));
+                
+                // 同样尝试解析二维码（stderr 可能也有）
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[a-zA-Z0-9]+/g);
+                
+                if (qrcodeMatches && qrcodeMatches.length > 0) {
+                    const qrUrl = qrcodeMatches[qrcodeMatches.length - 1];
+                    updateWeixinQrState({
+                        taskId: taskId,
+                        status: 'waiting',
+                        qrUrl: qrUrl,
+                        updatedAt: Math.floor(Date.now() / 1000)
+                    });
+                }
+            });
+            
+            // 进程结束
+            child.on('close', (code) => {
+                console.log('[微信QR] 进程结束，退出码:', code);
+                
+                if (code === 0) {
+                    // 登录成功
+                    updateWeixinQrState({
+                        taskId: taskId,
+                        status: 'success',
+                        updatedAt: Math.floor(Date.now() / 1000)
+                    });
+                    
+                    // 写入绑定状态文件
+                    const boundFile = path.join(OPENCLAW_DIR, '.weixin-bound');
+                    fs.writeFileSync(boundFile, JSON.stringify({ bound: true }));
+                    console.log('[微信QR] 登录成功，已写入绑定状态');
+                } else {
+                    // 登录失败/超时
+                    updateWeixinQrState({
+                        taskId: taskId,
+                        status: 'timeout',
+                        errorMsg: '进程退出码: ' + code,
+                        updatedAt: Math.floor(Date.now() / 1000)
+                    });
+                    console.log('[微信QR] 登录失败/超时');
+                }
+                
+                // 清空任务
+                currentWeixinTask = null;
+            });
+            
+            // 进程错误
+            child.on('error', (error) => {
+                console.error('[微信QR] 进程错误:', error);
+                
+                updateWeixinQrState({
+                    taskId: taskId,
+                    status: 'error',
+                    errorMsg: error.message,
+                    updatedAt: Math.floor(Date.now() / 1000)
+                });
+                
+                currentWeixinTask = null;
+            });
+        });
+        
+    } catch (error) {
+        console.error('[微信QR] 启动失败:', error);
+        res.json({
+            code: 1000,
+            msg: '启动失败: ' + error.message,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    }
+});
+
+/**
+ * 获取微信二维码登录状态
+ * GET /api/weixin/qr/status
+ * 
+ * 返回当前任务的状态和二维码链接
+ */
+app.get('/api/weixin/qr/status', (req, res) => {
+    try {
+        // 检查状态文件是否存在
+        if (!fs.existsSync(WEIXIN_QR_STATE_FILE)) {
+            return res.json({
+                code: 1002,
+                msg: '没有正在运行的登录任务',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+        
+        // 读取状态文件
+        const stateData = JSON.parse(fs.readFileSync(WEIXIN_QR_STATE_FILE, 'utf8'));
+        
+        // 根据状态返回不同响应
+        switch (stateData.status) {
+            case 'loading':
+                return res.json({
+                    code: 0,
+                    msg: 'loading',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: {
+                        taskId: stateData.taskId,
+                        status: 'loading',
+                        qrUrl: null,
+                        updatedAt: stateData.updatedAt
+                    }
+                });
+                
+            case 'waiting':
+                return res.json({
+                    code: 0,
+                    msg: 'waiting',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: {
+                        taskId: stateData.taskId,
+                        status: 'waiting',
+                        qrUrl: stateData.qrUrl,
+                        updatedAt: stateData.updatedAt
+                    }
+                });
+                
+            case 'success':
+                return res.json({
+                    code: 0,
+                    msg: 'success',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: {
+                        taskId: stateData.taskId,
+                        status: 'success',
+                        updatedAt: stateData.updatedAt
+                    }
+                });
+                
+            case 'timeout':
+                return res.json({
+                    code: 1001,
+                    msg: '二维码已过期或登录失败',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: {
+                        taskId: stateData.taskId,
+                        status: 'timeout',
+                        errorMsg: stateData.errorMsg,
+                        updatedAt: stateData.updatedAt
+                    }
+                });
+                
+            case 'error':
+                return res.json({
+                    code: 1001,
+                    msg: '登录出错',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: {
+                        taskId: stateData.taskId,
+                        status: 'error',
+                        errorMsg: stateData.errorMsg,
+                        updatedAt: stateData.updatedAt
+                    }
+                });
+                
+            case 'stopped':
+                return res.json({
+                    code: 1002,
+                    msg: '任务已停止',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: {
+                        taskId: stateData.taskId,
+                        status: 'stopped'
+                    }
+                });
+                
+            default:
+                return res.json({
+                    code: 1000,
+                    msg: '未知状态',
+                    currentTime: Math.floor(Date.now() / 1000),
+                    data: stateData
+                });
+        }
+        
+    } catch (error) {
+        console.error('[微信QR] 状态查询失败:', error);
+        res.json({
+            code: 1000,
+            msg: '状态查询失败',
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    }
+});
+
+/**
+ * 更新微信二维码状态文件
+ */
+function updateWeixinQrState(stateData) {
+    try {
+        fs.writeFileSync(WEIXIN_QR_STATE_FILE, JSON.stringify(stateData, null, 2));
+    } catch (error) {
+        console.error('[微信QR] 状态文件更新失败:', error);
+    }
+}
+
+
         }
         
         res.json({ 
