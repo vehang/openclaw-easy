@@ -119,24 +119,6 @@
     <script src="/js/app.js"></script>
     <script>
         /**
-         * 页面加载时检查密码是否已设置
-         * 如果已设置，重定向到登录页
-         */
-        (async function checkPasswordStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const result = await response.json();
-                
-                if (result.code === 0 && result.data && result.data.passwordSet) {
-                    // 密码已设置，重定向到登录页
-                    window.location.replace('/login.html');
-                }
-            } catch (error) {
-                console.error('检查状态失败:', error);
-            }
-        })();
-
-        /**
          * 密码强度检测
          */
         function checkPasswordStrength(password) {
@@ -183,7 +165,7 @@
         });
 
         /**
-         * 设置密码表单提交
+         * 初始化设置页面逻辑
          */
         document.getElementById('setupForm').addEventListener('submit', async (e) => {
             e.preventDefault();

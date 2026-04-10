@@ -87,17 +87,18 @@ app.use((req, res, next) => {
         return next(); // 非HTML请求，继续到静态文件服务
     }
     
-    // 允许访问 setup.html
-    if (req.path === '/setup.html') {
-        return next();
+    // 密码未设置：只能访问 setup.html
+    if (!isPasswordSet()) {
+        if (req.path === '/setup.html') {
+            return next();
+        }
+        // 其他页面重定向到 setup.html
+        return res.redirect('/setup.html');
     }
     
-    // 密码未设置，强制跳转到设置页面
-    if (!isPasswordSet()) {
-        if (req.path.startsWith('/api/')) {
-            return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
-        }
-        return res.redirect('/setup.html');
+    // 密码已设置：禁止访问 setup.html，重定向到 login.html
+    if (req.path === '/setup.html') {
+        return res.redirect('/login.html');
     }
     
     // 允许访问 login.html
@@ -112,9 +113,6 @@ app.use((req, res, next) => {
     }
     
     // 未登录，重定向到登录页
-    if (req.path.startsWith('/api/')) {
-        return res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
-    }
     res.redirect('/login.html');
 });
 
