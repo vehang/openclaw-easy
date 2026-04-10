@@ -83,6 +83,11 @@ app.use((req, res, next) => {
     // 只拦截 HTML 文件和根路径
     const isHtmlRequest = req.path.endsWith('.html') || req.path === '/' || req.path === '';
     
+    // 调试日志
+    if (isHtmlRequest) {
+        console.log('[中间件] 路径:', req.path, '密码已设置:', isPasswordSet(), 'Session:', !!req.cookies.session_token);
+    }
+    
     if (!isHtmlRequest) {
         return next(); // 非HTML请求，继续到静态文件服务
     }
@@ -93,12 +98,12 @@ app.use((req, res, next) => {
             return next();
         }
         // 其他页面重定向到 setup.html
-        return res.redirect('/setup.html');
+        return res.status(302).setHeader('Cache-Control', 'no-store').redirect('/setup.html');
     }
     
     // 密码已设置：禁止访问 setup.html，重定向到 login.html
     if (req.path === '/setup.html') {
-        return res.redirect('/login.html');
+        return res.status(302).setHeader('Cache-Control', 'no-store').redirect('/login.html');
     }
     
     // 允许访问 login.html
@@ -113,7 +118,7 @@ app.use((req, res, next) => {
     }
     
     // 未登录，重定向到登录页
-    res.redirect('/login.html');
+    res.status(302).setHeader('Cache-Control', 'no-store').redirect('/login.html');
 });
 
 // 静态文件服务
@@ -1039,7 +1044,7 @@ function authMiddleware(req, res, next) {
         if (req.path.startsWith('/api/')) {
             return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
         }
-        return res.redirect('/setup.html');
+        return res.status(302).setHeader('Cache-Control', 'no-store').redirect('/setup.html');
     }
 
     // 检查 Session
@@ -1054,7 +1059,7 @@ function authMiddleware(req, res, next) {
     }
 
     // 页面请求重定向到登录页
-    res.redirect('/login.html');
+    res.status(302).setHeader('Cache-Control', 'no-store').redirect('/login.html');
 }
 
 // ==================== API 路由 ====================
