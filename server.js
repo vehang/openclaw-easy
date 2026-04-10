@@ -1032,36 +1032,21 @@ async function restartEasy() {
  * 认证检查中间件
  */
 function authMiddleware(req, res, next) {
-    // 如果密码未设置，强制跳转到设置页面
+    // 页面重定向由全局中间件处理，这里只处理 API 权限
+    
+    // 密码未设置
     if (!isPasswordSet()) {
-        // 允许访问 setup 相关的路由
-        if (req.path === '/setup.html' ||
-            req.path === '/api/setup/password' ||
-            req.path === '/api/status' ||
-            req.path.startsWith('/css/') ||
-            req.path.startsWith('/js/')) {
-            return next();
-        }
-        // 其他路由重定向到 setup.html
-        if (req.path.startsWith('/api/')) {
-            return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
-        }
-        return res.status(302).setHeader('Cache-Control', 'no-store').redirect('/setup.html');
+        return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
     }
-
+    
     // 检查 Session
     const token = req.cookies.session_token;
     if (validateSession(token)) {
         return next();
     }
-
-    // API 请求返回 401
-    if (req.path.startsWith('/api/')) {
-        return res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
-    }
-
-    // 页面请求重定向到登录页
-    res.status(302).setHeader('Cache-Control', 'no-store').redirect('/login.html');
+    
+    // 未授权
+    res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
 }
 
 // ==================== API 路由 ====================
