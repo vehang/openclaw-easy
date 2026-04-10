@@ -83,42 +83,44 @@ app.use((req, res, next) => {
     // 只拦截 HTML 文件和根路径
     const isHtmlRequest = req.path.endsWith('.html') || req.path === '/' || req.path === '';
     
-    // 调试日志
-    if (isHtmlRequest) {
-        console.log('[中间件] 路径:', req.path, '密码已设置:', isPasswordSet(), 'Session:', !!req.cookies.session_token);
-    }
-    
     if (!isHtmlRequest) {
         return next(); // 非HTML请求，继续到静态文件服务
     }
     
-    // 密码未设置：只能访问 setup.html
-    if (!isPasswordSet()) {
-        if (req.path === '/setup.html') {
-            return next();
-        }
-        // 其他页面重定向到 setup.html
-        return res.status(302).setHeader('Cache-Control', 'no-store').redirect('/setup.html');
-    }
+    console.log('[中间件] 路径:', req.path, '密码已设置:', isPasswordSet());
     
-    // 密码已设置：禁止访问 setup.html，重定向到 login.html
-    if (req.path === '/setup.html') {
-        return res.status(302).setHeader('Cache-Control', 'no-store').redirect('/login.html');
-    }
-    
-    // 允许访问 login.html
+    // ========== login.html 逻辑 ==========
+    // 密码未设置→跳转setup，密码已设置→停留
     if (req.path === '/login.html') {
-        return next();
+        if (!isPasswordSet()) {
+            return res.redirect('/setup.html');
+        }
+        return next(); // 密码已设置，停留在login页面
     }
     
-    // 检查 Session
+    // ========== setup.html 逻辑 ==========
+    // 密码已设置→跳转login，密码未设置→停留
+    if (req.path === '/setup.html') {
+        if (isPasswordSet()) {
+            return res.redirect('/login.html');
+        }
+        return next(); // 密码未设置，停留在setup页面
+    }
+    
+    // ========== 其他页面逻辑 ==========
+    // 密码未设置→跳转setup
+    if (!isPasswordSet()) {
+        return res.redirect('/setup.html');
+    }
+    
+    // 检查是否已登录
     const token = req.cookies.session_token;
     if (validateSession(token)) {
         return next(); // 已登录，继续
     }
     
-    // 未登录，重定向到登录页
-    res.status(302).setHeader('Cache-Control', 'no-store').redirect('/login.html');
+    // 已设置密码但未登录→跳转login
+    res.redirect('/login.html');
 });
 
 // 静态文件服务
