@@ -1347,7 +1347,7 @@ app.post('/api/config', authMiddleware, async (req, res) => {
  */
 app.post('/api/config/simple', async (req, res) => {
     try {
-        const { nickName, apiUrl, apiKey, modelName, appId, appSecret, authToken } = req.body;
+        const { nickName, apiUrl, apiKey, modelName, appId, appSecret, authToken, barCode } = req.body;
 
         // ==================== 参数校验 ====================
         const errors = [];
@@ -1363,6 +1363,10 @@ app.post('/api/config/simple', async (req, res) => {
         
         if (!modelName || modelName.trim() === '') {
             errors.push('modelName必传');
+        }
+        
+        if (!barCode || barCode.trim() === '') {
+            errors.push('barCode必传');
         }
 
         // 2. appId + appSecret 组校验：要么都不传，要么都传
@@ -1492,6 +1496,7 @@ app.post('/api/config/simple', async (req, res) => {
             apiUrl: apiUrl.trim(),
             apiKey: apiKey.trim(),
             modelName: modelName.trim(),
+            barCode: barCode.trim(),
             updatedAt: Math.floor(Date.now() / 1000)
         };
         if (hasAppCredentialsGroup) {
