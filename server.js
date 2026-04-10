@@ -1044,6 +1044,11 @@ function authMiddleware(req, res, next) {
         return res.redirect('/setup.html');
     }
 
+    // 密码已设置，禁止访问 setup.html，重定向到登录页
+    if (req.path === '/setup.html' || req.path === '/api/setup/password') {
+        return res.redirect('/login.html');
+    }
+
     // 检查 Session
     const token = req.cookies.session_token;
     if (validateSession(token)) {
