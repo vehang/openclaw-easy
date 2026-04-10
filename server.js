@@ -1366,7 +1366,7 @@ app.post('/api/config/simple', async (req, res) => {
         }
         
         if (!barCode || barCode.trim() === '') {
-            errors.push('barCode必传');
+            errors.push('barCode必传，设备标识不能为空');
         }
 
         // 2. appId + appSecret 组校验：要么都不传，要么都传
@@ -1496,7 +1496,7 @@ app.post('/api/config/simple', async (req, res) => {
             apiUrl: apiUrl.trim(),
             apiKey: apiKey.trim(),
             modelName: modelName.trim(),
-            barCode: barCode.trim(),
+            barCode: barCode.trim(),  // 设备标识
             updatedAt: Math.floor(Date.now() / 1000)
         };
         if (hasAppCredentialsGroup) {
