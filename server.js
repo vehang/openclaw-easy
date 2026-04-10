@@ -87,18 +87,17 @@ app.use((req, res, next) => {
         return next(); // 非HTML请求，继续到静态文件服务
     }
     
-    // 密码未设置：只能访问 setup.html
-    if (!isPasswordSet()) {
-        if (req.path === '/setup.html') {
-            return next(); // 允许访问设置页面
-        }
-        // 其他页面重定向到设置页
-        return res.redirect('/setup.html');
+    // 允许访问 setup.html
+    if (req.path === '/setup.html') {
+        return next();
     }
     
-    // 密码已设置：禁止访问 setup.html，重定向到登录页
-    if (req.path === '/setup.html') {
-        return res.redirect('/login.html');
+    // 密码未设置，强制跳转到设置页面
+    if (!isPasswordSet()) {
+        if (req.path.startsWith('/api/')) {
+            return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
+        }
+        return res.redirect('/setup.html');
     }
     
     // 允许访问 login.html
@@ -113,6 +112,9 @@ app.use((req, res, next) => {
     }
     
     // 未登录，重定向到登录页
+    if (req.path.startsWith('/api/')) {
+        return res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
+    }
     res.redirect('/login.html');
 });
 
@@ -1025,11 +1027,21 @@ async function restartEasy() {
  * 认证检查中间件
  */
 function authMiddleware(req, res, next) {
-    // HTML 页面重定向由全局中间件处理，这里只处理 API 路由
-    
-    // 密码未设置，要求先设置密码
+    // 如果密码未设置，强制跳转到设置页面
     if (!isPasswordSet()) {
-        return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
+        // 允许访问 setup 相关的路由
+        if (req.path === '/setup.html' ||
+            req.path === '/api/setup/password' ||
+            req.path === '/api/status' ||
+            req.path.startsWith('/css/') ||
+            req.path.startsWith('/js/')) {
+            return next();
+        }
+        // 其他路由重定向到 setup.html
+        if (req.path.startsWith('/api/')) {
+            return res.json({ code: 1002, msg: '请先设置管理密码', data: { needSetup: true }, currentTime: Math.floor(Date.now() / 1000) });
+        }
+        return res.redirect('/setup.html');
     }
 
     // 检查 Session
@@ -1038,8 +1050,13 @@ function authMiddleware(req, res, next) {
         return next();
     }
 
-    // 未授权访问
-    res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
+    // API 请求返回 401
+    if (req.path.startsWith('/api/')) {
+        return res.json({ code: 1001, msg: '未授权访问', currentTime: Math.floor(Date.now() / 1000) });
+    }
+
+    // 页面请求重定向到登录页
+    res.redirect('/login.html');
 }
 
 // ==================== API 路由 ====================
