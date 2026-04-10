@@ -6,6 +6,42 @@
     <title>登录 - OpenClaw</title>
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+        /* 验证中状态样式 */
+        .verify-loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+        .verify-loading.active {
+            display: flex;
+        }
+        .verify-loading .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .verify-loading .text {
+            margin-top: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        /* 登录表单默认隐藏，验证失败后显示 */
+        .login-form-container {
+            display: none;
+        }
+        .login-form-container.active {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="login-wrapper">
@@ -15,21 +51,30 @@
                     <div class="logo-icon"><img src="/images/logo.webp" alt="Logo"></div>
                     <h1>OpenClaw</h1>
                 </a>
-                <p>请输入管理密码</p>
+                <p id="pageTitle">请输入管理密码</p>
             </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label class="form-label">管理密码</label>
-                            <input type="password" class="form-control" id="password"
-                                   placeholder="请输入密码" required autofocus>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
-                            登录
-                        </button>
-                    </form>
+            <!-- 验证中状态（有 token 参数时显示） -->
+            <div class="verify-loading" id="verifyLoading">
+                <div class="spinner"></div>
+                <div class="text">正在验证身份...</div>
+            </div>
+
+            <!-- 登录表单（验证失败或无 token 时显示） -->
+            <div class="login-form-container" id="loginFormContainer">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="loginForm">
+                            <div class="form-group">
+                                <label class="form-label">管理密码</label>
+                                <input type="password" class="form-control" id="password"
+                                       placeholder="请输入密码" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
+                                登录
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -42,8 +87,6 @@
     <script>
         /**
          * Token 验证（自动登录）
-         * 检测 URL 参数中是否有 token 和 barCode
-         * 如果有，调用验证接口实现免登录
          */
         async function verifyTokenAndLogin() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -51,15 +94,15 @@
             const barCode = urlParams.get('barCode');
             
             if (!token || !barCode) {
-                // 没有 token 参数，显示正常登录界面
+                // 没有 token 参数，直接显示登录表单
+                showLoginForm();
                 return false;
             }
             
             console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
-            console.log('[Token验证] 检测到 barCode 参数:', barCode);
             
-            // 显示验证状态
-            showToast('正在验证身份...', 'info');
+            // 显示验证中状态
+            showVerifyLoading();
             
             try {
                 const response = await fetch('/api/verify-token', {
@@ -72,38 +115,59 @@
                 
                 if (data.code === 0) {
                     // 验证成功
-                    showToast('身份验证成功', 'success');
+                    updateVerifyText('身份验证成功，正在跳转...');
                     
                     // 清除 URL 参数，跳转到首页
                     setTimeout(() => {
                         window.location.href = '/';
-                    }, 500);
+                    }, 800);
                     
                     return true;
                 } else {
-                    // 验证失败
+                    // 验证失败，显示登录表单
                     console.log('[Token验证] 验证失败:', data.msg);
-                    showToast(data.msg || '身份验证失败', 'error');
+                    showLoginForm();
+                    showToast(data.msg || '身份验证失败，请手动登录', 'error');
                     return false;
                 }
             } catch (error) {
                 console.error('[Token验证] 请求失败:', error);
-                showToast('验证请求失败', 'error');
+                showLoginForm();
+                showToast('验证请求失败，请手动登录', 'error');
                 return false;
             }
         }
         
         /**
+         * 显示验证中状态
+         */
+        function showVerifyLoading() {
+            document.getElementById('verifyLoading').classList.add('active');
+            document.getElementById('loginFormContainer').classList.remove('active');
+            document.getElementById('pageTitle').textContent = '身份验证中';
+        }
+        
+        /**
+         * 显示登录表单
+         */
+        function showLoginForm() {
+            document.getElementById('verifyLoading').classList.remove('active');
+            document.getElementById('loginFormContainer').classList.add('active');
+            document.getElementById('pageTitle').textContent = '请输入管理密码';
+            document.getElementById('password').focus();
+        }
+        
+        /**
+         * 更新验证提示文字
+         */
+        function updateVerifyText(text) {
+            document.querySelector('.verify-loading .text').textContent = text;
+        }
+        
+        /**
          * 页面加载时先尝试 Token 验证
          */
-        (async function init() {
-            const verified = await verifyTokenAndLogin();
-            if (!verified) {
-                // Token 验证未执行或失败，显示正常登录界面
-                // 密码输入框获得焦点
-                document.getElementById('password').focus();
-            }
-        })();
+        verifyTokenAndLogin();
         
         /**
          * 登录表单提交
@@ -119,7 +183,6 @@
                 return;
             }
 
-            // 显示加载状态
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="loading"></span> 登录中...';
 
@@ -134,7 +197,6 @@
 
                 if (response.ok && data.code === 0) {
                     showToast(data.msg || '登录成功', 'success');
-                    // 跳转到首页
                     setTimeout(() => {
                         window.location.href = '/';
                     }, 500);

@@ -18,6 +18,14 @@
         .strength-bar-fill.fair { width: 50%; background: #f97316; }
         .strength-bar-fill.good { width: 75%; background: #eab308; }
         .strength-bar-fill.strong { width: 100%; background: #16a34a; }
+        /* 验证中状态样式 */
+        .verify-loading { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; }
+        .verify-loading.active { display: flex; }
+        .verify-loading .spinner { width: 48px; height: 48px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .verify-loading .text { margin-top: 16px; color: var(--text-secondary); font-size: 14px; }
+        .setup-form-container { display: none; }
+        .setup-form-container.active { display: block; }
     </style>
 </head>
 <body>
@@ -28,42 +36,51 @@
                     <div class="logo-icon"><img src="/images/logo.webp" alt="Logo"></div>
                     <h1>欢迎使用 OpenClaw</h1>
                 </a>
-                <p>首次使用，请设置管理密码</p>
+                <p id="pageTitle">首次使用，请设置管理密码</p>
             </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <form id="setupForm">
-                        <div class="form-group">
-                            <label class="form-label">设置管理密码 <span class="required">*</span></label>
-                            <input type="password" class="form-control" id="password"
-                                   placeholder="请输入密码" required autofocus>
-                            <div class="strength-bar"><div class="strength-bar-fill" id="strengthBar"></div></div>
-                            <div id="passwordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
-                                <div style="display: flex; gap: 16px;">
-                                    <span id="req-length" style="flex: 1;">至少 8 个字符</span>
-                                    <span id="req-number" style="flex: 1;">包含数字 (0-9)</span>
-                                </div>
-                                <div style="display: flex; gap: 16px; margin-top: 4px;">
-                                    <span id="req-upper" style="flex: 1;">包含大写字母 (A-Z)</span>
-                                    <span id="req-lower" style="flex: 1;">包含小写字母 (a-z)</span>
+            <!-- 验证中状态 -->
+            <div class="verify-loading" id="verifyLoading">
+                <div class="spinner"></div>
+                <div class="text">正在验证身份...</div>
+            </div>
+
+            <!-- 设置表单 -->
+            <div class="setup-form-container" id="setupFormContainer">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="setupForm">
+                            <div class="form-group">
+                                <label class="form-label">设置管理密码 <span class="required">*</span></label>
+                                <input type="password" class="form-control" id="password"
+                                       placeholder="请输入密码" required>
+                                <div class="strength-bar"><div class="strength-bar-fill" id="strengthBar"></div></div>
+                                <div id="passwordRequirements" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+                                    <div style="display: flex; gap: 16px;">
+                                        <span id="req-length" style="flex: 1;">至少 8 个字符</span>
+                                        <span id="req-number" style="flex: 1;">包含数字 (0-9)</span>
+                                    </div>
+                                    <div style="display: flex; gap: 16px; margin-top: 4px;">
+                                        <span id="req-upper" style="flex: 1;">包含大写字母 (A-Z)</span>
+                                        <span id="req-lower" style="flex: 1;">包含小写字母 (a-z)</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">确认密码 <span class="required">*</span></label>
-                            <input type="password" class="form-control" id="confirmPassword"
-                                   placeholder="请再次输入密码" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="setupBtn">
-                            完成设置
-                        </button>
-                    </form>
+                            <div class="form-group">
+                                <label class="form-label">确认密码 <span class="required">*</span></label>
+                                <input type="password" class="form-control" id="confirmPassword"
+                                       placeholder="请再次输入密码" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block btn-lg" id="setupBtn">
+                                完成设置
+                            </button>
+                        </form>
+                    </div>
                 </div>
+                <p style="text-align: center; margin-top: 16px; color: var(--text-secondary); font-size: 13px;">
+                    设置完成后将自动进入配置管理界面
+                </p>
             </div>
-            <p style="text-align: center; margin-top: 16px; color: var(--text-secondary); font-size: 13px;">
-                设置完成后将自动进入配置管理界面
-            </p>
         </div>
     </div>
 
@@ -71,22 +88,18 @@
 
     <script src="/js/app.js"></script>
     <script>
-        /**
-         * Token 验证（自动登录）
-         * 检测 URL 参数中是否有 token 和 barCode
-         * 如果有，调用验证接口实现免登录
-         */
         async function verifyTokenAndLogin() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const barCode = urlParams.get('barCode');
             
             if (!token || !barCode) {
+                showSetupForm();
                 return false;
             }
             
             console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
-            showToast('正在验证身份...', 'info');
+            showVerifyLoading();
             
             try {
                 const response = await fetch('/api/verify-token', {
@@ -98,43 +111,44 @@
                 const data = await response.json();
                 
                 if (data.code === 0) {
-                    showToast('身份验证成功', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 500);
+                    updateVerifyText('身份验证成功，正在跳转...');
+                    setTimeout(() => { window.location.href = '/'; }, 800);
                     return true;
                 } else {
+                    console.log('[Token验证] 验证失败:', data.msg);
+                    showSetupForm();
                     showToast(data.msg || '身份验证失败', 'error');
                     return false;
                 }
             } catch (error) {
                 console.error('[Token验证] 请求失败:', error);
+                showSetupForm();
                 showToast('验证请求失败', 'error');
                 return false;
             }
         }
         
-        /**
-         * 页面加载时先尝试 Token 验证
-         */
-        (async function init() {
-            const verified = await verifyTokenAndLogin();
-            if (!verified) {
-                document.getElementById('password').focus();
-            }
-        })();
+        function showVerifyLoading() {
+            document.getElementById('verifyLoading').classList.add('active');
+            document.getElementById('setupFormContainer').classList.remove('active');
+            document.getElementById('pageTitle').textContent = '身份验证中';
+        }
         
-        /**
-         * 密码强度检测
-         */
+        function showSetupForm() {
+            document.getElementById('verifyLoading').classList.remove('active');
+            document.getElementById('setupFormContainer').classList.add('active');
+            document.getElementById('pageTitle').textContent = '首次使用，请设置管理密码';
+            document.getElementById('password').focus();
+        }
+        
+        function updateVerifyText(text) {
+            document.querySelector('.verify-loading .text').textContent = text;
+        }
+        
+        verifyTokenAndLogin();
+        
         function checkPasswordStrength(password) {
-            const checks = {
-                length: password.length >= 8,
-                lower: /[a-z]/.test(password),
-                upper: /[A-Z]/.test(password),
-                number: /[0-9]/.test(password)
-            };
-            
+            const checks = { length: password.length >= 8, lower: /[a-z]/.test(password), upper: /[A-Z]/.test(password), number: /[0-9]/.test(password) };
             const updateReq = (id, valid) => {
                 const el = document.getElementById(id);
                 el.style.color = password.length === 0 ? '' : (valid ? '#16a34a' : '#ef4444');
@@ -143,64 +157,40 @@
             updateReq('req-lower', checks.lower);
             updateReq('req-upper', checks.upper);
             updateReq('req-number', checks.number);
-            
             const score = Object.values(checks).filter(Boolean).length;
             const strengthBar = document.getElementById('strengthBar');
-            
             strengthBar.className = 'strength-bar-fill';
             if (password.length === 0) { strengthBar.style.width = '0'; }
             else if (score === 1) { strengthBar.classList.add('weak'); }
             else if (score === 2) { strengthBar.classList.add('fair'); }
             else if (score === 3) { strengthBar.classList.add('good'); }
             else if (score === 4) { strengthBar.classList.add('strong'); }
-            
             return checks;
         }
         
-        document.getElementById('password').addEventListener('input', (e) => {
-            checkPasswordStrength(e.target.value);
-        });
+        document.getElementById('password').addEventListener('input', (e) => { checkPasswordStrength(e.target.value); });
         
-        /**
-         * 设置密码表单提交
-         */
         document.getElementById('setupForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const setupBtn = document.getElementById('setupBtn');
-
             const checks = checkPasswordStrength(password);
             const allValid = Object.values(checks).every(Boolean);
-
-            if (!allValid) {
-                showToast('请满足所有密码要求', 'error');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                showToast('两次输入的密码不一致', 'error');
-                return;
-            }
-
+            if (!allValid) { showToast('请满足所有密码要求', 'error'); return; }
+            if (password !== confirmPassword) { showToast('两次输入的密码不一致', 'error'); return; }
             setupBtn.disabled = true;
             setupBtn.innerHTML = '<span class="loading"></span> 设置中...';
-
             try {
                 const response = await fetch('/api/setup/password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ password, confirmPassword })
                 });
-
                 const data = await response.json();
-
                 if (response.ok && data.code === 0) {
                     showToast(data.msg || '密码设置成功', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 500);
+                    setTimeout(() => { window.location.href = '/'; }, 500);
                 } else {
                     showToast(data.msg || '设置失败', 'error');
                     setupBtn.disabled = false;
