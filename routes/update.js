@@ -9,6 +9,7 @@
  * 更新策略：
  * - 排除法更新，保留 node_modules、tmp、.git、.env 等
  * - 增量 npm install，只在 package.json 变化时执行
+ * - 版本号比较，versionCode <= 当前版本则不更新
  */
 const express = require('express');
 const fs = require('fs');
@@ -125,7 +126,7 @@ router.get('/version', (req, res) => {
 
 /**
  * GET /update/check
- * 检查更新
+ * 检查更新（增加版本号比较）
  */
 router.get('/update/check', async (req, res) => {
     try {
@@ -133,19 +134,39 @@ router.get('/update/check', async (req, res) => {
         const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
         
         console.log('[版本检查] 请求:', checkUrl);
+        console.log('[版本检查] 当前版本:', currentVersion.versionCode, currentVersion.versionName);
         
         const response = await fetch(checkUrl);
         const result = await response.json();
         
-        console.log('[版本检查] 结果:', result);
+        console.log('[版本检查] 远程返回:', result);
+        
+        // 版本号比较：远程版本号 <= 当前版本号，则已是最新
+        let needsUpdate = false;
+        let newVersionData = null;
+        
+        if (result.data && result.data.versionCode) {
+            const remoteVersionCode = result.data.versionCode;
+            const currentVersionCode = currentVersion.versionCode;
+            
+            console.log('[版本检查] 版本号比较: 远程=' + remoteVersionCode + ', 当前=' + currentVersionCode);
+            
+            if (remoteVersionCode > currentVersionCode) {
+                needsUpdate = true;
+                newVersionData = result.data;
+                console.log('[版本检查] 发现新版本:', result.data.versionName);
+            } else {
+                console.log('[版本检查] 当前已是最新版本（版本号相同或更高）');
+            }
+        }
         
         res.json({
             code: result.code || 0,
-            msg: result.msg || '检查更新成功',
+            msg: needsUpdate ? '发现新版本' : '当前已是最新版本',
             tipMsg: result.tipMsg || '',
             currentTime: Math.floor(Date.now() / 1000),
             currentVersion: currentVersion,
-            data: result.data || null
+            data: needsUpdate ? newVersionData : null
         });
     } catch (error) {
         console.error('[版本检查] 失败:', error);
@@ -160,6 +181,7 @@ router.get('/update/check', async (req, res) => {
 /**
  * POST /update
  * 一键更新（使用排除法，保留 node_modules）
+ * 增加版本号判断，避免重复更新
  */
 router.post('/update', async (req, res) => {
     try {
@@ -174,16 +196,25 @@ router.post('/update', async (req, res) => {
             const checkResponse = await fetch(checkUrl);
             const checkResult = await checkResponse.json();
             
-            if (!checkResult.data) {
+            // 版本号比较
+            if (checkResult.data && checkResult.data.versionCode) {
+                if (checkResult.data.versionCode <= currentVersion.versionCode) {
+                    console.log('[一键更新] 当前已是最新版本（版本号相同或更高）');
+                    return res.json({
+                        code: 0,
+                        msg: '当前已是最新版本，无需更新',
+                        currentTime: Math.floor(Date.now() / 1000)
+                    });
+                }
+                newVersionInfo = checkResult.data;
+                downloadUrl = newVersionInfo.dlUrl;
+            } else {
                 return res.json({
                     code: 0,
-                    msg: '当前已经是最新版本',
+                    msg: '当前已是最新版本',
                     currentTime: Math.floor(Date.now() / 1000)
                 });
             }
-            
-            newVersionInfo = checkResult.data;
-            downloadUrl = newVersionInfo.dlUrl;
         }
         
         if (!downloadUrl) {

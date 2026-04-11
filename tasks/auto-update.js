@@ -1,5 +1,6 @@
 /**
  * 自动更新任务
+ * 增加版本号比较，避免重复更新相同版本
  */
 const { getVersionInfo, performUpdate } = require('../utils/update');
 
@@ -14,7 +15,7 @@ const AUTO_UPDATE_CONFIG = {
 let updateCheckTimer = null;
 
 /**
- * 执行自动更新检查
+ * 执行自动更新检查（增加版本号比较）
  */
 async function performAutoUpdateCheck() {
     try {
@@ -23,17 +24,31 @@ async function performAutoUpdateCheck() {
         const currentVersion = getVersionInfo();
         const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
         
+        console.log('[自动更新] 当前版本:', currentVersion.versionCode, currentVersion.versionName);
+        
         const response = await fetch(checkUrl);
         const result = await response.json();
         
-        if (result.data) {
-            console.log(`[自动更新] 发现新版本: ${result.data.versionName} (当前: ${currentVersion.versionName})`);
+        console.log('[自动更新] 远程返回:', result);
+        
+        // 版本号比较：远程版本号 > 当前版本号 才更新
+        if (result.data && result.data.versionCode) {
+            const remoteVersionCode = result.data.versionCode;
+            const currentVersionCode = currentVersion.versionCode;
             
-            if (AUTO_UPDATE_CONFIG.autoInstall) {
-                console.log('[自动更新] 开始自动更新...');
-                await performUpdate(result.data.dlUrl);
+            console.log(`[自动更新] 版本号比较: 远程=${remoteVersionCode}, 当前=${currentVersionCode}`);
+            
+            if (remoteVersionCode > currentVersionCode) {
+                console.log(`[自动更新] 发现新版本: ${result.data.versionName} (当前: ${currentVersion.versionName})`);
+                
+                if (AUTO_UPDATE_CONFIG.autoInstall) {
+                    console.log('[自动更新] 开始自动更新...');
+                    await performUpdate(result.data.dlUrl);
+                } else {
+                    console.log('[自动更新] AUTO_UPDATE_INSTALL=false，跳过自动安装');
+                }
             } else {
-                console.log('[自动更新] AUTO_UPDATE_INSTALL=false，跳过自动安装');
+                console.log('[自动更新] 当前已是最新版本（版本号相同或更高）');
             }
         } else {
             console.log('[自动更新] 当前已是最新版本');
