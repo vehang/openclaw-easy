@@ -1662,10 +1662,62 @@
             document.getElementById(`${tabId}Tab`).classList.add('active');
         }
 
+        // ==================== Token 自动登录验证 ====================
+        
+        /**
+         * 检测 URL 参数中的 token 和 barCode，自动验证登录
+         */
+        async function checkTokenAutoLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const barCode = urlParams.get('barCode');
+            
+            if (!token || !barCode) {
+                // 没有 token 参数，正常加载页面
+                return true;
+            }
+            
+            console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
+            console.log('[Token验证] barCode:', barCode);
+            
+            try {
+                const response = await fetch('/api/verifyToken', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, barCode })
+                });
+                
+                const data = await response.json();
+                
+                console.log('[Token验证] 验证结果:', data);
+                
+                if (data.code === 0) {
+                    console.log('[Token验证] 验证成功');
+                    // 清除 URL 参数，保持干净
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return true;
+                } else {
+                    console.log('[Token验证] 验证失败:', data.msg);
+                    // 验证失败，跳转到登录页
+                    window.location.href = '/login.html';
+                    return false;
+                }
+            } catch (error) {
+                console.error('[Token验证] 验证失败:', error);
+                // 网络错误等，跳转到登录页
+                window.location.href = '/login.html';
+                return false;
+            }
+        }
+        
         // ==================== 初始化 ====================
 
         // 页面加载时获取配置
         document.addEventListener('DOMContentLoaded', async () => {
+            // 先检查 token 自动登录
+            const canContinue = await checkTokenAutoLogin();
+            if (!canContinue) return;  // 验证失败，跳转中，不继续初始化
+            
             // 设置进度跟踪监听器
             setupProgressTracking();
 
