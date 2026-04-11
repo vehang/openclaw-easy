@@ -264,6 +264,17 @@ router.post('/qr/start', async (req, res) => {
                     // 写入绑定状态文件
                     setWeixinBoundStatus(true);
                     console.log('[微信QR] 登录成功，已写入绑定状态');
+                    
+                    // 异步重启 Gateway 服务
+                    setImmediate(async () => {
+                        try {
+                            console.log('[微信QR] 开始异步重启 Gateway...');
+                            const result = await restartGateway();
+                            console.log('[微信QR] 异步重启结果:', result);
+                        } catch (error) {
+                            console.error('[微信QR] 异步重启失败:', error);
+                        }
+                    });
                 } else {
                     // 登录失败/超时
                     updateWeixinQrState({
