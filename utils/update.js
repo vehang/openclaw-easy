@@ -3,6 +3,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { execSync } = require('child_process');
 
 // 获取项目根目录
@@ -11,9 +12,11 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 const VERSION_FILE = path.join(PROJECT_ROOT, 'version.json');
 const UPDATE_DIR = '/tmp/openclaw-easy-update';
 const BACKUP_DIR = '/tmp/openclaw-easy-backup';
+const OPENCLAW_DIR = path.join(os.homedir(), '.openclaw');
+const OPENCLAW_CONFIG_FILE = path.join(OPENCLAW_DIR, 'openclaw.json');
 
 /**
- * 读取当前版本信息
+ * 读取当前 openclaw-easy 版本信息
  */
 function getVersionInfo() {
     try {
@@ -23,6 +26,27 @@ function getVersionInfo() {
         console.error('读取版本信息失败:', error);
         return { versionName: '1.0.0', versionCode: 1000 };
     }
+}
+
+/**
+ * 读取当前运行的 OpenClaw 版本号
+ * 从 ~/.openclaw/openclaw.json 的 meta.lastTouchedVersion 获取
+ */
+function getOpenClawVersion() {
+    try {
+        if (fs.existsSync(OPENCLAW_CONFIG_FILE)) {
+            const content = fs.readFileSync(OPENCLAW_CONFIG_FILE, 'utf8');
+            const config = JSON.parse(content);
+            
+            if (config.meta && config.meta.lastTouchedVersion) {
+                return config.meta.lastTouchedVersion;
+            }
+        }
+    } catch (error) {
+        console.error('[版本] 读取 OpenClaw 版本失败:', error.message);
+    }
+    
+    return null;  // 无法获取时返回 null
 }
 
 /**
@@ -66,6 +90,8 @@ module.exports = {
     VERSION_FILE,
     UPDATE_DIR,
     BACKUP_DIR,
+    OPENCLAW_CONFIG_FILE,
     getVersionInfo,
+    getOpenClawVersion,
     performUpdate
 };
