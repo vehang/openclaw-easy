@@ -93,49 +93,15 @@
             const token = urlParams.get('token');
             const barCode = urlParams.get('barCode');
             
-            if (!token || !barCode) {
-                // 没有 token 参数，直接显示登录表单
-                showLoginForm();
+            if (token && barCode) {
+                // 有 token 参数，跳转到专用验证页面
+                window.location.href = '/verify.html' + window.location.search;
                 return false;
             }
             
-            console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
-            
-            // 显示验证中状态
-            showVerifyLoading();
-            
-            try {
-                const response = await fetch('/api/verifyToken', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, barCode })
-                });
-                
-                const data = await response.json();
-                
-                if (data.code === 0) {
-                    // 验证成功
-                    updateVerifyText('身份验证成功，正在跳转...');
-                    
-                    // 清除 URL 参数，跳转到首页
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 800);
-                    
-                    return true;
-                } else {
-                    // 验证失败，显示登录表单
-                    console.log('[Token验证] 验证失败:', data.msg);
-                    showLoginForm();
-                    showToast(data.msg || '身份验证失败，请手动登录', 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.error('[Token验证] 请求失败:', error);
-                showLoginForm();
-                showToast('验证请求失败，请手动登录', 'error');
-                return false;
-            }
+            // 没有 token 参数，正常显示登录表单
+            showLoginForm();
+            return false;
         }
         
         /**

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>身份验证 - OpenClaw</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .verify-container {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .verify-logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 30px;
+        }
+        
+        .verify-logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+        }
+        
+        .verify-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .verify-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .verify-text {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .verify-hint {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+        }
+        
+        /* 失败状态 */
+        .verify-failed {
+            display: none;
+        }
+        
+        .verify-failed.active {
+            display: block;
+        }
+        
+        .verify-loading.hidden {
+            display: none;
+        }
+        
+        .verify-error-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 30px;
+            color: white;
+        }
+        
+        .verify-error-text {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .verify-retry-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 12px 32px;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .verify-retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <!-- Logo -->
+        <div class="verify-logo">
+            <img src="/images/logo.webp" alt="OpenClaw Logo">
+        </div>
+        
+        <!-- 验证中状态 -->
+        <div class="verify-loading" id="verifyLoading">
+            <div class="verify-spinner"></div>
+            <div class="verify-title">OpenClaw Easy</div>
+            <div class="verify-text">正在验证身份...</div>
+            <div class="verify-hint">请稍候，验证成功后将自动进入配置页面</div>
+        </div>
+        
+        <!-- 验证失败状态 -->
+        <div class="verify-failed" id="verifyFailed">
+            <div class="verify-error-icon">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+            </div>
+            <div class="verify-title">验证失败</div>
+            <div class="verify-error-text" id="verifyErrorText">身份验证未通过，请重新登录</div>
+            <button class="verify-retry-btn" id="retryBtn">返回登录页</button>
+        </div>
+    </div>
+    
+    <script>
+        // ==================== Token 验证逻辑 ====================
+        async function verifyToken() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const barCode = urlParams.get('barCode');
+            
+            // 没有 token 参数，直接跳转登录页
+            if (!token || !barCode) {
+                console.log('[验证] 没有 token 参数，跳转登录页');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            console.log('[验证] 开始验证:', token.substring(0, 10) + '...', barCode);
+            
+            try {
+                const response = await fetch('/api/verifyToken', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, barCode })
+                });
+                
+                const data = await response.json();
+                
+                console.log('[验证] 结果:', data);
+                
+                if (data.code === 0) {
+                    console.log('[验证] 验证成功，跳转首页');
+                    // 验证成功，跳转首页
+                    window.location.href = '/';
+                } else {
+                    console.log('[验证] 验证失败:', data.msg);
+                    // 显示失败状态
+                    showFailed(data.msg || '身份验证未通过');
+                }
+            } catch (error) {
+                console.error('[验证] 请求失败:', error);
+                showFailed('网络错误，请检查网络连接');
+            }
+        }
+        
+        // 显示失败状态
+        function showFailed(message) {
+            document.getElementById('verifyLoading').classList.add('hidden');
+            document.getElementById('verifyFailed').classList.add('active');
+            document.getElementById('verifyErrorText').textContent = message;
+        }
+        
+        // 返回登录页按钮
+        document.getElementById('retryBtn').addEventListener('click', () => {
+            window.location.href = '/login.html';
+        });
+        
+        // 页面加载后立即验证
+        verifyToken();
+    </script>
+</body>
+</html>

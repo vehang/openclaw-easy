@@ -93,13 +93,14 @@
             const token = urlParams.get('token');
             const barCode = urlParams.get('barCode');
             
-            if (!token || !barCode) {
-                showSetupForm();
-                return false;
+            if (token && barCode) {
+                // 有 token 参数，跳转到专用验证页面
+                window.location.href = '/verify.html' + window.location.search;
+                return;
             }
             
-            console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
-            showVerifyLoading();
+            // 没有 token 参数，正常显示设置页面
+            showSetupForm();
             
             try {
                 const response = await fetch('/api/verifyToken', {
