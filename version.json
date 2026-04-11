@@ -1,12 +1,12 @@
 {
-    "versionName": "1.0.0.1",
-    "versionCode": 1001,
+    "versionName": "1.0.0.2",
+    "versionCode": 1002,
     "releaseDate": "2026-04-11",
     "changelog": [
-        "模块化代码重构",
-        "API 认证安全方案",
-        "APP端微信扫码自动重启",
-        "修复微信二维码URL解析问题",
-        "优化提示文字"
+        "模块化代码重构（server.js拆分）",
+        "API认证安全方案（accessToken机制）",
+        "升级脚本排除法优化（保留node_modules）",
+        "纯shell命令替代rsync（无额外依赖）",
+        "排除列表统一（12项完全一致）"
     ]
 }
