@@ -34,6 +34,9 @@ const EXCLUDE_PATTERNS = [
     '.simple-config.json',    // 配置缓存
     '.weixin-bound',          // 微信绑定状态
     '.weixin-qr-state.json',  // 微信登录状态
+    '*.backup',               // 备份文件
+    '*.bak',                  // 备份文件
+    '*.log',                  // 日志文件
 ];
 
 /**
