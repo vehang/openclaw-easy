@@ -164,7 +164,7 @@
 
 ---
 
-#### POST /api/verify-token
+#### POST /api/verifyToken
 
 **用途**: 通过 token + barCode 验证身份（自动登录）
 
@@ -553,7 +553,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get('token');
 const barCode = urlParams.get('barCode');
 
-const response = await fetch('/api/verify-token', {
+const response = await fetch('/api/verifyToken', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ token, barCode })

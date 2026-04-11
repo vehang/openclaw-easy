@@ -21,7 +21,7 @@ const pages = require('./pages');
  */
 function mountRoutes(app) {
     // 认证路由 - 挂载到 /api
-    // 路径：/api/status, /api/login, /api/logout, /api/setup/password, /api/verify-token, /api/password/change
+    // 路径：/api/status, /api/login, /api/logout, /api/setup/password, /api/verifyToken, /api/password/change
     app.use('/api', auth);
     
     // 配置路由 - 挂载到 /api

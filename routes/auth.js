@@ -6,7 +6,7 @@
  * - POST /setup/password    设置密码（首次访问）
  * - POST /login             登录验证
  * - POST /logout            退出登录
- * - POST /verify-token      通过 token 验证用户身份（旧接口）
+ * - POST /verifyToken      通过 token 验证用户身份（旧接口）
  * - POST /auth/token        认证获取临时凭证（新接口）
  * - POST /password/change   修改密码
  */
@@ -127,11 +127,11 @@ router.post('/logout', (req, res) => {
 });
 
 /**
- * POST /api/verify-token
+ * POST /api/verifyToken
  * 通过 token 验证用户身份（自动登录）
  * 旧接口，保持兼容
  */
-router.post('/verify-token', async (req, res) => {
+router.post('/verifyToken', async (req, res) => {
     try {
         const { token, barCode } = req.body;
         
