@@ -34,7 +34,6 @@ const EXCLUDE_PATTERNS = [
     '.simple-config.json',    // 配置缓存
     '.weixin-bound',          // 微信绑定状态
     '.weixin-qr-state.json',  // 微信登录状态
-    'docker',                 // Docker 配置
 ];
 
 /**
