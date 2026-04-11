@@ -6,7 +6,9 @@
  * - GET  /update/check 检查更新
  * - POST /update       一键更新
  * 
- * 注意：路由路径不含 /api 前缀，挂载时通过 app.use('/api', updateRoutes) 添加
+ * 更新策略：
+ * - 排除法更新，保留 node_modules、tmp、.git、.env 等
+ * - 增量 npm install，只在 package.json 变化时执行
  */
 const express = require('express');
 const fs = require('fs');
@@ -20,6 +22,90 @@ const { restartEasy } = require('../utils/restart');
 // 获取项目根目录
 const PROJECT_ROOT = path.join(__dirname, '..');
 const VERSION_FILE = path.join(PROJECT_ROOT, 'version.json');
+
+// 排除列表（不更新、不删除、不备份）
+const EXCLUDE_PATTERNS = [
+    'node_modules',           // 依赖目录，保留并增量更新
+    'tmp',                    // 临时文件
+    '.git',                   // Git 目录
+    '.env',                   // 本地环境配置
+    '.env.local',             // 本地环境配置
+    '.passwd',                // 密码文件
+    '.simple-config.json',    // 配置缓存
+    '.weixin-bound',          // 微信绑定状态
+    '.weixin-qr-state.json',  // 微信登录状态
+    'docker',                 // Docker 配置
+];
+
+/**
+ * 检查是否在排除列表
+ */
+function shouldExclude(item) {
+    for (const pattern of EXCLUDE_PATTERNS) {
+        if (item === pattern) return true;
+        // 支持通配符（如 *.backup）
+        if (pattern.startsWith('*') && item.endsWith(pattern.slice(1))) return true;
+        if (pattern.endsWith('*') && item.startsWith(pattern.slice(0, -1))) return true;
+    }
+    return false;
+}
+
+/**
+ * 使用排除法复制目录
+ */
+function copyWithExclude(sourceDir, destDir) {
+    const items = fs.readdirSync(sourceDir);
+    
+    for (const item of items) {
+        if (shouldExclude(item)) {
+            console.log(`[更新] 跳过排除项: ${item}`);
+            continue;
+        }
+        
+        const srcPath = path.join(sourceDir, item);
+        const destPath = path.join(destDir, item);
+        
+        if (fs.statSync(srcPath).isDirectory()) {
+            // 目录：如果目标存在则删除，然后复制
+            if (fs.existsSync(destPath)) {
+                fs.rmSync(destPath, { recursive: true });
+            }
+            fs.cpSync(srcPath, destPath, { recursive: true });
+            console.log(`[更新] 复制目录: ${item}`);
+        } else {
+            // 文件：直接复制覆盖
+            fs.copyFileSync(srcPath, destPath);
+            console.log(`[更新] 复制文件: ${item}`);
+        }
+    }
+}
+
+/**
+ * 增量依赖更新
+ * 只在 package.json 变化时执行 npm install
+ */
+function updateDependencies(appDir, oldPackageContent, newPackageContent) {
+    if (oldPackageContent && newPackageContent) {
+        if (oldPackageContent === newPackageContent) {
+            console.log('[一键更新] package.json 未变化，跳过 npm install（节省时间）');
+            return;
+        }
+    }
+    
+    console.log('[一键更新] package.json 已变化，执行增量 npm install...');
+    
+    try {
+        // 增量安装，不删除现有 node_modules
+        execSync('npm install --production --no-audit --no-fund', { 
+            cwd: appDir, 
+            stdio: 'pipe', 
+            timeout: 120000 
+        });
+        console.log('[一键更新] 依赖更新完成');
+    } catch (npmError) {
+        console.warn('[一键更新] npm install 警告:', npmError.message);
+    }
+}
 
 /**
  * GET /version
@@ -71,7 +157,7 @@ router.get('/update/check', async (req, res) => {
 
 /**
  * POST /update
- * 一键更新（无参数调用）
+ * 一键更新（使用排除法，保留 node_modules）
  */
 router.post('/update', async (req, res) => {
     try {
@@ -122,7 +208,7 @@ router.post('/update', async (req, res) => {
         // 后台执行更新
         setImmediate(async () => {
             try {
-                console.log('[一键更新] 开始下载更新包...');
+                console.log('[一键更新] ========== 开始更新 ==========');
                 
                 // 创建目录
                 if (!fs.existsSync(UPDATE_DIR)) {
@@ -134,35 +220,40 @@ router.post('/update', async (req, res) => {
                 
                 const tarFile = path.join(UPDATE_DIR, 'update.tar.gz');
                 
-                // 下载
+                // ==================== 步骤1: 下载 ====================
+                console.log('[一键更新] [1/5] 下载更新包...');
+                
                 const downloadResponse = await fetch(downloadUrl);
                 if (!downloadResponse.ok) {
                     throw new Error(`下载失败: ${downloadResponse.status}`);
                 }
                 const buffer = await downloadResponse.buffer();
                 fs.writeFileSync(tarFile, buffer);
-                console.log('[一键更新] 下载完成, 大小:', buffer.length);
+                console.log('[一键更新] 下载完成, 大小:', Math.round(buffer.length / 1024), 'KB');
                 
-                // 备份
+                // ==================== 步骤2: 备份 ====================
+                console.log('[一键更新] [2/5] 备份当前版本...');
+                
                 const appDir = PROJECT_ROOT;
                 const timestamp = Date.now();
                 const backupPath = path.join(BACKUP_DIR, `backup-${timestamp}`);
                 fs.mkdirSync(backupPath, { recursive: true });
                 
-                const filesToBackup = ['server.js', 'version.json', 'package.json', 'public'];
-                for (const file of filesToBackup) {
-                    const src = path.join(appDir, file);
-                    if (fs.existsSync(src)) {
-                        if (fs.statSync(src).isDirectory()) {
-                            fs.cpSync(src, path.join(backupPath, file), { recursive: true });
-                        } else {
-                            fs.copyFileSync(src, path.join(backupPath, file));
-                        }
-                    }
+                // 保存 package.json 用于后续比较
+                const oldPackagePath = path.join(appDir, 'package.json');
+                let oldPackageContent = null;
+                if (fs.existsSync(oldPackagePath)) {
+                    oldPackageContent = fs.readFileSync(oldPackagePath, 'utf8');
+                    fs.copyFileSync(oldPackagePath, path.join(backupPath, 'package.json.bak'));
                 }
+                
+                // 备份重要文件（排除 node_modules 等）
+                copyWithExclude(appDir, backupPath);
                 console.log('[一键更新] 备份完成:', backupPath);
                 
-                // 解压
+                // ==================== 步骤3: 解压 ====================
+                console.log('[一键更新] [3/5] 解压更新包...');
+                
                 const extractDir = path.join(UPDATE_DIR, 'extracted');
                 if (fs.existsSync(extractDir)) {
                     fs.rmSync(extractDir, { recursive: true });
@@ -177,40 +268,44 @@ router.post('/update', async (req, res) => {
                 const extractedFiles = fs.readdirSync(extractDir);
                 if (extractedFiles.length === 1 && fs.statSync(path.join(extractDir, extractedFiles[0])).isDirectory()) {
                     sourceDir = path.join(extractDir, extractedFiles[0]);
+                    console.log('[一键更新] 检测到单目录结构:', extractedFiles[0]);
                 }
                 
-                // 复制文件（跳过 node_modules）
-                const newFiles = fs.readdirSync(sourceDir);
-                for (const file of newFiles) {
-                    if (file === 'node_modules') continue;
-                    
-                    const srcPath = path.join(sourceDir, file);
-                    const destPath = path.join(appDir, file);
-                    
-                    if (fs.statSync(srcPath).isDirectory()) {
-                        if (fs.existsSync(destPath)) {
-                            fs.rmSync(destPath, { recursive: true });
-                        }
-                        fs.cpSync(srcPath, destPath, { recursive: true });
-                    } else {
-                        fs.copyFileSync(srcPath, destPath);
-                    }
-                }
-                console.log('[一键更新] 文件复制完成');
+                // ==================== 步骤4: 更新文件 ====================
+                console.log('[一键更新] [4/5] 更新文件（排除 node_modules）...');
                 
-                // 更新依赖
-                try {
-                    execSync('npm install --production', { cwd: appDir, stdio: 'pipe', timeout: 120000 });
-                    console.log('[一键更新] 依赖更新完成');
-                } catch (npmError) {
-                    console.warn('[一键更新] npm install 警告:', npmError.message);
+                // 获取新的 package.json 内容
+                const newPackagePath = path.join(sourceDir, 'package.json');
+                let newPackageContent = null;
+                if (fs.existsSync(newPackagePath)) {
+                    newPackageContent = fs.readFileSync(newPackagePath, 'utf8');
                 }
                 
-                // 清理临时文件
+                // 使用排除法更新
+                copyWithExclude(sourceDir, appDir);
+                console.log('[一键更新] 文件更新完成');
+                
+                // ==================== 步骤5: 增量依赖更新 ====================
+                console.log('[一键更新] [5/5] 增量依赖更新...');
+                updateDependencies(appDir, oldPackageContent, newPackageContent);
+                
+                // ==================== 清理临时文件 ====================
+                console.log('[一键更新] 清理临时文件...');
                 fs.rmSync(UPDATE_DIR, { recursive: true, force: true });
-                console.log('[一键更新] 临时文件清理完成');
                 
-                // 重启 openclaw-easy 服务
+                // 清理旧备份（保留最近5个）
+                const backups = fs.readdirSync(BACKUP_DIR).filter(f => f.startsWith('backup-'));
+                if (backups.length > 5) {
+                    backups.sort().slice(0, -5).forEach(old => {
+                        fs.rmSync(path.join(BACKUP_DIR, old), { recursive: true });
+                        console.log('[一键更新] 清理旧备份:', old);
+                    });
+                }
+                
+                console.log('[一键更新] ========== 更新完成 ==========');
+                console.log('[一键更新] 备份保存在:', backupPath);
+                
+                // 重启服务
                 console.log('[一键更新] 准备重启 openclaw-easy 服务...');
                 await restartEasy();
                 
