@@ -96,20 +96,34 @@
             if (token && barCode) {
                 // 有 token 参数，跳转到专用验证页面
                 window.location.href = '/verify.html?token=' + encodeURIComponent(token) + '&barCode=' + encodeURIComponent(barCode);
-                return false;
+                return;
             }
             
-            // 没有 token 参数，正常显示设置页面
+            // 没有 token 参数，直接显示设置页面
             showSetupForm();
-            return false;
         }
         
+        function showVerifyLoading() {
+            document.getElementById('verifyLoading').classList.add('active');
+            document.getElementById('setupFormContainer').classList.remove('active');
+            document.getElementById('pageTitle').textContent = '身份验证中';
+        }
+        
+        function showSetupForm() {
             document.getElementById('verifyLoading').classList.remove('active');
             document.getElementById('setupFormContainer').classList.add('active');
             document.getElementById('pageTitle').textContent = '首次使用，请设置管理密码';
             document.getElementById('password').focus();
         }
         
+        function updateVerifyText(text) {
+            document.querySelector('.verify-loading .text').textContent = text;
+        }
+        
+        verifyTokenAndLogin();
+        
+        function checkPasswordStrength(password) {
+            const checks = { length: password.length >= 8, lower: /[a-z]/.test(password), upper: /[A-Z]/.test(password), number: /[0-9]/.test(password) };
             const updateReq = (id, valid) => {
                 const el = document.getElementById(id);
                 el.style.color = password.length === 0 ? '' : (valid ? '#16a34a' : '#ef4444');
