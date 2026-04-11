@@ -3,6 +3,7 @@
 # 独立于 Node.js 进程，可在服务停止后继续执行
 # 支持多种压缩格式: tar.gz, tar.bz2, tar.xz, zip, gz, 7z
 # 使用排除法更新，保留 node_modules 和用户数据
+# 不依赖 rsync，使用纯 shell 命令
 
 APP_DIR="/app/openclaw-easy"
 BACKUP_BASE="/tmp/openclaw-easy-backup"
@@ -58,13 +59,77 @@ cleanup_update() {
     fi
 }
 
-# 构建 rsync exclude 参数
-build_exclude_args() {
-    local args=""
+# 检查是否在排除列表
+should_exclude() {
+    local item="$1"
+    
     for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-        args="$args --exclude=$pattern"
+        # 通配符匹配
+        if [[ "$pattern" == "*"* ]]; then
+            local suffix="${pattern#\*}"
+            if [[ "$item" == *"$suffix" ]]; then
+                return 0
+            fi
+        elif [[ "$pattern" == *"*" ]]; then
+            local prefix="${pattern%\*}"
+            if [[ "$item" == "$prefix"* ]]; then
+                return 0
+            fi
+        # 精确匹配
+        elif [[ "$item" == "$pattern" ]]; then
+            return 0
+        fi
     done
-    echo "$args"
+    
+    return 1
+}
+
+# 使用排除法复制目录（不依赖 rsync）
+copy_with_exclude() {
+    local source_dir="$1"
+    local dest_dir="$2"
+    local action="$3"  # "backup" or "update"
+    
+    log "复制文件（排除: node_modules, tmp, .git 等）..."
+    
+    local copied_files=0
+    local copied_dirs=0
+    local skipped_items=0
+    
+    # 遍历源目录
+    for item in $(ls -A "$source_dir"); do
+        # 检查是否排除
+        if should_exclude "$item"; then
+            log "跳过排除项: $item"
+            skipped_items=$(( skipped_items + 1 ))
+            continue
+        fi
+        
+        local src="$source_dir/$item"
+        local dest="$dest_dir/$item"
+        
+        if [ -d "$src" ]; then
+            # 目录：删除目标（如果存在），然后复制
+            if [ -e "$dest" ]; then
+                rm -rf "$dest"
+            fi
+            if cp -r "$src" "$dest" 2>/dev/null; then
+                copied_dirs=$(( copied_dirs + 1 ))
+                log "复制目录: $item"
+            else
+                log "警告: 复制目录 $item 失败"
+            fi
+        else
+            # 文件：直接复制
+            if cp "$src" "$dest" 2>/dev/null; then
+                copied_files=$(( copied_files + 1 ))
+            else
+                log "警告: 复制文件 $item 失败"
+            fi
+        fi
+    done
+    
+    log "复制完成: $copied_files 个文件, $copied_dirs 个目录, $skipped_items 项已跳过"
 }
 
 # 检测压缩格式
@@ -217,44 +282,6 @@ get_filename_from_url() {
     echo "$filename"
 }
 
-# 使用排除法备份（rsync）
-backup_with_exclude() {
-    local backup_dir="$1"
-    local exclude_args=$(build_exclude_args)
-    
-    log "备份当前版本（排除 node_modules, tmp, .git 等）..."
-    
-    mkdir -p "$backup_dir"
-    
-    # rsync 备份，排除不需要的内容
-    rsync -av $exclude_args "$APP_DIR/" "$backup_dir/" 2>&1 | while read line; do
-        log "rsync backup: $line"
-    done || error_exit "备份失败"
-    
-    # 保存 package.json 用于后续比较
-    if [ -f "$APP_DIR/package.json" ]; then
-        cp "$APP_DIR/package.json" "$backup_dir/package.json.bak"
-    fi
-    
-    log "备份完成: $backup_dir"
-}
-
-# 使用排除法更新（rsync）
-update_with_exclude() {
-    local source_dir="$1"
-    local exclude_args=$(build_exclude_args)
-    
-    log "更新文件（排除 node_modules, tmp, .git, .env 等）..."
-    
-    # rsync 增量复制
-    # --delete 删除目标端多余文件（排除的内容不删除）
-    rsync -av --delete $exclude_args "$source_dir/" "$APP_DIR/" 2>&1 | while read line; do
-        log "rsync update: $line"
-    done || error_exit "文件更新失败"
-    
-    log "文件更新完成"
-}
-
 # 增量依赖更新
 update_dependencies() {
     local backup_dir="$1"
@@ -309,12 +336,7 @@ rollback() {
     log "========== 开始回滚 =========="
     log "备份目录: $backup_dir"
     
-    local exclude_args=$(build_exclude_args)
-    
-    # rsync 回滚
-    rsync -av --delete $exclude_args "$backup_dir/" "$APP_DIR/" 2>&1 | while read line; do
-        log "rsync rollback: $line"
-    done || log "警告: 部分文件回滚失败"
+    copy_with_exclude "$backup_dir" "$APP_DIR" "rollback"
     
     # 重新安装依赖
     update_dependencies "$backup_dir"
@@ -351,7 +373,13 @@ main() {
     
     # ==================== 步骤2: 备份当前版本 ====================
     log "[2/6] 备份当前版本..."
-    backup_with_exclude "$backup_dir"
+    
+    # 保存 package.json 用于后续比较
+    if [ -f "$APP_DIR/package.json" ]; then
+        cp "$APP_DIR/package.json" "$backup_dir/package.json.bak"
+    fi
+    
+    copy_with_exclude "$APP_DIR" "$backup_dir" "backup"
     
     echo "$backup_dir" > "$MARKER_FILE"
     
@@ -409,7 +437,7 @@ main() {
     
     # ==================== 步骤5: 更新文件 ====================
     log "[5/6] 更新文件..."
-    update_with_exclude "$source_dir"
+    copy_with_exclude "$source_dir" "$APP_DIR" "update"
     
     # ==================== 步骤6: 增量依赖更新 ====================
     log "[6/6] 增量依赖更新..."
@@ -422,7 +450,7 @@ main() {
     # 清理旧备份（保留最近5个）
     local backup_count=$(ls -d "$BACKUP_BASE"-* 2>/dev/null | wc -l)
     if [ "$backup_count" -gt 5 ]; then
-        ls -dt "$BACKUP_BASE"-* 2>/dev/null | tail -n +6 | while read old; do
+        ls -dt "$BACKUP_BASE"-* 2>/null | tail -n +6 | while read old; do
             rm -rf "$old"
             log "清理旧备份: $old"
         done
@@ -469,15 +497,15 @@ case "$1" in
             printf "  %-12s %-30s %s\n" ".$fmt_ext" "$fmt_desc" "$status"
         done
         ;;
-    clear-marker)
-        rm -f "$MARKER_FILE"
-        log "标记文件已清理"
-        ;;
     excludes)
         echo "排除列表（不更新、不删除）:"
         for pattern in "${EXCLUDE_PATTERNS[@]}"; do
             echo "  - $pattern"
         done
+        ;;
+    clear-marker)
+        rm -f "$MARKER_FILE"
+        log "标记文件已清理"
         ;;
     *)
         echo "用法: $0 {update <下载地址>|rollback [备份目录]|status|formats|excludes|clear-marker}"
