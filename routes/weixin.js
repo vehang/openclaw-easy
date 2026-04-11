@@ -204,12 +204,18 @@ router.post('/qr/start', async (req, res) => {
                 allOutput += output;
                 console.log('[微信QR] stdout:', output.substring(0, 100));
                 
-                // 解析二维码链接
-                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[\s\S]+/g);
+                // 解析二维码链接 - 只匹配有效的 URL 部分（不含换行符和后续文本）
+                // 正则：匹配到空白字符为止
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s]+/g);
                 
                 if (qrcodeMatches && qrcodeMatches.length > 0) {
-                    const qrUrl = qrcodeMatches[qrcodeMatches.length - 1];
-                    console.log('[微信QR] 解析到二维码:', qrUrl.substring(0, 50));
+                    // 取最后一个匹配的 URL
+                    let qrUrl = qrcodeMatches[qrcodeMatches.length - 1];
+                    
+                    // 清理 URL：去除末尾可能的非 URL 字符
+                    qrUrl = qrUrl.trim();
+                    
+                    console.log('[微信QR] 解析到二维码:', qrUrl.substring(0, 60));
                     
                     // 更新状态
                     updateWeixinQrState({
@@ -228,10 +234,12 @@ router.post('/qr/start', async (req, res) => {
                 console.log('[微信QR] stderr:', output.substring(0, 100));
                 
                 // 同样尝试解析二维码（stderr 可能也有）
-                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[a-zA-Z0-9]+/g);
+                const qrcodeMatches = allOutput.match(/https?:\/\/liteapp\.weixin\.qq\.com\/q\/[^\s]+/g);
                 
                 if (qrcodeMatches && qrcodeMatches.length > 0) {
-                    const qrUrl = qrcodeMatches[qrcodeMatches.length - 1];
+                    let qrUrl = qrcodeMatches[qrcodeMatches.length - 1];
+                    qrUrl = qrUrl.trim();
+                    
                     updateWeixinQrState({
                         taskId: taskId,
                         status: 'waiting',
