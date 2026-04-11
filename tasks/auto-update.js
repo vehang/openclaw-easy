@@ -2,7 +2,7 @@
  * 自动更新任务
  * 增加版本号比较，避免重复更新相同版本
  */
-const { getVersionInfo, performUpdate } = require('../utils/update');
+const { getVersionInfo, getOpenClawVersion, performUpdate } = require("../utils/update");
 
 // 自动更新配置
 const AUTO_UPDATE_CONFIG = {
@@ -22,7 +22,12 @@ async function performAutoUpdateCheck() {
         console.log('[自动更新] 开始检查更新...');
         
         const currentVersion = getVersionInfo();
-        const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+        const openclawVersion = getOpenClawVersion();
+        let checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+        if (openclawVersion) {
+            checkUrl += `&openclawVersion=${encodeURIComponent(openclawVersion)}`;
+            console.log("[自动更新] OpenClaw 版本:", openclawVersion);
+        }
         
         console.log('[自动更新] 当前版本:', currentVersion.versionCode, currentVersion.versionName);
         

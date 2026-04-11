@@ -17,7 +17,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const router = express.Router();
 
-const { UPDATE_DIR, BACKUP_DIR, getVersionInfo } = require('../utils/update');
+const { UPDATE_DIR, BACKUP_DIR, getVersionInfo, getOpenClawVersion } = require("../utils/update");
 const { restartEasy } = require('../utils/restart');
 
 // 获取项目根目录
@@ -131,7 +131,12 @@ router.get('/version', (req, res) => {
 router.get('/update/check', async (req, res) => {
     try {
         const currentVersion = getVersionInfo();
-        const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+        const openclawVersion = getOpenClawVersion();
+        let checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+        if (openclawVersion) {
+            checkUrl += `&openclawVersion=${encodeURIComponent(openclawVersion)}`;
+            console.log("[版本检查] OpenClaw 版本:", openclawVersion);
+        }
         
         console.log('[版本检查] 请求:', checkUrl);
         console.log('[版本检查] 当前版本:', currentVersion.versionCode, currentVersion.versionName);
@@ -192,7 +197,12 @@ router.post('/update', async (req, res) => {
         // 如果没有传下载地址，先检查更新获取
         if (!downloadUrl) {
             console.log('[一键更新] 检查更新...');
-            const checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+            const openclawVersion = getOpenClawVersion();
+            let checkUrl = `https://api.yun.tilldream.com/api/nas/fw/getNewVersionV2?platform=openclaw-easy&versionCode=${currentVersion.versionCode}`;
+            if (openclawVersion) {
+                checkUrl += `&openclawVersion=${encodeURIComponent(openclawVersion)}`;
+                console.log("[一键更新] OpenClaw 版本:", openclawVersion);
+            }
             const checkResponse = await fetch(checkUrl);
             const checkResult = await checkResponse.json();
             
