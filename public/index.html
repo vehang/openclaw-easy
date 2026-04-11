@@ -436,6 +436,17 @@
 </style>
 </head>
 <body>
+    <!-- Token 验证中状态页面 -->
+    <div class="verify-overlay" id="verifyOverlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <div class="verify-spinner" style="width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: verify-spin 1s linear infinite;"></div>
+        <div class="verify-text" style="margin-top: 20px; color: white; font-size: 18px; font-weight: 500;">正在验证身份...</div>
+        <div class="verify-hint" style="margin-top: 10px; color: rgba(255,255,255,0.7); font-size: 14px;">请稍候，验证成功后将自动进入配置页面</div>
+    </div>
+    <style>
+        @keyframes verify-spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
     <div class="page-wrapper">
         <!-- 头部导航 -->
         <header class="header">
@@ -445,16 +456,16 @@
                     <span class="logo-text">OpenClaw</span>
                 </a>
                 <div class="header-actions">
-                    <span id="versionInfo" style="color: var(--text-secondary); font-size: 12px; margin-right: 12px;">v1.0.0</span>
-                    <button class="btn btn-outline btn-sm" id="checkUpdateBtn">
+                    <span id="versionInfo" style="color: var(--text-secondary); font-size: 12px; margin-right: 12px; display: none;">v1.0.0</span>
+                    <button class="btn btn-outline btn-sm" id="checkUpdateBtn" style="display: none;">
                         <span class="iconify btn-icon" data-icon="mdi:cloud-download-outline" style="font-size: 16px;"></span>
                         <span class="btn-text">检查更新</span>
                     </button>
-                    <button class="btn btn-outline btn-sm" id="changePasswordBtn">
+                    <button class="btn btn-outline btn-sm" id="changePasswordBtn" style="display: none;">
                         <span class="iconify btn-icon" data-icon="mdi:key-outline" style="font-size: 16px;"></span>
                         <span class="btn-text">修改密码</span>
                     </button>
-                    <button class="btn btn-secondary btn-sm" id="logoutBtn">
+                    <button class="btn btn-secondary btn-sm" id="logoutBtn" style="display: none;">
                         <span class="iconify btn-icon" data-icon="mdi:logout" style="font-size: 16px;"></span>
                         <span class="btn-text">退出</span>
                     </button>
@@ -1677,6 +1688,12 @@
                 return true;
             }
             
+            // 显示验证中状态页面
+            const verifyOverlay = document.getElementById('verifyOverlay');
+            if (verifyOverlay) {
+                verifyOverlay.style.display = 'flex';
+            }
+            
             console.log('[Token验证] 检测到 token 参数:', token.substring(0, 10) + '...');
             console.log('[Token验证] barCode:', barCode);
             
@@ -1693,6 +1710,10 @@
                 
                 if (data.code === 0) {
                     console.log('[Token验证] 验证成功');
+                    // 隐藏验证中状态页面
+                    if (verifyOverlay) {
+                        verifyOverlay.style.display = 'none';
+                    }
                     // 清除 URL 参数，保持干净
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return true;
@@ -1718,16 +1739,36 @@
             const canContinue = await checkTokenAutoLogin();
             if (!canContinue) return;  // 验证失败，跳转中，不继续初始化
             
-            // 检查登录方式，隐藏修改密码和退出按钮（token 登录用户不显示）
+            // 检查登录方式和版本信息，显示相应按钮
             try {
+                // 获取登录状态
                 const statusResponse = await fetch('/api/status');
                 const statusData = await statusResponse.json();
-                if (statusData.data && statusData.data.isTokenLogin) {
-                    console.log('[初始化] token 登录用户，隐藏修改密码和退出按钮');
+                
+                // 获取版本信息
+                const versionResponse = await fetch('/api/version');
+                const versionData = await versionResponse.json();
+                
+                if (versionData.data) {
+                    // 显示版本号和检查更新按钮
+                    const versionInfo = document.getElementById('versionInfo');
+                    const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+                    if (versionInfo) {
+                        versionInfo.textContent = 'v' + versionData.data.versionName;
+                        versionInfo.style.display = '';
+                    }
+                    if (checkUpdateBtn) {
+                        checkUpdateBtn.style.display = '';
+                    }
+                }
+                
+                // 只有密码登录才显示修改密码和退出按钮
+                if (statusData.data && !statusData.data.isTokenLogin) {
+                    console.log('[初始化] 密码登录用户，显示修改密码和退出按钮');
                     const changePasswordBtn = document.getElementById('changePasswordBtn');
                     const logoutBtn = document.getElementById('logoutBtn');
-                    if (changePasswordBtn) changePasswordBtn.style.display = 'none';
-                    if (logoutBtn) logoutBtn.style.display = 'none';
+                    if (changePasswordBtn) changePasswordBtn.style.display = '';
+                    if (logoutBtn) logoutBtn.style.display = '';
                 }
             } catch (e) {
                 console.warn('[初始化] 获取状态失败:', e);
