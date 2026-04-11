@@ -2,20 +2,21 @@
  * 认证路由
  * 
  * 接口列表：
- * - GET  /status          检查系统状态
- * - POST /setup/password  设置密码（首次访问）
- * - POST /login           登录验证
- * - POST /logout          退出登录
- * - POST /verify-token    通过 token 验证用户身份
- * - POST /password/change 修改密码
+ * - GET  /status            检查系统状态
+ * - POST /setup/password    设置密码（首次访问）
+ * - POST /login             登录验证
+ * - POST /logout            退出登录
+ * - POST /verify-token      通过 token 验证用户身份（旧接口）
+ * - POST /auth/token        认证获取临时凭证（新接口）
+ * - POST /password/change   修改密码
  */
 const express = require('express');
 const router = express.Router();
 
 const { isPasswordSet, savePassword, verifyPassword, validatePasswordStrength } = require('../utils/password');
-const { createSession, validateSession, deleteSession, generateSessionId } = require('../utils/session');
+const { createSession, createSessionForDevice, validateSession, deleteSession, generateSessionId, getSessionInfo } = require('../utils/session');
 const { SESSION_EXPIRE_TIME } = require('../constants');
-const { sessions } = require('../state');
+const { sessions, findSessionByBarCode, clearSessionsByBarCode } = require('../state');
 const { authMiddleware } = require('../middleware');
 
 /**
@@ -79,7 +80,7 @@ router.post('/setup/password', async (req, res) => {
 
 /**
  * POST /api/login
- * 登录验证
+ * 登录验证（网页用户）
  */
 router.post('/login', async (req, res) => {
     try {
@@ -128,6 +129,7 @@ router.post('/logout', (req, res) => {
 /**
  * POST /api/verify-token
  * 通过 token 验证用户身份（自动登录）
+ * 旧接口，保持兼容
  */
 router.post('/verify-token', async (req, res) => {
     try {
@@ -170,13 +172,8 @@ router.post('/verify-token', async (req, res) => {
         
         // 验证成功
         if (result.code === 0 || result.success) {
-            // 创建 session
-            const sessionId = generateSessionId();
-            sessions.set(sessionId, {
-                createdAt: Date.now(),
-                verifiedByToken: true,
-                barCode: barCode.trim()
-            });
+            // 创建 session（使用新的设备绑定函数）
+            const sessionId = createSessionForDevice(barCode.trim());
             
             // 设置 cookie
             res.cookie('session_token', sessionId, {
@@ -212,6 +209,94 @@ router.post('/verify-token', async (req, res) => {
             code: 1000,
             msg: '验证请求失败: ' + error.message,
             currentTime: Math.floor(Date.now() / 1000)
+        });
+    }
+});
+
+/**
+ * POST /api/auth/token
+ * 认证接口 - 通过 token + barCode 获取临时访问凭证
+ * 
+ * 新接口，用于 APP 客户端认证
+ * 返回 accessToken，后续接口使用该凭证
+ */
+router.post('/auth/token', async (req, res) => {
+    const currentTime = Math.floor(Date.now() / 1000);
+    
+    try {
+        const { token, barCode } = req.body;
+        
+        // 参数校验
+        if (!token || token.trim() === '') {
+            return res.json({
+                code: 1002,
+                msg: 'token参数必传',
+                currentTime
+            });
+        }
+        
+        if (!barCode || barCode.trim() === '') {
+            return res.json({
+                code: 1002,
+                msg: 'barCode参数必传',
+                currentTime
+            });
+        }
+        
+        console.log('[认证] 开始认证:', { 
+            token: token.substring(0, 10) + '...', 
+            barCode: barCode.trim() 
+        });
+        
+        // 调用远程验证接口
+        const verifyUrl = 'https://api.yun.tilldream.com/api/im/openClaw/verifyByAdmin';
+        
+        const response = await fetch(verifyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token: token.trim(),
+                barCode: barCode.trim()
+            })
+        });
+        
+        const result = await response.json();
+        
+        console.log('[认证] 远程验证结果:', result);
+        
+        // 验证成功
+        if (result.code === 0 || result.success) {
+            // 创建 Session（单设备绑定）
+            const accessToken = createSessionForDevice(barCode.trim());
+            
+            console.log('[认证] 认证成功，accessToken:', accessToken.substring(0, 10) + '...');
+            
+            return res.json({
+                code: 0,
+                msg: '认证成功',
+                currentTime,
+                data: {
+                    accessToken: accessToken,
+                    expiresIn: Math.floor(SESSION_EXPIRE_TIME / 1000)  // 秒
+                }
+            });
+        }
+        
+        // 验证失败
+        console.log('[认证] 认证失败:', result.msg || result.message);
+        
+        return res.json({
+            code: 1003,
+            msg: '认证失败',
+            currentTime
+        });
+        
+    } catch (error) {
+        console.error('[认证] 请求失败:', error);
+        return res.json({
+            code: 1000,
+            msg: '认证请求失败: ' + error.message,
+            currentTime
         });
     }
 });
