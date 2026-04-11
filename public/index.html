@@ -1718,6 +1718,21 @@
             const canContinue = await checkTokenAutoLogin();
             if (!canContinue) return;  // 验证失败，跳转中，不继续初始化
             
+            // 检查登录方式，隐藏修改密码和退出按钮（token 登录用户不显示）
+            try {
+                const statusResponse = await fetch('/api/status');
+                const statusData = await statusResponse.json();
+                if (statusData.data && statusData.data.isTokenLogin) {
+                    console.log('[初始化] token 登录用户，隐藏修改密码和退出按钮');
+                    const changePasswordBtn = document.getElementById('changePasswordBtn');
+                    const logoutBtn = document.getElementById('logoutBtn');
+                    if (changePasswordBtn) changePasswordBtn.style.display = 'none';
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                }
+            } catch (e) {
+                console.warn('[初始化] 获取状态失败:', e);
+            }
+            
             // 设置进度跟踪监听器
             setupProgressTracking();
 

@@ -24,12 +24,17 @@ const { authMiddleware } = require('../middleware');
  * 检查系统状态
  */
 router.get('/status', (req, res) => {
+    const token = req.cookies.session_token;
+    const session = getSessionInfo(token);
+    
     res.json({
         code: 0,
         msg: '成功',
         data: {
             passwordSet: isPasswordSet(),
-            authenticated: validateSession(req.cookies.session_token)
+            authenticated: validateSession(token),
+            loginMethod: session ? (session.verifiedByToken ? 'token' : 'password') : null,
+            isTokenLogin: session ? session.verifiedByToken : false
         },
         currentTime: Math.floor(Date.now() / 1000)
     });
