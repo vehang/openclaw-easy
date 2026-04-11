@@ -1,14 +1,12 @@
 {
-    "versionName": "1.0.0.0",
-    "versionCode": 1000,
-    "releaseDate": "2026-04-10",
+    "versionName": "1.0.0.1",
+    "versionCode": 1001,
+    "releaseDate": "2026-04-11",
     "changelog": [
-        "初始版本",
-        "支持简化配置接口",
-        "支持微信扫码登录",
-        "支持 Gateway 服务管理",
-        "支持多种压缩格式解压",
-        "/api/fix 异步执行",
-        "barCode 设备标识参数"
+        "模块化代码重构",
+        "API 认证安全方案",
+        "APP端微信扫码自动重启",
+        "修复微信二维码URL解析问题",
+        "优化提示文字"
     ]
 }
