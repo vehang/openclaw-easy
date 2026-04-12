@@ -391,11 +391,26 @@ router.get('/config/simple', (req, res) => {
             });
         }
         
-        // barCode 匹配，返回完整配置数据
+        // barCode 匹配，尝试从 openclaw.json 同步最新的 AI 配置
+        const resultData = { ...cachedData };
+        try {
+            const realConfig = readConfig();
+            const provider = (realConfig.models?.providers?.default) || {};
+            const model = ((provider.models || [])[0]) || {};
+            
+            // 用 openclaw.json 的实际值替换这三个字段
+            if (provider.baseUrl) resultData.apiUrl = provider.baseUrl;
+            if (provider.apiKey) resultData.apiKey = provider.apiKey;
+            if (model.id) resultData.modelName = model.id;
+        } catch (e) {
+            // 任何异常都不影响正常返回，使用缓存原值
+            console.error('[config/simple] 同步 openclaw.json 失败:', e.message);
+        }
+        
         res.json({
             code: 0,
             msg: '成功',
-            data: cachedData,
+            data: resultData,
             currentTime: Math.floor(Date.now() / 1000)
         });
     } catch (error) {
