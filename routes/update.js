@@ -19,7 +19,6 @@ const router = express.Router();
 
 const { UPDATE_DIR, BACKUP_DIR, getVersionInfo, getOpenClawVersion } = require("../utils/update");
 const { restartEasy } = require('../utils/restart');
-const { notifyNas } = require('../utils/common');
 
 // 获取项目根目录
 const PROJECT_ROOT = path.join(__dirname, '..');
@@ -352,7 +351,6 @@ router.post('/update', async (req, res) => {
                 // 重启服务
                 console.log('[一键更新] 准备重启 openclaw-easy 服务...');
                 await restartEasy();
-                await notifyNas(200);
                 
             } catch (updateError) {
                 console.error('[一键更新] 后台更新失败:', updateError);
