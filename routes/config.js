@@ -328,17 +328,15 @@ router.post('/config/simple', async (req, res) => {
         }
         fs.writeFileSync(SIMPLE_CACHE_FILE, JSON.stringify(cacheData, null, 2), "utf8");
 
-        // ==================== 先通知NAS，再异步重启（不阻塞响应）====================
+        // ==================== 异步重启（不阻塞响应）====================
         setImmediate(async () => {
             try {
-                // 先通知 NAS，再重启（避免重启导致通知丢失）
-                console.log("[通知] 准备通知NAS, type=200(配置保存重启)");
-                await notifyNas(200);
-                console.log("[通知] NAS通知完成, type=200");
-                
                 console.log('[配置保存] 开始异步重启 Gateway...');
                 const result = await restartGateway();
                 console.log('[配置保存] 异步重启结果:', result);
+                console.log("[通知] 准备通知NAS, type=200(配置保存重启)");
+                await notifyNas(200);
+                console.log("[通知] NAS通知完成, type=200");
             } catch (error) {
                 console.error('[配置保存] 异步重启失败:', error);
             }

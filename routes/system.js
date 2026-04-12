@@ -21,14 +21,12 @@ const { notifyNas } = require('../utils/common');
 router.post('/gateway/restart', authMiddleware, async (req, res) => {
     console.log('[操作] 开始重启网关...');
     try {
-        // 先通知 NAS，再重启
-        console.log('[通知] 准备通知NAS, type=200(重启成功)');
-        await notifyNas(200);
-        console.log('[通知] NAS通知完成, type=200');
-        
         const result = await restartGateway();
         if (result.success || result.code === 0) {
             console.log('[操作] 网关重启成功');
+            console.log('[通知] 准备通知NAS, type=200(重启成功)');
+            await notifyNas(200);
+            console.log('[通知] NAS通知完成, type=200');
         } else {
             console.log('[操作] 网关重启失败:', result.error);
         }

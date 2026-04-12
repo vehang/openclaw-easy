@@ -53,20 +53,29 @@ function deepMerge(target, source) {
 async function notifyNas(type) {
     const url = 'http://127.0.0.1:18319/sendNotifyToNas?type=' + type;
     console.log('[NAS通知] 开始请求, type=' + type + ', url=' + url);
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch(url, {
-            signal: controller.signal
+    
+    return new Promise((resolve) => {
+        const http = require('http');
+        const req = http.get(url, { timeout: 5000 }, (res) => {
+            let body = '';
+            res.on('data', (chunk) => { body += chunk; });
+            res.on('end', () => {
+                console.log('[NAS通知] 请求完成, type=' + type + ', status=' + res.statusCode + ', response=' + body);
+                resolve();
+            });
         });
-        clearTimeout(timeout);
         
-        const data = await response.text();
-        console.log('[NAS通知] 请求完成, type=' + type + ', status=' + response.status + ', response=' + data);
-    } catch (error) {
-        console.error('[NAS通知] 请求异常, type=' + type + ', error=' + error.message);
-    }
+        req.on('error', (error) => {
+            console.error('[NAS通知] 请求异常, type=' + type + ', error=' + error.message);
+            resolve();
+        });
+        
+        req.on('timeout', () => {
+            console.error('[NAS通知] 请求超时, type=' + type);
+            req.destroy();
+            resolve();
+        });
+    });
 }
 
 module.exports = {

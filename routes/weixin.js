@@ -117,14 +117,12 @@ router.post('/bound', authMiddleware, (req, res) => {
         if (bound === true) {
             setImmediate(async () => {
                 try {
-                    // 先通知 NAS，再重启
-                    console.log("[通知] 准备通知NAS, type=200(微信绑定重启)");
-                    await notifyNas(200);
-                    console.log("[通知] NAS通知完成, type=200");
-                    
                     console.log('[微信绑定] 开始异步重启 Gateway...');
                     const result = await restartGateway();
                     console.log('[微信绑定] 异步重启结果:', result);
+                    console.log("[通知] 准备通知NAS, type=200(微信绑定重启)");
+                    await notifyNas(200);
+                    console.log("[通知] NAS通知完成, type=200");
                 } catch (error) {
                     console.error('[微信绑定] 异步重启失败:', error);
                 }
@@ -274,14 +272,12 @@ router.post('/qr/start', async (req, res) => {
                     // 异步重启 Gateway 服务
                     setImmediate(async () => {
                         try {
-                            // 先通知 NAS，再重启
-                            console.log("[通知] 准备通知NAS, type=200(微信QR重启)");
-                            await notifyNas(200);
-                            console.log("[通知] NAS通知完成, type=200");
-                            
                             console.log('[微信QR] 开始异步重启 Gateway...');
                             const result = await restartGateway();
                             console.log('[微信QR] 异步重启结果:', result);
+                            console.log("[通知] 准备通知NAS, type=200(微信QR重启)");
+                            await notifyNas(200);
+                            console.log("[通知] NAS通知完成, type=200");
                         } catch (error) {
                             console.error('[微信QR] 异步重启失败:', error);
                         }
