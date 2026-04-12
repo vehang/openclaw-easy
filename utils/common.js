@@ -51,19 +51,21 @@ function deepMerge(target, source) {
  * @param {number} type - 100:修复成功, 200:重启成功
  */
 async function notifyNas(type) {
+    const url = 'http://127.0.0.1:18319/sendNotifyToNas?type=' + type;
+    console.log('[NAS通知] 开始请求, type=' + type + ', url=' + url);
     try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         
-        const response = await fetch('http://127.0.0.1:18319/sendNotifyToNas?type=' + type, {
+        const response = await fetch(url, {
             signal: controller.signal
         });
         clearTimeout(timeout);
         
         const data = await response.text();
-        console.log('[NAS通知] type=' + type + ', status=' + response.status + ', response=' + data);
+        console.log('[NAS通知] 请求完成, type=' + type + ', status=' + response.status + ', response=' + data);
     } catch (error) {
-        console.error('[NAS通知] 调用失败 type=' + type + ', error=' + error.message);
+        console.error('[NAS通知] 请求异常, type=' + type + ', error=' + error.message);
     }
 }
 
