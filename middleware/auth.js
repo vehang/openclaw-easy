@@ -69,7 +69,25 @@ function getBarCode(req) {
 function authMiddleware(req, res, next) {
     const currentTime = Math.floor(Date.now() / 1000);
     
-    // 1. 检查密码是否已设置
+    // 1. 先检查凭证（token 登录用户可能没设密码，但有有效 session）
+    const credential = getAccessToken(req);
+    
+    if (credential) {
+        // 获取 barCode（用于设备绑定验证）
+        const barCode = getBarCode(req);
+        
+        // 验证 Session
+        const isValid = barCode 
+            ? validateSessionForDevice(credential.token, barCode)
+            : validateSession(credential.token);
+        
+        if (isValid) {
+            // 有有效 session，直接放行
+            return next();
+        }
+    }
+    
+    // 2. 无有效凭证，检查密码是否设置
     if (!isPasswordSet()) {
         return res.json({ 
             code: 1002, 
@@ -79,36 +97,12 @@ function authMiddleware(req, res, next) {
         });
     }
     
-    // 2. 获取凭证
-    const credential = getAccessToken(req);
-    if (!credential) {
-        return res.json({ 
-            code: 1001, 
-            msg: '未授权访问，请先认证', 
-            currentTime 
-        });
-    }
-    
-    // 3. 获取 barCode（用于设备绑定验证）
-    const barCode = getBarCode(req);
-    
-    // 4. 验证 Session
-    // 如果有 barCode，使用设备绑定验证
-    // 否则使用基础验证
-    const isValid = barCode 
-        ? validateSessionForDevice(credential.token, barCode)
-        : validateSession(credential.token);
-    
-    if (!isValid) {
-        return res.json({ 
-            code: 1001, 
-            msg: '凭证无效或已过期', 
-            currentTime 
-        });
-    }
-    
-    // 5. 认证通过，继续处理
-    next();
+    // 3. 密码已设置但无有效凭证
+    return res.json({ 
+        code: 1001, 
+        msg: '未授权访问，请先认证', 
+        currentTime 
+    });
 }
 
 module.exports = { 

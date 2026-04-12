@@ -19,6 +19,7 @@ const { WEIXIN_QR_STATE_FILE, WEIXIN_BOUND_FILE, OPENCLAW_DIR } = require('../co
 const { getCurrentWeixinTask, setCurrentWeixinTask, clearCurrentWeixinTask } = require('../state');
 const { updateWeixinQrState, getWeixinBoundStatus, setWeixinBoundStatus } = require('../utils/weixin');
 const { restartGateway } = require('../utils/restart');
+const { notifyNas } = require('../utils/common');
 
 /**
  * GET /login
@@ -119,6 +120,9 @@ router.post('/bound', authMiddleware, (req, res) => {
                     console.log('[微信绑定] 开始异步重启 Gateway...');
                     const result = await restartGateway();
                     console.log('[微信绑定] 异步重启结果:', result);
+                    console.log("[通知] 准备通知NAS, type=200(微信绑定重启)");
+                    await notifyNas(200);
+                    console.log("[通知] NAS通知完成, type=200");
                 } catch (error) {
                     console.error('[微信绑定] 异步重启失败:', error);
                 }
@@ -271,6 +275,9 @@ router.post('/qr/start', async (req, res) => {
                             console.log('[微信QR] 开始异步重启 Gateway...');
                             const result = await restartGateway();
                             console.log('[微信QR] 异步重启结果:', result);
+                            console.log("[通知] 准备通知NAS, type=200(微信QR重启)");
+                            await notifyNas(200);
+                            console.log("[通知] NAS通知完成, type=200");
                         } catch (error) {
                             console.error('[微信QR] 异步重启失败:', error);
                         }

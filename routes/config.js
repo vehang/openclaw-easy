@@ -19,6 +19,7 @@ const { readConfig, saveConfig, configToFormFormat, formToConfig, getConfigStatu
 const { validateAiConfig, validateAllChannels } = require('../utils/validator');
 const { SIMPLE_CACHE_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE } = require('../constants');
 const { restartGateway } = require('../utils/restart');
+const { notifyNas } = require('../utils/common');
 const { setWeixinBoundStatus } = require('../utils/weixin');
 
 /**
@@ -164,7 +165,7 @@ router.post('/config', authMiddleware, async (req, res) => {
  * POST /api/config/simple
  * 简化配置接口 - 通过 JSON 参数设置配置
  */
-router.post('/config/simple', authMiddleware, async (req, res) => {
+router.post('/config/simple', async (req, res) => {
     try {
         const { nickName, apiUrl, apiKey, modelName, appId, appSecret, authToken, barCode } = req.body;
 
@@ -333,6 +334,9 @@ router.post('/config/simple', authMiddleware, async (req, res) => {
                 console.log('[配置保存] 开始异步重启 Gateway...');
                 const result = await restartGateway();
                 console.log('[配置保存] 异步重启结果:', result);
+                console.log("[通知] 准备通知NAS, type=200(配置保存重启)");
+                await notifyNas(200);
+                console.log("[通知] NAS通知完成, type=200");
             } catch (error) {
                 console.error('[配置保存] 异步重启失败:', error);
             }
@@ -353,7 +357,7 @@ router.post('/config/simple', authMiddleware, async (req, res) => {
  * GET /api/config/simple
  * 查询缓存的 Simple 配置参数
  */
-router.get('/config/simple', authMiddleware, (req, res) => {
+router.get('/config/simple', (req, res) => {
     try {
         const { barCode } = req.query;
         

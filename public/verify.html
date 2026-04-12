@@ -171,11 +171,12 @@
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             const barCode = urlParams.get('barCode');
+            const from = urlParams.get('from') || 'login';
             
-            // 没有 token 参数，直接跳转登录页
+            // 没有 token 参数，根据来源跳回
             if (!token || !barCode) {
-                console.log('[验证] 没有 token 参数，跳转登录页');
-                window.location.href = '/login.html';
+                console.log('[验证] 没有 token 参数，跳转来源页');
+                navigateToFromPage(from);
                 return;
             }
             
@@ -194,29 +195,53 @@
                 
                 if (data.code === 0) {
                     console.log('[验证] 验证成功，跳转首页');
-                    // 验证成功，跳转首页
+                    // 验证成功，丢弃 token 和 barCode，直接跳转首页
                     window.location.href = '/';
                 } else {
                     console.log('[验证] 验证失败:', data.msg);
-                    // 显示失败状态
-                    showFailed(data.msg || '身份验证未通过');
+                    // 验证失败，丢弃 token 和 barCode，跳回来源页面
+                    // 验证失败，直接跳回来源页面
+                    navigateToFromPage(from);
                 }
             } catch (error) {
                 console.error('[验证] 请求失败:', error);
-                showFailed('网络错误，请检查网络连接');
+                // 网络错误，直接跳回来源页面
+                    navigateToFromPage(from);
+            }
+        }
+        
+        // 根据来源跳转到对应页面
+        function navigateToFromPage(from) {
+            switch (from) {
+                case 'setup':
+                    window.location.href = '/setup.html';
+                    break;
+                case 'index':
+                    window.location.href = '/login.html';
+                    break;
+                case 'login':
+                default:
+                    window.location.href = '/login.html';
+                    break;
             }
         }
         
         // 显示失败状态
-        function showFailed(message) {
+        function showFailed(message, from) {
             document.getElementById('verifyLoading').classList.add('hidden');
             document.getElementById('verifyFailed').classList.add('active');
             document.getElementById('verifyErrorText').textContent = message;
+            // 2秒后自动跳转回来源页
+            setTimeout(() => {
+                navigateToFromPage(from || 'login');
+            }, 2000);
         }
         
-        // 返回登录页按钮
+        // 返回按钮 - 根据来源跳回
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromPage = urlParams.get('from') || 'login';
         document.getElementById('retryBtn').addEventListener('click', () => {
-            window.location.href = '/login.html';
+            navigateToFromPage(fromPage);
         });
         
         // 页面加载后立即验证

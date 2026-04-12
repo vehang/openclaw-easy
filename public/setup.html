@@ -92,43 +92,12 @@
             
             if (token && barCode) {
                 // 有 token 参数，跳转到专用验证页面
-                window.location.href = '/verify.html?token=' + encodeURIComponent(token) + '&barCode=' + encodeURIComponent(barCode);
-                return false;
+                window.location.href = '/verify.html?token=' + encodeURIComponent(token) + '&barCode=' + encodeURIComponent(barCode) + '&from=setup';
+                return;
             }
             
             // 没有 token 参数，正常显示设置页面
             showSetupForm();
-            return false;
-        }
-            
-            // 没有 token 参数，正常显示设置页面
-            showSetupForm();
-            
-            try {
-                const response = await fetch('/api/verifyToken', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token, barCode })
-                });
-                
-                const data = await response.json();
-                
-                if (data.code === 0) {
-                    updateVerifyText('身份验证成功，正在跳转...');
-                    setTimeout(() => { window.location.href = '/'; }, 800);
-                    return true;
-                } else {
-                    console.log('[Token验证] 验证失败:', data.msg);
-                    showSetupForm();
-                    showToast(data.msg || '身份验证失败', 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.error('[Token验证] 请求失败:', error);
-                showSetupForm();
-                showToast('验证请求失败', 'error');
-                return false;
-            }
         }
         
         
