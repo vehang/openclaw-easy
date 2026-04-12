@@ -200,11 +200,13 @@
                 } else {
                     console.log('[验证] 验证失败:', data.msg);
                     // 验证失败，丢弃 token 和 barCode，跳回来源页面
-                    showFailed(data.msg || '身份验证未通过', from);
+                    // 验证失败，直接跳回来源页面
+                    navigateToFromPage(from);
                 }
             } catch (error) {
                 console.error('[验证] 请求失败:', error);
-                showFailed('网络错误，请检查网络连接', from);
+                // 网络错误，直接跳回来源页面
+                    navigateToFromPage(from);
             }
         }
         
