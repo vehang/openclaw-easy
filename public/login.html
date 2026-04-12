@@ -95,7 +95,7 @@
             
             if (token && barCode) {
                 // 有 token 参数，跳转到专用验证页面
-                window.location.href = '/verify.html' + window.location.search;
+                window.location.href = '/verify.html?token=' + encodeURIComponent(token) + '&barCode=' + encodeURIComponent(barCode) + '&from=login';
                 return false;
             }
             
