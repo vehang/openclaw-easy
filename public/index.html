@@ -1674,7 +1674,7 @@
             
             if (token && barCode) {
                 // 有 token 参数，跳转到专用验证页面
-                window.location.href = '/verify.html?token=' + encodeURIComponent(token) + '&barCode=' + encodeURIComponent(barCode);
+                window.location.href = '/verify.html?token=' + encodeURIComponent(token) + '&barCode=' + encodeURIComponent(barCode) + '&from=index';
                 return false;  // 不继续初始化，等待跳转
             }
             
