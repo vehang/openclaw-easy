@@ -464,7 +464,18 @@
 
         <!-- 主内容区 -->
         <main class="main-content">
-            <div class="container">
+            <!-- 配置加载中状态 -->
+            <div id="configLoading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;">
+                <div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#667eea;border-radius:50%;animation:spin 1s linear infinite;"></div>
+                <p style="margin-top:16px;color:#6b7280;font-size:14px;">正在加载配置...</p>
+            </div>
+            <!-- 配置加载失败状态 -->
+            <div id="configError" style="display:none;flex-direction:column;align-items:center;justify-content:center;min-height:400px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="#ef4444"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                <p style="margin-top:16px;color:#6b7280;font-size:14px;" id="configErrorText">配置加载失败</p>
+                <button onclick="retryLoadConfig()" style="margin-top:16px;background:#667eea;color:white;border:none;padding:8px 24px;border-radius:8px;cursor:pointer;font-size:14px;">重新加载</button>
+            </div>
+            <div class="container" id="configContainer">
                 <!-- 精致步骤导航 -->
                 <div class="steps-nav fade-in">
                     <div class="step-item active" data-step="1" onclick="goToStep(1)">
@@ -1742,6 +1753,7 @@
          * 加载配置数据
          */
         async function loadConfig() {
+            showConfigLoading();
             try {
                 const response = await fetchWithAuth('/api/config');
 
@@ -1752,11 +1764,37 @@
                 const result = await response.json();
                 const config = result.data;
                 populateConfig(config);
+                showConfigContent();
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
                 console.error('加载配置失败:', error);
-                showToast('加载配置失败', 'error');
+                showConfigError(error.message || '配置加载失败');
             }
+        }
+        
+        function showConfigLoading() {
+            document.getElementById('configLoading').style.display = 'flex';
+            document.getElementById('configError').style.display = 'none';
+            document.getElementById('configContainer').style.display = 'none';
+        }
+        
+        function showConfigContent() {
+            document.getElementById('configLoading').style.display = 'none';
+            document.getElementById('configError').style.display = 'none';
+            document.getElementById('configContainer').style.display = '';
+        }
+        
+        function showConfigError(message) {
+            document.getElementById('configLoading').style.display = 'none';
+            document.getElementById('configError').style.display = 'flex';
+            document.getElementById('configContainer').style.display = 'none';
+            document.getElementById('configErrorText').textContent = message || '配置加载失败';
+        }
+        
+        async function retryLoadConfig() {
+            await loadConfig();
+            await loadConfigStatus();
+            calculateProgress();
         }
 
         /**
