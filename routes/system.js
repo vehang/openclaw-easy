@@ -14,6 +14,28 @@ const { authMiddleware } = require('../middleware');
 const { restartGateway } = require('../utils/restart');
 
 /**
+ * 通知 NAS 接口
+ * @param {number} type - 100:修复成功, 200:重启成功
+ */
+async function notifyNas(type) {
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000); // 5秒超时
+        
+        const response = await fetch('http://127.0.0.1:18319/sendNotifyToNas?type=' + type, {
+            signal: controller.signal
+        });
+        clearTimeout(timeout);
+        
+        const data = await response.text();
+        console.log('[NAS通知] type=' + type + ', status=' + response.status + ', response=' + data);
+    } catch (error) {
+        // 任何异常都不影响后续流程
+        console.error('[NAS通知] 调用失败 type=' + type + ', error=' + error.message);
+    }
+}
+
+/**
  * POST /api/gateway/restart
  * 重启 Gateway 服务
  */
@@ -21,8 +43,9 @@ router.post('/gateway/restart', authMiddleware, async (req, res) => {
     console.log('[操作] 开始重启网关...');
     try {
         const result = await restartGateway();
-        if (result.success) {
+        if (result.success || result.code === 0) {
             console.log('[操作] 网关重启成功');
+            await notifyNas(200);
         } else {
             console.log('[操作] 网关重启失败:', result.error);
         }
@@ -62,8 +85,11 @@ router.post('/fix', async (req, res) => {
                 console.log('[修复]', data.toString().trim());
             });
             
-            child.on('close', (code) => {
+            child.on('close', async (code) => {
                 console.log('[修复] 执行完成，退出码:', code);
+                if (code === 0) {
+                    await notifyNas(100);
+                }
             });
             
             child.on('error', (err) => {
