@@ -19,6 +19,7 @@ const { readConfig, saveConfig, configToFormFormat, formToConfig, getConfigStatu
 const { validateAiConfig, validateAllChannels } = require('../utils/validator');
 const { SIMPLE_CACHE_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE } = require('../constants');
 const { restartGateway } = require('../utils/restart');
+const { notifyNas } = require('../utils/common');
 const { setWeixinBoundStatus } = require('../utils/weixin');
 
 /**
@@ -333,6 +334,7 @@ router.post('/config/simple', async (req, res) => {
                 console.log('[配置保存] 开始异步重启 Gateway...');
                 const result = await restartGateway();
                 console.log('[配置保存] 异步重启结果:', result);
+                await notifyNas(200);
             } catch (error) {
                 console.error('[配置保存] 异步重启失败:', error);
             }

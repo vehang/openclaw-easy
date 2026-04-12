@@ -12,28 +12,9 @@ const router = express.Router();
 
 const { authMiddleware } = require('../middleware');
 const { restartGateway } = require('../utils/restart');
+const { notifyNas } = require('../utils/common');
 
-/**
- * 通知 NAS 接口
- * @param {number} type - 100:修复成功, 200:重启成功
- */
-async function notifyNas(type) {
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000); // 5秒超时
-        
-        const response = await fetch('http://127.0.0.1:18319/sendNotifyToNas?type=' + type, {
-            signal: controller.signal
-        });
-        clearTimeout(timeout);
-        
-        const data = await response.text();
-        console.log('[NAS通知] type=' + type + ', status=' + response.status + ', response=' + data);
-    } catch (error) {
-        // 任何异常都不影响后续流程
-        console.error('[NAS通知] 调用失败 type=' + type + ', error=' + error.message);
-    }
-}
+
 
 /**
  * POST /api/gateway/restart
