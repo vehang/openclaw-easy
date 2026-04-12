@@ -334,7 +334,9 @@ router.post('/config/simple', async (req, res) => {
                 console.log('[配置保存] 开始异步重启 Gateway...');
                 const result = await restartGateway();
                 console.log('[配置保存] 异步重启结果:', result);
+                console.log("[通知] 准备通知NAS, type=200(配置保存重启)");
                 await notifyNas(200);
+                console.log("[通知] NAS通知完成, type=200");
             } catch (error) {
                 console.error('[配置保存] 异步重启失败:', error);
             }

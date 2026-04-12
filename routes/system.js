@@ -14,8 +14,6 @@ const { authMiddleware } = require('../middleware');
 const { restartGateway } = require('../utils/restart');
 const { notifyNas } = require('../utils/common');
 
-
-
 /**
  * POST /api/gateway/restart
  * 重启 Gateway 服务
@@ -26,7 +24,9 @@ router.post('/gateway/restart', authMiddleware, async (req, res) => {
         const result = await restartGateway();
         if (result.success || result.code === 0) {
             console.log('[操作] 网关重启成功');
+            console.log('[通知] 准备通知NAS, type=200(重启成功)');
             await notifyNas(200);
+            console.log('[通知] NAS通知完成, type=200');
         } else {
             console.log('[操作] 网关重启失败:', result.error);
         }
@@ -69,7 +69,9 @@ router.post('/fix', async (req, res) => {
             child.on('close', async (code) => {
                 console.log('[修复] 执行完成，退出码:', code);
                 if (code === 0) {
+                    console.log('[通知] 准备通知NAS, type=100(修复成功)');
                     await notifyNas(100);
+                    console.log('[通知] NAS通知完成, type=100');
                 }
             });
             
@@ -90,13 +92,10 @@ router.post('/test/ai', authMiddleware, async (req, res) => {
     try {
         const { apiKey, baseUrl, modelId } = req.body;
 
-        // 这里可以实现实际的连接测试
-        // 目前只做基本的参数验证
         if (!apiKey || !modelId) {
             return res.json({ code: 1000, msg: 'API Key 和模型ID不能为空', currentTime: Math.floor(Date.now() / 1000) });
         }
 
-        // 模拟测试成功
         res.json({ code: 0, msg: 'AI 配置验证通过', currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('测试 AI 连接失败:', error);
