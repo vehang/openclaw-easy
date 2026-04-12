@@ -200,11 +200,11 @@
                 } else {
                     console.log('[验证] 验证失败:', data.msg);
                     // 验证失败，丢弃 token 和 barCode，跳回来源页面
-                    showFailed(data.msg || '身份验证未通过');
+                    showFailed(data.msg || '身份验证未通过', from);
                 }
             } catch (error) {
                 console.error('[验证] 请求失败:', error);
-                showFailed('网络错误，请检查网络连接');
+                showFailed('网络错误，请检查网络连接', from);
             }
         }
         
@@ -225,10 +225,14 @@
         }
         
         // 显示失败状态
-        function showFailed(message) {
+        function showFailed(message, from) {
             document.getElementById('verifyLoading').classList.add('hidden');
             document.getElementById('verifyFailed').classList.add('active');
             document.getElementById('verifyErrorText').textContent = message;
+            // 2秒后自动跳转回来源页
+            setTimeout(() => {
+                navigateToFromPage(from || 'login');
+            }, 2000);
         }
         
         // 返回按钮 - 根据来源跳回
