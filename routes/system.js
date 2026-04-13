@@ -98,11 +98,12 @@ router.post('/test/ai', authMiddleware, async (req, res) => {
         }
 
         const result = await probeAiConfig(baseUrl || '', apiKey, modelId);
-        res.json({
+        const responseObj = {
             code: result.ok ? 0 : 1000,
-            msg: result.msg,
             currentTime: Math.floor(Date.now() / 1000)
-        });
+        };
+        responseObj[result.ok ? 'msg' : 'errorMsg'] = result.msg;
+        res.json(responseObj);
     } catch (error) {
         console.error('测试 AI 连接失败:', error);
         res.json({ code: 1000, errorMsg: '测试连接失败', currentTime: Math.floor(Date.now() / 1000) });

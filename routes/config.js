@@ -108,12 +108,14 @@ router.post('/config/validate', authMiddleware, (req, res) => {
             errors.push(...channelsValidation.allErrors);
         }
 
-        res.json({
-            code: errors.length === 0 ? 0 : 1000,
-            msg: errors.length === 0 ? '验证通过' : errors.join('; '),
-            data: { valid: errors.length === 0, errors },
+        const isValid = errors.length === 0;
+        const validateResponse = {
+            code: isValid ? 0 : 1000,
+            [isValid ? 'msg' : 'errorMsg']: isValid ? '验证通过' : errors.join('; '),
+            data: { valid: isValid, errors },
             currentTime: Math.floor(Date.now() / 1000)
-        });
+        };
+        res.json(validateResponse);
     } catch (error) {
         console.error('验证配置失败:', error);
         res.json({ code: 1000, errorMsg: '验证配置失败', currentTime: Math.floor(Date.now() / 1000) });
