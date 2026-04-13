@@ -53,7 +53,7 @@ sync_config_with_env() {
     "defaultProfile": "openclaw",
     "executablePath": "/usr/bin/chromium"
   },
-  "models": { "mode": "merge", "providers": { "default": { "models": [] } } },
+  "models": { "mode": "merge", "providers": { "default": { "baseUrl": "https://placeholder.invalid/v1", "apiKey": "__PLACEHOLDER_API_KEY__", "models": [] } } },
   "agents": {
     "defaults": {
       "compaction": { "mode": "safeguard" },

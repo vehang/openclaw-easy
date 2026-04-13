@@ -1,10 +1,11 @@
 /**
  * 配置验证工具函数
  */
-const { CHANNEL_REQUIRED_FIELDS } = require('../constants');
+const { CHANNEL_REQUIRED_FIELDS, DEFAULT_PLACEHOLDER } = require('../constants');
 
 /**
  * 验证 AI 配置
+ * 占位默认值视为"未配置"，与空值同等对待
  */
 function validateAiConfig(ai) {
     const errors = [];
@@ -14,15 +15,15 @@ function validateAiConfig(ai) {
         return { valid: false, errors };
     }
 
-    if (!ai.baseUrl || ai.baseUrl.trim() === '') {
+    if (!ai.baseUrl || ai.baseUrl.trim() === '' || ai.baseUrl === DEFAULT_PLACEHOLDER.API_URL) {
         errors.push('Base URL 不能为空');
     }
 
-    if (!ai.apiKey || ai.apiKey.trim() === '') {
+    if (!ai.apiKey || ai.apiKey.trim() === '' || ai.apiKey === DEFAULT_PLACEHOLDER.API_KEY) {
         errors.push('API Key 不能为空');
     }
 
-    if (!ai.modelId || ai.modelId.trim() === '') {
+    if (!ai.modelId || ai.modelId.trim() === '' || ai.modelId === DEFAULT_PLACEHOLDER.MODEL_NAME) {
         errors.push('模型 ID 不能为空');
     }
 

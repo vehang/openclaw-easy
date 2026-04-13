@@ -97,16 +97,16 @@ sync_config_with_env() {
     "defaultProfile": "openclaw",
     "executablePath": "/usr/bin/chromium"
   },
-  "models": { 
-    "mode": "merge", 
-    "providers": { 
-      "default": { 
-        "baseUrl": "https://api.openai.com/v1",
-        "apiKey": "placeholder-configure-via-web-ui",
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "default": {
+        "baseUrl": "https://placeholder.invalid/v1",
+        "apiKey": "__PLACEHOLDER_API_KEY__",
         "api": "openai-completions",
-        "models": [] 
-      } 
-    } 
+        "models": []
+      }
+    }
   },
   "agents": {
     "defaults": {

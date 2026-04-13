@@ -17,7 +17,7 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware');
 const { readConfig, saveConfig, configToFormFormat, formToConfig, getConfigStatus } = require('../utils/config');
 const { validateAiConfig, validateAllChannels } = require('../utils/validator');
-const { SIMPLE_CACHE_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE } = require('../constants');
+const { SIMPLE_CACHE_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE, DEFAULT_PLACEHOLDER } = require('../constants');
 const { restartGateway } = require('../utils/restart');
 const { notifyNas } = require('../utils/common');
 const { setWeixinBoundStatus } = require('../utils/weixin');
@@ -172,42 +172,32 @@ router.post('/config/simple', async (req, res) => {
         // ==================== 参数校验 ====================
         const errors = [];
 
-        // 1. 必传参数校验：apiUrl、apiKey、modelName
-        if (!apiUrl || apiUrl.trim() === '') {
-            errors.push('apiUrl必传');
-        }
-        
-        if (!apiKey || apiKey.trim() === '') {
-            errors.push('apiKey必传');
-        }
-        
-        if (!modelName || modelName.trim() === '') {
-            errors.push('modelName必传');
-        }
-        
+        // barCode 仍必传
         if (!barCode || barCode.trim() === '') {
             errors.push('barCode必传，设备标识不能为空');
         }
 
-        // 2. appId + appSecret 组校验：要么都不传，要么都传
+        // apiUrl / apiKey / modelName 允许为空，后续统一 fallback 为占位值
+
+        // appId + appSecret 组校验：要么都不传，要么都传
         const hasAppId = appId && appId.trim() !== '';
         const hasAppSecret = appSecret && appSecret.trim() !== '';
         const hasAppCredentialsGroup = hasAppId && hasAppSecret;
-        
+
         if ((hasAppId && !hasAppSecret) || (!hasAppId && hasAppSecret)) {
             errors.push('appId和appSecret需同时传递');
         }
 
-        // 3. nickName + authToken 组校验：要么都不传，要么都传
+        // nickName + authToken 组校验：要么都不传，要么都传
         const hasNickName = nickName && nickName.trim() !== '';
         const hasAuthToken = authToken && authToken.trim() !== '';
         const hasAuthTokenGroup = hasNickName && hasAuthToken;
-        
+
         if ((hasNickName && !hasAuthToken) || (!hasNickName && hasAuthToken)) {
             errors.push('nickName和authToken需同时传递');
         }
 
-        // 4. 两组必须至少传一组
+        // 两组必须至少传一组
         if (!hasAppCredentialsGroup && !hasAuthTokenGroup) {
             errors.push('需传递appId+appSecret或nickName+authToken');
         }
@@ -218,16 +208,21 @@ router.post('/config/simple', async (req, res) => {
         }
 
         // ==================== 构建配置 ====================
+        // 空值 fallback 为占位默认值（保证配置文件有值，避免服务无法启动）
+        const finalApiUrl = (apiUrl && apiUrl.trim()) || DEFAULT_PLACEHOLDER.API_URL;
+        const finalApiKey = (apiKey && apiKey.trim()) || DEFAULT_PLACEHOLDER.API_KEY;
+        const finalModelName = (modelName && modelName.trim()) || DEFAULT_PLACEHOLDER.MODEL_NAME;
+
         const existingConfig = readConfig();
 
-        // 构建 AI 配置（必传参数，已确保非空）
+        // 构建 AI 配置（使用 fallback 后的值，保证非空）
         const defaultProvider = {
-            baseUrl: apiUrl.trim(),
-            apiKey: apiKey.trim(),
+            baseUrl: finalApiUrl,
+            apiKey: finalApiKey,
             api: 'openai-completions',
             models: [{
-                id: modelName.trim(),
-                name: modelName.trim(),
+                id: finalModelName,
+                name: finalModelName,
                 reasoning: false,
                 input: ['text', 'image'],
                 cost: {
@@ -296,10 +291,10 @@ router.post('/config/simple', async (req, res) => {
                 defaults: {
                     ...existingConfig.agents?.defaults,
                     model: {
-                        primary: `default/${modelName.trim()}`
+                        primary: `default/${finalModelName}`
                     },
                     imageModel: {
-                        primary: `default/${modelName.trim()}`
+                        primary: `default/${finalModelName}`
                     }
                 }
             },
@@ -310,11 +305,11 @@ router.post('/config/simple', async (req, res) => {
         // 保存配置
         saveConfig(newConfig);
 
-        // 缓存 simple 接口的原始参数到文件
+        // 缓存 simple 接口的原始参数到文件（存原始传入值，不存 fallback 后的占位值）
         const cacheData = {
-            apiUrl: apiUrl.trim(),
-            apiKey: apiKey.trim(),
-            modelName: modelName.trim(),
+            apiUrl: (apiUrl && apiUrl.trim()) || '',
+            apiKey: (apiKey && apiKey.trim()) || '',
+            modelName: (modelName && modelName.trim()) || '',
             barCode: barCode.trim(),
             updatedAt: Math.floor(Date.now() / 1000)
         };
@@ -397,7 +392,7 @@ router.get('/config/simple', (req, res) => {
             const realConfig = readConfig();
             const provider = (realConfig.models?.providers?.default) || {};
             const model = ((provider.models || [])[0]) || {};
-            
+
             // 用 openclaw.json 的实际值替换这三个字段
             if (provider.baseUrl) resultData.apiUrl = provider.baseUrl;
             if (provider.apiKey) resultData.apiKey = provider.apiKey;
@@ -406,7 +401,12 @@ router.get('/config/simple', (req, res) => {
             // 任何异常都不影响正常返回，使用缓存原值
             console.error('[config/simple] 同步 openclaw.json 失败:', e.message);
         }
-        
+
+        // 脱占位：如果值为占位默认值，返回空字符串给客户端
+        if (resultData.apiUrl === DEFAULT_PLACEHOLDER.API_URL) resultData.apiUrl = '';
+        if (resultData.apiKey === DEFAULT_PLACEHOLDER.API_KEY) resultData.apiKey = '';
+        if (resultData.modelName === DEFAULT_PLACEHOLDER.MODEL_NAME) resultData.modelName = '';
+
         res.json({
             code: 0,
             msg: '成功',

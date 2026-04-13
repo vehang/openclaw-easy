@@ -3,7 +3,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { CONFIG_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE } = require('../constants');
+const { CONFIG_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE, DEFAULT_PLACEHOLDER } = require('../constants');
 const { ensureConfigDir, deepMerge } = require('./common');
 const { validateAiConfig, validateAllChannels } = require('./validator');
 
@@ -157,11 +157,14 @@ function configToFormFormat(config) {
     const channels = config.channels || {};
     const gateway = config.gateway || {};
 
+    // 辅助：脱占位（占位默认值 → 空字符串）
+    const strip = (val, placeholder) => (val === placeholder ? '' : (val || ''));
+
     return {
         ai: {
-            baseUrl: defaultProvider.baseUrl || '',
-            apiKey: defaultProvider.apiKey || '',
-            modelId: defaultModel.id || '',
+            baseUrl: strip(defaultProvider.baseUrl, DEFAULT_PLACEHOLDER.API_URL),
+            apiKey: strip(defaultProvider.apiKey, DEFAULT_PLACEHOLDER.API_KEY),
+            modelId: strip(defaultModel.id, DEFAULT_PLACEHOLDER.MODEL_NAME),
             contextWindow: defaultModel.contextWindow || 200000,
             maxTokens: defaultModel.maxTokens || 8192
         },
@@ -211,29 +214,30 @@ function formToConfig(formConfig) {
     const { ai, im, gateway = {} } = formConfig;
 
     // 构建 models.providers.default 配置
+    // 空值 fallback 为占位默认值，保证配置文件字段非空
+    const finalBaseUrl = (ai.baseUrl && ai.baseUrl.trim()) || DEFAULT_PLACEHOLDER.API_URL;
+    const finalApiKey = (ai.apiKey && ai.apiKey.trim()) || DEFAULT_PLACEHOLDER.API_KEY;
+    const finalModelId = (ai.modelId && ai.modelId.trim()) || DEFAULT_PLACEHOLDER.MODEL_NAME;
+
     const defaultProvider = {};
-    if (ai.baseUrl) defaultProvider.baseUrl = ai.baseUrl;
-    if (ai.apiKey) defaultProvider.apiKey = ai.apiKey;
+    defaultProvider.baseUrl = finalBaseUrl;
+    defaultProvider.apiKey = finalApiKey;
     defaultProvider.api = 'openai-completions';
 
-    if (ai.modelId) {
-        defaultProvider.models = [{
-            id: ai.modelId,
-            name: ai.modelId,
-            reasoning: false,
-            input: ['text', 'image'],
-            cost: {
-                input: 0,
-                output: 0,
-                cacheRead: 0,
-                cacheWrite: 0
-            },
-            contextWindow: ai.contextWindow || 200000,
-            maxTokens: ai.maxTokens || 8192
-        }];
-    } else {
-        defaultProvider.models = [];
-    }
+    defaultProvider.models = [{
+        id: finalModelId,
+        name: finalModelId,
+        reasoning: false,
+        input: ['text', 'image'],
+        cost: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0
+        },
+        contextWindow: ai.contextWindow || 200000,
+        maxTokens: ai.maxTokens || 8192
+    }];
 
     // 构建 channels 配置
     const channels = { ...existingConfig.channels };
@@ -349,10 +353,10 @@ function formToConfig(formConfig) {
             defaults: {
                 ...existingConfig.agents?.defaults,
                 model: {
-                    primary: ai.modelId ? `default/${ai.modelId}` : ''
+                    primary: `default/${finalModelId}`
                 },
                 imageModel: {
-                    primary: ai.modelId ? `default/${ai.modelId}` : ''
+                    primary: `default/${finalModelId}`
                 }
             }
         },

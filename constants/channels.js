@@ -31,8 +31,8 @@ const CHANNEL_REQUIRED_FIELDS = {
         ]
     }
     // 注意：nim (网易云信) 有两种认证方式：
-    // 1. appId + appSecret
-    // 2. authToken
+    // appId + appSecret
+    // authToken
     // 两组数据有一组即可，不在此处验证
 };
 
