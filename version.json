@@ -1,6 +1,6 @@
 {
-    "versionName": "1.0.0.4",
-    "versionCode": 1004,
+    "versionName": "1.0.0.5",
+    "versionCode": 1005,
     "releaseDate": "2026-04-13",
     "changelog": [
         "模块化代码重构（server.js拆分）",
@@ -14,6 +14,7 @@
         "AI配置支持传空，空值自动fallback为占位默认值",
         "AI配置保存前连通性探测，验证API可用性",
         "Web端步骤1点击下一步增加API连通性检测",
-        "修复首页loading期间内容区域未隐藏"
+        "修复首页loading期间内容区域未隐藏",
+        "统一错误响应字段msg→errorMsg，兼容APP端格式"
     ]
 }
