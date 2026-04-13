@@ -34,7 +34,7 @@ router.post('/gateway/restart', authMiddleware, async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('重启服务失败:', error);
-        res.json({ code: 1000, msg: error.message || '重启服务失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: error.message || '重启服务失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -94,7 +94,7 @@ router.post('/test/ai', authMiddleware, async (req, res) => {
         const { apiKey, baseUrl, modelId } = req.body;
 
         if (!apiKey || !modelId) {
-            return res.json({ code: 1000, msg: 'API Key 和模型ID不能为空', currentTime: Math.floor(Date.now() / 1000) });
+            return res.json({ code: 1000, errorMsg: 'API Key 和模型ID不能为空', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         const result = await probeAiConfig(baseUrl || '', apiKey, modelId);
@@ -105,7 +105,7 @@ router.post('/test/ai', authMiddleware, async (req, res) => {
         });
     } catch (error) {
         console.error('测试 AI 连接失败:', error);
-        res.json({ code: 1000, msg: '测试连接失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '测试连接失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 

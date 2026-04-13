@@ -177,7 +177,7 @@ router.get('/update/check', async (req, res) => {
         console.error('[版本检查] 失败:', error);
         res.json({
             code: 1000,
-            msg: '检查更新失败: ' + error.message,
+            errorMsg: '检查更新失败: ' + error.message,
             currentTime: Math.floor(Date.now() / 1000)
         });
     }
@@ -230,7 +230,7 @@ router.post('/update', async (req, res) => {
         if (!downloadUrl) {
             return res.json({
                 code: 1001,
-                msg: '下载地址不存在',
+                errorMsg: '下载地址不存在',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
@@ -361,7 +361,7 @@ router.post('/update', async (req, res) => {
         console.error('[一键更新] 失败:', error);
         res.json({
             code: 1000,
-            msg: '更新失败: ' + error.message,
+            errorMsg: '更新失败: ' + error.message,
             currentTime: Math.floor(Date.now() / 1000)
         });
     }

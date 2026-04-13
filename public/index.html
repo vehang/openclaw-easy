@@ -1367,7 +1367,7 @@
                         showToast(result.msg, 'info');
                     }
                 } else {
-                    showToast(result.msg || '保存失败', 'error');
+                    showToast(result.errorMsg || result.msg || '保存失败', 'error');
                 }
             } catch (error) {
                 console.error('[微信登录] 保存绑定状态失败:', error);
@@ -1639,7 +1639,7 @@
                         const data = await response.json();
 
                         if (!response.ok || data.code !== 0) {
-                            showToast(data.msg || 'AI 配置验证失败', 'error');
+                            showToast(data.errorMsg || data.msg || 'AI 配置验证失败', 'error');
                             return;
                         }
                     } catch (error) {
@@ -2316,11 +2316,11 @@
                     // 立即更新进度到100%（不等待 loadConfigStatus）
                     calculateProgress();
 
-                    showToast(data.msg || '配置保存成功', 'success');
+                    showToast(data.errorMsg || data.msg || '配置保存成功', 'success');
                     // 刷新配置状态
                     await loadConfigStatus();
                 } else {
-                    showToast(data.msg || '保存失败', 'error');
+                    showToast(data.errorMsg || data.msg || '保存失败', 'error');
                 }
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
@@ -2403,9 +2403,9 @@
                 const data = await response.json();
 
                 if (response.ok && data.code === 0) {
-                    showToast(data.msg || '连接测试成功', 'success');
+                    showToast(data.errorMsg || data.msg || '连接测试成功', 'success');
                 } else {
-                    showToast(data.msg || '连接测试失败', 'error');
+                    showToast(data.errorMsg || data.msg || '连接测试失败', 'error');
                 }
             } catch (error) {
                 if (error.message === 'Unauthorized') return;
@@ -2537,9 +2537,9 @@
                 const data = await response.json();
 
                 if (response.ok && data.code === 0) {
-                    showToast(data.msg || '重启命令已执行', 'success');
+                    showToast(data.errorMsg || data.msg || '重启命令已执行', 'success');
                 } else {
-                    showToast(data.msg || '重启失败', 'error');
+                    showToast(data.errorMsg || data.msg || '重启失败', 'error');
                 }
             } catch (error) {
                 console.error('重启服务失败:', error);
@@ -2660,9 +2660,9 @@
                 const data = await response.json();
 
                 if (response.ok && data.code === 0) {
-                    showToast(data.msg || '修复完成', 'success');
+                    showToast(data.errorMsg || data.msg || '修复完成', 'success');
                 } else {
-                    showToast(data.msg || '修复失败', 'error');
+                    showToast(data.errorMsg || data.msg || '修复失败', 'error');
                 }
             } catch (error) {
                 console.error('修复失败:', error);
@@ -2728,13 +2728,13 @@
                 const data = await response.json();
 
                 if (response.ok && data.code === 0) {
-                    showToast(data.msg || '密码修改成功', 'success');
+                    showToast(data.errorMsg || data.msg || '密码修改成功', 'success');
                     passwordModal.style.display = 'none';
                     document.getElementById('changePasswordForm').reset();
                     // 重置密码强度指示器
                     resetChangePasswordStrength();
                 } else {
-                    showToast(data.msg || '修改失败', 'error');
+                    showToast(data.errorMsg || data.msg || '修改失败', 'error');
                 }
             } catch (error) {
                 console.error('修改密码失败:', error);
@@ -2945,9 +2945,9 @@
                 const result = await response.json();
                 
                 if (result.code === 0) {
-                    showToast(result.msg || '更新成功，服务正在重启...', 'success');
+                    showToast(result.errorMsg || result.msg || '更新成功，服务正在重启...', 'success');
                 } else {
-                    showToast(result.msg || '更新失败', 'error');
+                    showToast(result.errorMsg || result.msg || '更新失败', 'error');
                     btn.disabled = false;
                     btn.innerHTML = '<span class="iconify btn-icon" data-icon="mdi:cloud-download-outline" style="font-size: 16px;"></span><span class="btn-text">检查更新</span>';
                 }

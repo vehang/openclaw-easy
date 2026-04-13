@@ -164,10 +164,10 @@
                 });
                 const data = await response.json();
                 if (response.ok && data.code === 0) {
-                    showToast(data.msg || '密码设置成功', 'success');
+                    showToast(data.errorMsg || data.msg || '密码设置成功', 'success');
                     setTimeout(() => { window.location.href = '/'; }, 500);
                 } else {
-                    showToast(data.msg || '设置失败', 'error');
+                    showToast(data.errorMsg || data.msg || '设置失败', 'error');
                     setupBtn.disabled = false;
                     setupBtn.textContent = '完成设置';
                 }

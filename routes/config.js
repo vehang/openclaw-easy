@@ -39,7 +39,7 @@ router.get('/config', authMiddleware, (req, res) => {
         });
     } catch (error) {
         console.error('获取配置失败:', error);
-        res.json({ code: 1000, msg: '获取配置失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '获取配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -58,7 +58,7 @@ router.get('/config/raw', authMiddleware, (req, res) => {
         });
     } catch (error) {
         console.error('获取配置失败:', error);
-        res.json({ code: 1000, msg: '获取配置失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '获取配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -78,7 +78,7 @@ router.get('/config/status', authMiddleware, (req, res) => {
         });
     } catch (error) {
         console.error('获取配置状态失败:', error);
-        res.json({ code: 1000, msg: '获取配置状态失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '获取配置状态失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -91,7 +91,7 @@ router.post('/config/validate', authMiddleware, (req, res) => {
         const formConfig = req.body;
 
         if (!formConfig) {
-            return res.json({ code: 1000, msg: '配置不能为空', currentTime: Math.floor(Date.now() / 1000) });
+            return res.json({ code: 1000, errorMsg: '配置不能为空', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         const errors = [];
@@ -116,7 +116,7 @@ router.post('/config/validate', authMiddleware, (req, res) => {
         });
     } catch (error) {
         console.error('验证配置失败:', error);
-        res.json({ code: 1000, msg: '验证配置失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '验证配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -130,20 +130,20 @@ router.post('/config', authMiddleware, async (req, res) => {
 
         // 验证配置结构
         if (!formConfig || !formConfig.ai) {
-            return res.json({ code: 1000, msg: '配置格式不正确', currentTime: Math.floor(Date.now() / 1000) });
+            return res.json({ code: 1000, errorMsg: '配置格式不正确', currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 验证配置
         const aiValidation = validateAiConfig(formConfig.ai);
         if (!aiValidation.valid) {
-            return res.json({ code: 1000, msg: aiValidation.errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
+            return res.json({ code: 1000, errorMsg: aiValidation.errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // 验证启用的渠道
         if (formConfig.im) {
             const channelsValidation = validateAllChannels(formConfig.im);
             if (channelsValidation.allErrors.length > 0) {
-                return res.json({ code: 1000, msg: channelsValidation.allErrors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
+                return res.json({ code: 1000, errorMsg: channelsValidation.allErrors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
             }
         }
 
@@ -158,7 +158,7 @@ router.post('/config', authMiddleware, async (req, res) => {
         });
     } catch (error) {
         console.error('保存配置失败:', error);
-        res.json({ code: 1000, msg: '保存配置失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '保存配置失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -205,7 +205,7 @@ router.post('/config/simple', async (req, res) => {
 
         // 返回校验错误
         if (errors.length > 0) {
-            return res.json({ code: 1002, msg: errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
+            return res.json({ code: 1002, errorMsg: errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
         }
 
         // ==================== AI 连通性探测 ====================
@@ -217,7 +217,7 @@ router.post('/config/simple', async (req, res) => {
         if (rawApiUrl && rawApiKey && rawModelName) {
             const probeResult = await probeAiConfig(rawApiUrl, rawApiKey, rawModelName);
             if (!probeResult.ok) {
-                return res.json({ code: 1002, msg: probeResult.msg, currentTime: Math.floor(Date.now() / 1000) });
+                return res.json({ code: 1002, errorMsg: probeResult.msg, currentTime: Math.floor(Date.now() / 1000) });
             }
         }
 
@@ -358,7 +358,7 @@ router.post('/config/simple', async (req, res) => {
         });
     } catch (error) {
         console.error('简化配置保存失败:', error);
-        res.json({ code: 1000, msg: '配置保存失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '配置保存失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -374,7 +374,7 @@ router.get('/config/simple', (req, res) => {
         if (!barCode || barCode.trim() === '') {
             return res.json({
                 code: 1002,
-                msg: 'barCode参数必传',
+                errorMsg: 'barCode参数必传',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
@@ -383,19 +383,19 @@ router.get('/config/simple', (req, res) => {
         if (!fs.existsSync(SIMPLE_CACHE_FILE)) {
             return res.json({
                 code: 1001,
-                msg: '设备未配置',
+                errorMsg: '设备未配置',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
-        
+
         // 读取缓存数据
         const cachedData = JSON.parse(fs.readFileSync(SIMPLE_CACHE_FILE, "utf8"));
-        
+
         // 验证 barCode 是否匹配
         if (cachedData.barCode !== barCode.trim()) {
             return res.json({
                 code: 1003,
-                msg: '设备未配置',
+                errorMsg: '设备未配置',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
@@ -429,7 +429,7 @@ router.get('/config/simple', (req, res) => {
         });
     } catch (error) {
         console.error('查询 Simple 配置缓存失败:', error);
-        res.json({ code: 1000, msg: '查询失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '查询失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 

@@ -136,7 +136,7 @@ router.post('/bound', authMiddleware, (req, res) => {
         });
     } catch (error) {
         console.error('[微信] 保存绑定状态失败:', error);
-        res.json({ code: 1000, msg: '保存失败', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 1000, errorMsg: '保存失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });
 
@@ -316,7 +316,7 @@ router.post('/qr/start', async (req, res) => {
         console.error('[微信QR] 启动失败:', error);
         res.json({
             code: 1000,
-            msg: '启动失败: ' + error.message,
+            errorMsg: '启动失败: ' + error.message,
             currentTime: Math.floor(Date.now() / 1000)
         });
     }
@@ -332,7 +332,7 @@ router.get('/qr/status', (req, res) => {
         if (!fs.existsSync(WEIXIN_QR_STATE_FILE)) {
             return res.json({
                 code: 1002,
-                msg: '没有正在运行的登录任务',
+                errorMsg: '没有正在运行的登录任务',
                 currentTime: Math.floor(Date.now() / 1000)
             });
         }
@@ -383,7 +383,7 @@ router.get('/qr/status', (req, res) => {
             case 'timeout':
                 return res.json({
                     code: 1001,
-                    msg: '二维码已过期或登录失败',
+                    errorMsg: '二维码已过期或登录失败',
                     currentTime: Math.floor(Date.now() / 1000),
                     data: {
                         taskId: stateData.taskId,
@@ -396,7 +396,7 @@ router.get('/qr/status', (req, res) => {
             case 'error':
                 return res.json({
                     code: 1001,
-                    msg: '登录出错',
+                    errorMsg: '登录出错',
                     currentTime: Math.floor(Date.now() / 1000),
                     data: {
                         taskId: stateData.taskId,
@@ -409,7 +409,7 @@ router.get('/qr/status', (req, res) => {
             case 'stopped':
                 return res.json({
                     code: 1002,
-                    msg: '任务已停止',
+                    errorMsg: '任务已停止',
                     currentTime: Math.floor(Date.now() / 1000),
                     data: {
                         taskId: stateData.taskId,
@@ -420,7 +420,7 @@ router.get('/qr/status', (req, res) => {
             default:
                 return res.json({
                     code: 1000,
-                    msg: '未知状态',
+                    errorMsg: '未知状态',
                     currentTime: Math.floor(Date.now() / 1000),
                     data: stateData
                 });
@@ -430,7 +430,7 @@ router.get('/qr/status', (req, res) => {
         console.error('[微信QR] 状态查询失败:', error);
         res.json({
             code: 1000,
-            msg: '状态查询失败',
+            errorMsg: '状态查询失败',
             currentTime: Math.floor(Date.now() / 1000)
         });
     }
