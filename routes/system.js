@@ -13,6 +13,7 @@ const router = express.Router();
 const { authMiddleware } = require('../middleware');
 const { restartGateway } = require('../utils/restart');
 const { notifyNas } = require('../utils/common');
+const { probeAiConfig } = require('../utils/ai-probe');
 
 /**
  * POST /api/gateway/restart
@@ -96,7 +97,12 @@ router.post('/test/ai', authMiddleware, async (req, res) => {
             return res.json({ code: 1000, msg: 'API Key 和模型ID不能为空', currentTime: Math.floor(Date.now() / 1000) });
         }
 
-        res.json({ code: 0, msg: 'AI 配置验证通过', currentTime: Math.floor(Date.now() / 1000) });
+        const result = await probeAiConfig(baseUrl || '', apiKey, modelId);
+        res.json({
+            code: result.ok ? 0 : 1000,
+            msg: result.msg,
+            currentTime: Math.floor(Date.now() / 1000)
+        });
     } catch (error) {
         console.error('测试 AI 连接失败:', error);
         res.json({ code: 1000, msg: '测试连接失败', currentTime: Math.floor(Date.now() / 1000) });

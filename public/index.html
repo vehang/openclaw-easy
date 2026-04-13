@@ -1610,13 +1610,49 @@
             updateStepUI();
         }
 
-        function nextStep() {
+        async function nextStep() {
             if (currentStep < totalSteps) {
                 // 步骤1需要验证
                 if (currentStep === 1 && !validateAiConfig()) {
                     showToast('请填写所有必填字段', 'error');
                     return;
                 }
+
+                // 步骤1：表单校验通过后，探测 AI 连通性
+                if (currentStep === 1) {
+                    const nextBtn = document.querySelector('#step1 .btn-primary');
+                    const originalText = nextBtn.textContent;
+                    nextBtn.disabled = true;
+                    nextBtn.innerHTML = '<span class="loading"></span> 验证中...';
+
+                    try {
+                        const baseUrl = document.getElementById('aiBaseUrl').value.trim();
+                        const apiKey = document.getElementById('aiApiKey').value.trim();
+                        const modelId = document.getElementById('aiModelId').value.trim();
+
+                        const response = await fetchWithAuth('/api/test/ai', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ apiKey, baseUrl, modelId })
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok || data.code !== 0) {
+                            showToast(data.msg || 'AI 配置验证失败', 'error');
+                            return;
+                        }
+                    } catch (error) {
+                        if (error.message === 'Unauthorized') return;
+                        console.error('AI 配置验证失败:', error);
+                        showToast('AI 配置验证失败，请检查网络', 'error');
+                        return;
+                    } finally {
+                        nextBtn.disabled = false;
+                        nextBtn.textContent = originalText;
+                    }
+                }
+
                 goToStep(currentStep + 1);
             }
         }

@@ -21,6 +21,7 @@ const { SIMPLE_CACHE_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE, DEFAULT_PLACEHOLDER 
 const { restartGateway } = require('../utils/restart');
 const { notifyNas } = require('../utils/common');
 const { setWeixinBoundStatus } = require('../utils/weixin');
+const { probeAiConfig } = require('../utils/ai-probe');
 
 /**
  * GET /api/config
@@ -205,6 +206,19 @@ router.post('/config/simple', async (req, res) => {
         // 返回校验错误
         if (errors.length > 0) {
             return res.json({ code: 1002, msg: errors.join('; '), currentTime: Math.floor(Date.now() / 1000) });
+        }
+
+        // ==================== AI 连通性探测 ====================
+        const rawApiUrl = (apiUrl && apiUrl.trim()) || '';
+        const rawApiKey = (apiKey && apiKey.trim()) || '';
+        const rawModelName = (modelName && modelName.trim()) || '';
+
+        // 三项都有真实值时才探测，空值跳过
+        if (rawApiUrl && rawApiKey && rawModelName) {
+            const probeResult = await probeAiConfig(rawApiUrl, rawApiKey, rawModelName);
+            if (!probeResult.ok) {
+                return res.json({ code: 1002, msg: probeResult.msg, currentTime: Math.floor(Date.now() / 1000) });
+            }
         }
 
         // ==================== 构建配置 ====================
