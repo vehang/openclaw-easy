@@ -459,7 +459,12 @@ main() {
     log "========== 更新完成 =========="
     log "备份保存在: $backup_dir"
     log "注意: node_modules 已保留，package.json 未变化时跳过了 npm install"
-    
+
+    # 更新成功，清理标记文件（防止下次启动时误判为更新失败而触发回滚）
+    rm -f "$MARKER_FILE"
+    rm -f "$ROLLBACK_COUNT_FILE"
+    log "已清理更新标记文件"
+
     echo "$backup_dir"
 }
 
