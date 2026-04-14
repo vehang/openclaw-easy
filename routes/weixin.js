@@ -14,7 +14,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const router = express.Router();
 
-const { authMiddleware } = require('../middleware');
+const { authMiddleware, appAuthMiddleware } = require('../middleware');
 const { WEIXIN_QR_STATE_FILE, WEIXIN_BOUND_FILE, OPENCLAW_DIR } = require('../constants');
 const { getCurrentWeixinTask, setCurrentWeixinTask, clearCurrentWeixinTask } = require('../state');
 const { updateWeixinQrState, getWeixinBoundStatus, setWeixinBoundStatus } = require('../utils/weixin');
@@ -144,7 +144,7 @@ router.post('/bound', authMiddleware, (req, res) => {
  * POST /qr/start
  * 启动微信二维码登录任务
  */
-router.post('/qr/start', async (req, res) => {
+router.post('/qr/start', appAuthMiddleware, async (req, res) => {
     try {
         console.log('[微信QR] 收到启动请求');
         
@@ -326,7 +326,7 @@ router.post('/qr/start', async (req, res) => {
  * GET /qr/status
  * 获取微信二维码登录状态
  */
-router.get('/qr/status', (req, res) => {
+router.get('/qr/status', appAuthMiddleware, (req, res) => {
     try {
         // 检查状态文件是否存在
         if (!fs.existsSync(WEIXIN_QR_STATE_FILE)) {

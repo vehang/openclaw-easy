@@ -10,7 +10,7 @@ const express = require('express');
 const { spawn } = require('child_process');
 const router = express.Router();
 
-const { authMiddleware } = require('../middleware');
+const { authMiddleware, appAuthMiddleware } = require('../middleware');
 const { restartGateway } = require('../utils/restart');
 const { notifyNas } = require('../utils/common');
 const { probeAiConfig } = require('../utils/ai-probe');
@@ -43,7 +43,7 @@ router.post('/gateway/restart', authMiddleware, async (req, res) => {
  * 修复 OpenClaw 运行环境（异步执行）
  * 无需登录验证
  */
-router.post('/fix', async (req, res) => {
+router.post('/fix', appAuthMiddleware, async (req, res) => {
     console.log('[操作] 修复任务已触发');
     // 立即返回响应
     res.json({

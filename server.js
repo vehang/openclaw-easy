@@ -25,6 +25,10 @@ const { PORT, CONFIG_FILE } = require('./constants');
 const { htmlAccessMiddleware } = require('./middleware');
 const { mountRoutes } = require('./routes');
 const { startAutoUpdateTask } = require('./tasks');
+const { loadAppTokens } = require('./state/app-tokens');
+
+// ==================== 加载持久化状态 ====================
+loadAppTokens();
 
 // ==================== Express 应用初始化 ====================
 const app = express();

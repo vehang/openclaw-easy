@@ -35,6 +35,8 @@ const PASSWORD_FILE = path.join(OPENCLAW_DIR, '.passwd');
 const SIMPLE_CACHE_FILE = path.join(OPENCLAW_DIR, '.simple-config.json');
 const WEIXIN_QR_STATE_FILE = path.join(OPENCLAW_DIR, '.weixin-qr-state.json');
 const WEIXIN_BOUND_FILE = path.join(OPENCLAW_DIR, '.weixin-bound');
+const APP_TOKENS_FILE = path.join(OPENCLAW_DIR, '.app-tokens.json');
+const APP_TOKEN_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000; // 7 天
 
 module.exports = {
     DEFAULT_PLACEHOLDER,
@@ -47,5 +49,7 @@ module.exports = {
     PASSWORD_FILE,
     SIMPLE_CACHE_FILE,
     WEIXIN_QR_STATE_FILE,
-    WEIXIN_BOUND_FILE
+    WEIXIN_BOUND_FILE,
+    APP_TOKENS_FILE,
+    APP_TOKEN_EXPIRE_TIME
 };

@@ -10,7 +10,11 @@
  */
 const { isPasswordSet } = require('../utils/password');
 const { validateSession, validateSessionForDevice } = require('../utils/session');
+const { validateAppToken, getAppTokenInfo } = require('../state/app-tokens');
 const { SESSION_EXPIRE_TIME } = require('../constants');
+const path = require('path');
+const fs = require('fs');
+const VERSION_FILE = path.join(__dirname, '..', 'version.json');
 
 /**
  * 从请求中获取凭证（多渠道）
@@ -105,8 +109,69 @@ function authMiddleware(req, res, next) {
     });
 }
 
+/**
+ * 读取 appAuthRequired 开关
+ */
+function isAppAuthRequired() {
+    try {
+        const v = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
+        return v.appAuthRequired === true;
+    } catch (_) {
+        return false;
+    }
+}
+
+/**
+ * App API 认证中间件
+ * 检查 appAuthRequired 开关 → 从 5 种来源提取 accessToken → 校验
+ */
+function appAuthMiddleware(req, res, next) {
+    if (!isAppAuthRequired()) return next();
+
+    // 从 5 种来源提取 accessToken
+    let token = null;
+
+    // 1. Authorization: Bearer ac_xxx
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7).trim();
+    }
+
+    // 2. X-Access-Token
+    if (!token && req.headers['x-access-token']) {
+        token = req.headers['x-access-token'].trim();
+    }
+
+    // 3. Query
+    if (!token && req.query?.accessToken) {
+        token = req.query.accessToken.trim();
+    }
+
+    // 4. Body
+    if (!token && req.body?.accessToken) {
+        token = req.body.accessToken.trim();
+    }
+
+    // 5. Cookie
+    if (!token && req.cookies?.access_token) {
+        token = req.cookies.access_token.trim();
+    }
+
+    if (!token || !validateAppToken(token)) {
+        return res.json({
+            code: 4001,
+            errorMsg: 'accessToken 无效或已过期，请重新认证',
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    }
+
+    req.appDevice = getAppTokenInfo(token);
+    next();
+}
+
 module.exports = { 
     authMiddleware,
+    appAuthMiddleware,
     getAccessToken,
     getBarCode
 };

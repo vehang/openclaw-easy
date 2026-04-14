@@ -1,7 +1,8 @@
 {
-    "versionName": "1.0.0.5",
-    "versionCode": 1005,
-    "releaseDate": "2026-04-13",
+    "versionName": "1.0.0.6",
+    "versionCode": 1006,
+    "releaseDate": "2026-04-14",
+    "appAuthRequired": true,
     "changelog": [
         "模块化代码重构（server.js拆分）",
         "API认证安全方案（accessToken机制）",
@@ -15,6 +16,10 @@
         "AI配置保存前连通性探测，验证API可用性",
         "Web端步骤1点击下一步增加API连通性检测",
         "修复首页loading期间内容区域未隐藏",
-        "统一错误响应字段msg→errorMsg，兼容APP端格式"
+        "统一错误响应字段msg→errorMsg，兼容APP端格式",
+        "App API认证体系：持久化accessToken（7天有效）",
+        "appAuthMiddleware保护5个App接口",
+        "version.json增加appAuthRequired开关",
+        "accessToken支持5种传递方式（Header/Query/Body/Cookie）"
     ]
 }

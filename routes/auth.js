@@ -15,7 +15,8 @@ const router = express.Router();
 
 const { isPasswordSet, savePassword, verifyPassword, validatePasswordStrength } = require('../utils/password');
 const { createSession, createSessionForDevice, validateSession, deleteSession, generateSessionId, getSessionInfo } = require('../utils/session');
-const { SESSION_EXPIRE_TIME } = require('../constants');
+const { findAppTokenByBarCode, createAppToken } = require('../state/app-tokens');
+const { SESSION_EXPIRE_TIME, APP_TOKEN_EXPIRE_TIME } = require('../constants');
 const { sessions, findSessionByBarCode, clearSessionsByBarCode } = require('../state');
 const { authMiddleware } = require('../middleware');
 
@@ -220,10 +221,10 @@ router.post('/verifyToken', async (req, res) => {
 
 /**
  * POST /api/auth/token
- * 认证接口 - 通过 token + barCode 获取临时访问凭证
+ * 认证接口 - 通过 token + barCode 获取持久化 accessToken
  * 
- * 新接口，用于 APP 客户端认证
- * 返回 accessToken，后续接口使用该凭证
+ * App 客户端认证接口
+ * 远程验证通过后，生成/返回持久化 accessToken（7天有效，重启不丢失）
  */
 router.post('/auth/token', async (req, res) => {
     const currentTime = Math.floor(Date.now() / 1000);
@@ -233,76 +234,60 @@ router.post('/auth/token', async (req, res) => {
         
         // 参数校验
         if (!token || token.trim() === '') {
-            return res.json({
-                code: 1002,
-                errorMsg: 'token参数必传',
-                currentTime
-            });
+            return res.json({ code: 1002, errorMsg: 'token参数必传', currentTime });
         }
 
         if (!barCode || barCode.trim() === '') {
-            return res.json({
-                code: 1002,
-                errorMsg: 'barCode参数必传',
-                currentTime
-            });
+            return res.json({ code: 1002, errorMsg: 'barCode参数必传', currentTime });
         }
         
-        console.log('[认证] 开始认证:', { 
-            token: token.substring(0, 10) + '...', 
-            barCode: barCode.trim() 
-        });
+        console.log('[认证] 开始认证:', { token: token.substring(0, 10) + '...', barCode: barCode.trim() });
         
         // 调用远程验证接口
         const verifyUrl = 'https://api.yun.tilldream.com/api/im/openClaw/verifyByAdmin';
-        
         const response = await fetch(verifyUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                token: token.trim(),
-                barCode: barCode.trim()
-            })
+            body: JSON.stringify({ token: token.trim(), barCode: barCode.trim() })
         });
-        
         const result = await response.json();
-        
         console.log('[认证] 远程验证结果:', result);
         
-        // 验证成功
         if (result.code === 0 || result.success) {
-            // 创建 Session（单设备绑定）
-            const accessToken = createSessionForDevice(barCode.trim());
+            // 检查是否已有有效 token（避免重复生成）
+            const existing = findAppTokenByBarCode(barCode.trim());
+            if (existing) {
+                console.log('[认证] 复用已有 accessToken, barCode:', barCode.trim());
+                return res.json({
+                    code: 0, msg: '认证成功', currentTime,
+                    data: {
+                        accessToken: existing.accessToken,
+                        expiresIn: Math.floor((existing.expiresAt - existing.createdAt) / 1000),
+                        barCode: barCode.trim()
+                    }
+                });
+            }
             
-            console.log('[认证] 认证成功，accessToken:', accessToken.substring(0, 10) + '...');
+            // 生成新的持久化 token
+            const tokenInfo = createAppToken(barCode.trim());
+            console.log('[认证] 认证成功，生成 accessToken, barCode:', barCode.trim());
             
             return res.json({
-                code: 0,
-                msg: '认证成功',
-                currentTime,
+                code: 0, msg: '认证成功', currentTime,
                 data: {
-                    accessToken: accessToken,
-                    expiresIn: Math.floor(SESSION_EXPIRE_TIME / 1000)  // 秒
+                    accessToken: tokenInfo.accessToken,
+                    expiresIn: Math.floor((tokenInfo.expiresAt - tokenInfo.createdAt) / 1000),
+                    barCode: barCode.trim()
                 }
             });
         }
         
-        // 验证失败
         console.log('[认证] 认证失败:', result.msg || result.message);
-        
-        return res.json({
-            code: 1003,
-            errorMsg: '认证失败',
-            currentTime
-        });
+        return res.json({ code: 1003, errorMsg: result.msg || result.message || '认证失败', currentTime });
         
     } catch (error) {
         console.error('[认证] 请求失败:', error);
-        return res.json({
-            code: 1000,
-            errorMsg: '认证请求失败: ' + error.message,
-            currentTime
-        });
+        return res.json({ code: 1000, errorMsg: '认证请求失败: ' + error.message, currentTime });
     }
 });
 

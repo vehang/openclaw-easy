@@ -14,7 +14,7 @@ const express = require('express');
 const fs = require('fs');
 const router = express.Router();
 
-const { authMiddleware } = require('../middleware');
+const { authMiddleware, appAuthMiddleware } = require('../middleware');
 const { readConfig, saveConfig, configToFormFormat, formToConfig, getConfigStatus } = require('../utils/config');
 const { validateAiConfig, validateAllChannels } = require('../utils/validator');
 const { SIMPLE_CACHE_FILE, OPENCLAW_DIR, WEIXIN_BOUND_FILE, DEFAULT_PLACEHOLDER } = require('../constants');
@@ -168,7 +168,7 @@ router.post('/config', authMiddleware, async (req, res) => {
  * POST /api/config/simple
  * 简化配置接口 - 通过 JSON 参数设置配置
  */
-router.post('/config/simple', async (req, res) => {
+router.post('/config/simple', appAuthMiddleware, async (req, res) => {
     try {
         const { nickName, apiUrl, apiKey, modelName, appId, appSecret, authToken, barCode } = req.body;
 
@@ -368,7 +368,7 @@ router.post('/config/simple', async (req, res) => {
  * GET /api/config/simple
  * 查询缓存的 Simple 配置参数
  */
-router.get('/config/simple', (req, res) => {
+router.get('/config/simple', appAuthMiddleware, (req, res) => {
     try {
         const { barCode } = req.query;
         
