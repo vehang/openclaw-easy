@@ -25,7 +25,7 @@ function isPlaceholder(value) {
         || value === DEFAULT_PLACEHOLDER.MODEL_NAME;
 }
 
-const PORT = 18780;
+const PORT = parseInt(process.env.PORT) || 18780;
 const SALT_ROUNDS = 10;
 const SESSION_EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24小时
 
