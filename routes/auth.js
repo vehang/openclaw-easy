@@ -14,10 +14,9 @@ const express = require('express');
 const router = express.Router();
 
 const { isPasswordSet, savePassword, verifyPassword, validatePasswordStrength } = require('../utils/password');
-const { createSession, createSessionForDevice, validateSession, deleteSession, generateSessionId, getSessionInfo } = require('../utils/session');
+const { createSession, createSessionForDevice, validateSession, deleteSession, getSessionInfo } = require('../utils/session');
 const { findAppTokenByBarCode, createAppToken } = require('../state/app-tokens');
-const { SESSION_EXPIRE_TIME, APP_TOKEN_EXPIRE_TIME } = require('../constants');
-const { sessions, findSessionByBarCode, clearSessionsByBarCode } = require('../state');
+const { SESSION_EXPIRE_TIME } = require('../constants');
 const { authMiddleware } = require('../middleware');
 
 /**

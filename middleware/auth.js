@@ -11,7 +11,6 @@
 const { isPasswordSet } = require('../utils/password');
 const { validateSession, validateSessionForDevice } = require('../utils/session');
 const { validateAppToken, getAppTokenInfo } = require('../state/app-tokens');
-const { SESSION_EXPIRE_TIME } = require('../constants');
 const path = require('path');
 const fs = require('fs');
 const VERSION_FILE = path.join(__dirname, '..', 'version.json');

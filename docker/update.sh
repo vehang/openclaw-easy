@@ -20,15 +20,6 @@ MARKER_FILE="/tmp/openclaw-easy-update-marker"
 LOG_FILE="/var/log/supervisor/update.log"
 TEST_PORT=18781
 
-# 备份排除列表
-BACKUP_EXCLUDES=(
-    "node_modules"
-    "tmp"
-    ".git"
-    ".env"
-    ".env.local"
-)
-
 # 支持的压缩格式配置
 ARCHIVE_FORMATS=(
     "tar.gz|gzip tar|tar -xzf|Gzip 压缩的 TAR 归档"

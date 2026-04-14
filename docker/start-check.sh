@@ -119,7 +119,7 @@ check_and_rollback
 
 # 2. 显示版本信息
 if [ -f "$VERSION_FILE" ]; then
-    local version_name=$(grep -o '"versionName"[[:space:]]*:[[:space:]]*"[^"]*"' "$VERSION_FILE" 2>/dev/null | head -1 | cut -d'"' -f4)
+    version_name=$(grep -o '"versionName"[[:space:]]*:[[:space:]]*"[^"]*"' "$VERSION_FILE" 2>/dev/null | head -1 | cut -d'"' -f4)
     [ -n "$version_name" ] && log "当前版本: $version_name"
 fi
 

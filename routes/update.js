@@ -14,12 +14,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { execSync } = require('child_process');
-const path = require('path');
-
-const { UPDATE_DIR, BACKUP_DIR, getVersionInfo, getOpenClawVersion, performUpdate } = require("../utils/update");
-
-const PROJECT_ROOT = path.join(__dirname, '..');
+const { getVersionInfo, getOpenClawVersion, performUpdate } = require("../utils/update");
 
 /**
  * GET /version
