@@ -6,34 +6,12 @@
     <title>身份验证 - OpenClaw</title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        /* 页面布局 */
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-color, #f5f7fa);
-        }
-        
-        .verify-wrapper {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         .verify-card {
             background: white;
             border-radius: 16px;
             padding: 40px 30px;
             box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
             text-align: center;
-            width: 100%;
-            max-width: 400px;
-            display: flex;
-            flex-direction: column;
         }
         
         .verify-header {
@@ -145,8 +123,8 @@
     </style>
 </head>
 <body>
-    <div class="verify-wrapper">
-        <div class="verify-card">
+    <div class="login-wrapper">
+        <div class="login-card fade-in verify-card">
             <!-- 头部 Logo -->
             <div class="verify-header">
                 <div class="verify-logo">
