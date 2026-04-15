@@ -1,25 +1,9 @@
 {
-    "versionName": "1.0.0.6",
-    "versionCode": 1006,
-    "releaseDate": "2026-04-14",
+    "versionName": "1.0.0.7",
+    "versionCode": 1007,
+    "releaseDate": "2026-04-15",
     "appAuthRequired": true,
     "changelog": [
-        "模块化代码重构（server.js拆分）",
-        "API认证安全方案（accessToken机制）",
-        "首页支持token+barCode自动登录",
-        "token登录用户隐藏修改密码和退出按钮",
-        "升级脚本排除法优化（保留node_modules）",
-        "纯shell命令替代rsync（无额外依赖）",
-        "版本检查添加openclawVersion参数",
-        "版本号比较避免重复更新",
-        "AI配置支持传空，空值自动fallback为占位默认值",
-        "AI配置保存前连通性探测，验证API可用性",
-        "Web端步骤1点击下一步增加API连通性检测",
-        "修复首页loading期间内容区域未隐藏",
-        "统一错误响应字段msg→errorMsg，兼容APP端格式",
-        "App API认证体系：持久化accessToken（7天有效）",
-        "appAuthMiddleware保护5个App接口",
-        "version.json增加appAuthRequired开关",
-        "accessToken支持5种传递方式（Header/Query/Body/Cookie）"
+        "修复已知bug"
     ]
 }
