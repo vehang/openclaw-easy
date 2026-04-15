@@ -8,7 +8,8 @@
  * - POST /api/config/validate 验证配置
  * - POST /api/config          保存配置
  * - POST /api/config/simple   简化配置接口
- * - GET  /api/config/simple   查询缓存的 Simple 配置
+ * - GET  /api/config/simple          查询缓存的 Simple 配置
+ * - GET  /api/config/simple/status   查询是否已配置（无需认证）
  */
 const express = require('express');
 const fs = require('fs');
@@ -431,6 +432,53 @@ router.get('/config/simple', appAuthMiddleware, (req, res) => {
         });
     } catch (error) {
         console.error('查询 Simple 配置缓存失败:', error);
+        res.json({ code: 1000, errorMsg: '查询失败', currentTime: Math.floor(Date.now() / 1000) });
+    }
+});
+
+/**
+ * GET /api/config/simple/status
+ * 查询是否已配置（无需认证，不返回配置数据）
+ */
+router.get('/config/simple/status', (req, res) => {
+    try {
+        const { barCode } = req.query;
+
+        // barCode 必传
+        if (!barCode || barCode.trim() === '') {
+            return res.json({
+                code: 1002,
+                errorMsg: 'barCode参数必传',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+
+        // 检查缓存文件是否存在
+        if (!fs.existsSync(SIMPLE_CACHE_FILE)) {
+            return res.json({
+                code: 1001,
+                errorMsg: '设备未配置',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+
+        // 验证 barCode 是否匹配
+        const cachedData = JSON.parse(fs.readFileSync(SIMPLE_CACHE_FILE, "utf8"));
+        if (cachedData.barCode !== barCode.trim()) {
+            return res.json({
+                code: 1003,
+                errorMsg: '设备未配置',
+                currentTime: Math.floor(Date.now() / 1000)
+            });
+        }
+
+        res.json({
+            code: 0,
+            msg: '已配置',
+            currentTime: Math.floor(Date.now() / 1000)
+        });
+    } catch (error) {
+        console.error('查询配置状态失败:', error);
         res.json({ code: 1000, errorMsg: '查询失败', currentTime: Math.floor(Date.now() / 1000) });
     }
 });

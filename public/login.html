@@ -162,6 +162,10 @@
                 const data = await response.json();
 
                 if (response.ok && data.code === 0) {
+                    // 存储 sessionToken 到 localStorage（兼容 WebView fetch 不带 cookie）
+                    if (data.data && data.data.sessionToken) {
+                        localStorage.setItem('session_token', data.data.sessionToken);
+                    }
                     showToast(data.errorMsg || data.msg || '登录成功', 'success');
                     setTimeout(() => {
                         window.location.href = '/';

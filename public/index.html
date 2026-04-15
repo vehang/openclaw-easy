@@ -1048,21 +1048,50 @@
         function handleUnauthorized() {
             // 清除会话
             document.cookie = 'session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            localStorage.clear();
+            localStorage.removeItem('session_token');
             // 跳转到登录页
             window.location.href = '/login.html';
         }
 
         /**
-         * 检查响应状态，处理 401
+         * 带超时和认证的 fetch 封装
+         * - 从 localStorage 读取 sessionToken 通过 Authorization header 发送（兼容 WebView fetch 不带 cookie）
+         * - 超时保护，防止 WebView 下请求挂起导致 loading 永不消失
+         * - 检测 HTTP 401
          */
-        async function fetchWithAuth(url, options = {}) {
-            const response = await fetch(url, options);
-            if (response.status === 401) {
-                handleUnauthorized();
-                throw new Error('Unauthorized');
+        async function fetchWithAuth(url, options = {}, timeoutMs = 10000) {
+            // 从 localStorage 读取 token，通过 header 发送
+            const token = localStorage.getItem('session_token');
+            if (token) {
+                options.headers = {
+                    ...(options.headers || {}),
+                    'Authorization': 'Bearer ' + token
+                };
             }
-            return response;
+
+            // 超时保护：防止 WebView 下 fetch 挂起
+            const controller = new AbortController();
+            options.signal = controller.signal;
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const response = await fetch(url, options);
+                clearTimeout(timer);
+
+                // 检查 HTTP 401
+                if (response.status === 401) {
+                    handleUnauthorized();
+                    throw new Error('Unauthorized');
+                }
+
+                return response;
+            } catch (error) {
+                clearTimeout(timer);
+                if (error.name === 'AbortError') {
+                    throw new Error('请求超时，请检查网络连接');
+                }
+                throw error;
+            }
         }
 
         // 当前步骤
@@ -1798,7 +1827,18 @@
                 }
 
                 const result = await response.json();
+
+                // 兜底：HTTP 200 但 body 中是认证失败
+                if (result.code === 1001 || result.code === 1002) {
+                    handleUnauthorized();
+                    throw new Error('Unauthorized');
+                }
+
                 const config = result.data;
+                if (!config) {
+                    throw new Error('配置数据为空');
+                }
+
                 populateConfig(config);
                 showConfigContent();
             } catch (error) {
@@ -1845,6 +1885,12 @@
                 }
 
                 const result = await response.json();
+
+                // 兜底：HTTP 200 但 body 中是认证失败
+                if (result.code === 1001 || result.code === 1002) {
+                    handleUnauthorized();
+                    throw new Error('Unauthorized');
+                }
                 const status = result.data;
                 updateConfigStatusUI(status);
             } catch (error) {

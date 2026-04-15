@@ -92,19 +92,19 @@ function authMiddleware(req, res, next) {
     
     // 2. 无有效凭证，检查密码是否设置
     if (!isPasswordSet()) {
-        return res.json({ 
-            code: 1002, 
-            msg: '请先设置管理密码', 
-            data: { needSetup: true }, 
-            currentTime 
+        return res.status(401).json({
+            code: 1002,
+            msg: '请先设置管理密码',
+            data: { needSetup: true },
+            currentTime
         });
     }
-    
+
     // 3. 密码已设置但无有效凭证
-    return res.json({ 
-        code: 1001, 
-        msg: '未授权访问，请先认证', 
-        currentTime 
+    return res.status(401).json({
+        code: 1001,
+        msg: '未授权访问，请先认证',
+        currentTime
     });
 }
 

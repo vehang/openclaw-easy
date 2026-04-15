@@ -76,7 +76,7 @@ router.post('/setup/password', async (req, res) => {
         });
 
         console.log('[操作] 设置密码成功');
-        res.json({ code: 0, msg: '密码设置成功', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 0, msg: '密码设置成功', data: { sessionToken: token }, currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('设置密码失败:', error);
         res.json({ code: 1000, errorMsg: '设置密码失败', currentTime: Math.floor(Date.now() / 1000) });
@@ -112,7 +112,7 @@ router.post('/login', async (req, res) => {
         });
 
         console.log('[操作] 用户登录成功');
-        res.json({ code: 0, msg: '登录成功', currentTime: Math.floor(Date.now() / 1000) });
+        res.json({ code: 0, msg: '登录成功', data: { sessionToken: token }, currentTime: Math.floor(Date.now() / 1000) });
     } catch (error) {
         console.error('登录失败:', error);
         res.json({ code: 1000, errorMsg: '登录失败', currentTime: Math.floor(Date.now() / 1000) });
@@ -194,7 +194,8 @@ router.post('/verifyToken', async (req, res) => {
                 currentTime: Math.floor(Date.now() / 1000),
                 data: {
                     verified: true,
-                    sessionCreated: true
+                    sessionCreated: true,
+                    sessionToken: sessionId
                 }
             });
         }
