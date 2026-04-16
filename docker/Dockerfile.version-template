@@ -14,24 +14,15 @@ RUN mkdir -p /root/.openclaw/extensions && \
     cp -a /root/.openclaw-seed/extensions/. /root/.openclaw/extensions/
 
 # ========== 安装微信插件 ==========
-# 使用 openclaw plugins install，超时跳过登录引导，失败则用 npm pack fallback
+# 使用官方 CLI 安装，超时跳过登录引导
 RUN echo "=== 安装微信插件 ===" && \
-    echo "尝试 openclaw plugins install..." && \
-    timeout 120 openclaw plugins install openclaw-weixin || true && \
+    timeout 120 npx -y @tencent-weixin/openclaw-weixin-cli@latest install || true && \
     if [ -f "/root/.openclaw/extensions/openclaw-weixin/openclaw.plugin.json" ]; then \
         echo "✅ 微信插件安装成功"; \
     else \
-        echo "⚠️ CLI 安装未成功，尝试 npm pack fallback..."; \
-        cd /tmp && \
-        npm pack @tencent-weixin/openclaw-weixin@latest && \
-        mkdir -p /root/.openclaw/extensions/openclaw-weixin && \
-        tar -xzf tencent-weixin-openclaw-weixin-*.tgz -C /root/.openclaw/extensions/openclaw-weixin --strip-components=1 && \
-        rm -f tencent-weixin-openclaw-weixin-*.tgz && \
-        cd /root/.openclaw/extensions/openclaw-weixin && \
-        npm install --production && \
-        echo "✅ npm pack 安装完成"; \
+        echo "⚠️ 微信插件安装不完整"; \
     fi && \
-    cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
+    cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ || true && \
     ls -la /root/.openclaw/extensions/openclaw-weixin/
 
 # 更新 seed 版本标识
