@@ -123,13 +123,12 @@ sync_config_with_env() {
     "sessions": { "visibility": "all" },
     "fs": { "workspaceOnly": true }
   },
-  "plugins": { 
+  "plugins": {
     "enabled": true,
     "allow": ["nim", "openclaw-weixin"],
     "load": {
       "paths": [
-        "/root/.openclaw/extensions/openclaw-nim-yx-auth",
-        "/root/.openclaw/extensions/openclaw-weixin"
+        "/root/.openclaw/extensions/openclaw-nim-yx-auth"
       ]
     },
     "installs": {
@@ -137,11 +136,6 @@ sync_config_with_env() {
         "source": "path",
         "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
         "version": "1.0.0"
-      },
-      "openclaw-weixin": {
-        "source": "npm",
-        "installPath": "/root/.openclaw/extensions/openclaw-weixin",
-        "version": "1.0.3"
       }
     }
   },
@@ -222,14 +216,13 @@ config_file = os.environ.get('CONFIG_FILE')
 with open(config_file, 'r') as f:
     config = json.load(f)
 
-# 确保 plugins 配置正确（包含 NIM 和微信插件）
+# 确保 plugins 配置正确（NIM 插件 + 启用微信插件）
 config["plugins"] = {
     "enabled": True,
     "allow": ["nim", "openclaw-weixin"],
     "load": {
         "paths": [
-            "/root/.openclaw/extensions/openclaw-nim-yx-auth",
-            "/root/.openclaw/extensions/openclaw-weixin"
+            "/root/.openclaw/extensions/openclaw-nim-yx-auth"
         ]
     },
     "installs": {
@@ -237,11 +230,6 @@ config["plugins"] = {
             "source": "path",
             "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
             "version": "1.0.0"
-        },
-        "openclaw-weixin": {
-            "source": "npm",
-            "installPath": "/root/.openclaw/extensions/openclaw-weixin",
-            "version": "1.0.3"
         }
     }
 }

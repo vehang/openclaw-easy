@@ -76,6 +76,7 @@ RUN cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
     timeout 300 openclaw plugins install @tencent-connect/openclaw-qqbot@latest || true && \
     timeout 300 openclaw plugins install @sunnoy/wecom || true && \
+    timeout 300 openclaw plugins install openclaw-weixin || true && \
     mkdir -p /root/.openclaw /root/.openclaw-seed && \
     find /root/.openclaw/extensions -name ".git" -type d -exec rm -rf {} + && \
     mv /root/.openclaw/extensions /root/.openclaw-seed/ && \
