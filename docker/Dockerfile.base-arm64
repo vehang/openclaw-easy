@@ -76,10 +76,11 @@ RUN cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
     timeout 300 openclaw plugins install @tencent-connect/openclaw-qqbot@latest || true && \
     timeout 300 openclaw plugins install @sunnoy/wecom || true && \
-    # 微信插件：直接 npm 安装，避免 CLI 触发交互式登录 \
+    # 微信插件：npm 安装后会触发登录引导，用超时跳过，然后检测文件是否到位 \
     mkdir -p openclaw-weixin && cd openclaw-weixin && \
     npm init -y >/dev/null 2>&1 && \
-    npm install openclaw-weixin --save --production && \
+    timeout 120 npm install openclaw-weixin --save --production || true && \
+    if [ -d "node_modules/openclaw-weixin" ]; then echo "✅ 微信插件安装成功"; else echo "⚠️ 微信插件安装失败，将在运行时重试"; fi && \
     cd /root/.openclaw/extensions && \
     mkdir -p /root/.openclaw /root/.openclaw-seed && \
     find /root/.openclaw/extensions -name ".git" -type d -exec rm -rf {} + && \
