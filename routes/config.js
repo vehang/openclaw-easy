@@ -319,26 +319,35 @@ router.post('/config/simple', appAuthMiddleware, async (req, res) => {
             plugins
         };
 
-        // 保存配置
-        saveConfig(newConfig);
+        // 保存配置（openclaw.json）
+        try {
+            saveConfig(newConfig);
+        } catch (e) {
+            console.error('[配置保存] openclaw.json 写入失败:', e.message);
+            return res.json({ code: 1001, errorMsg: '配置更新失败，请检查磁盘是否正常插入', currentTime: Math.floor(Date.now() / 1000) });
+        }
 
         // 缓存 simple 接口的原始参数到文件（存原始传入值，不存 fallback 后的占位值）
-        const cacheData = {
-            apiUrl: (apiUrl && apiUrl.trim()) || '',
-            apiKey: (apiKey && apiKey.trim()) || '',
-            modelName: (modelName && modelName.trim()) || '',
-            barCode: barCode.trim(),
-            updatedAt: Math.floor(Date.now() / 1000)
-        };
-        if (hasAppCredentialsGroup) {
-            cacheData.appId = appId.trim();
-            cacheData.appSecret = appSecret.trim();
+        try {
+            const cacheData = {
+                apiUrl: (apiUrl && apiUrl.trim()) || '',
+                apiKey: (apiKey && apiKey.trim()) || '',
+                modelName: (modelName && modelName.trim()) || '',
+                barCode: barCode.trim(),
+                updatedAt: Math.floor(Date.now() / 1000)
+            };
+            if (hasAppCredentialsGroup) {
+                cacheData.appId = appId.trim();
+                cacheData.appSecret = appSecret.trim();
+            }
+            if (hasAuthTokenGroup) {
+                cacheData.nickName = nickName.trim();
+                cacheData.authToken = authToken.trim();
+            }
+            fs.writeFileSync(SIMPLE_CACHE_FILE, JSON.stringify(cacheData, null, 2), "utf8");
+        } catch (e) {
+            console.error('[配置保存] 缓存文件写入失败:', e.message);
         }
-        if (hasAuthTokenGroup) {
-            cacheData.nickName = nickName.trim();
-            cacheData.authToken = authToken.trim();
-        }
-        fs.writeFileSync(SIMPLE_CACHE_FILE, JSON.stringify(cacheData, null, 2), "utf8");
 
         // ==================== 异步重启（不阻塞响应）====================
         setImmediate(async () => {

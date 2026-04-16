@@ -3,7 +3,8 @@
  * 
  * 接口列表：
  * - POST /gateway/restart  重启 Gateway 服务
- * - POST /fix              修复 OpenClaw 运行环境
+ * - POST /web/fix          修复 OpenClaw 运行环境（Web 端）
+ * - POST /fix              修复 OpenClaw 运行环境（App 端）
  * - POST /test/ai          测试 AI 连接
  */
 const express = require('express');
@@ -39,9 +40,41 @@ router.post('/gateway/restart', authMiddleware, async (req, res) => {
 });
 
 /**
+ * POST /api/web/fix
+ * 修复 OpenClaw 运行环境（Web 端，使用 session 认证）
+ */
+router.post('/web/fix', authMiddleware, async (req, res) => {
+    console.log('[操作-Web] 修复任务已触发');
+    res.json({
+        code: 0,
+        msg: '修复任务已启动',
+        currentTime: Math.floor(Date.now() / 1000)
+    });
+
+    setImmediate(async () => {
+        try {
+            console.log('[修复-Web] 开始执行 openclaw doctor --fix...');
+            const child = spawn('openclaw', ['doctor', '--fix'], { shell: true });
+            child.stdout.on('data', (data) => console.log('[修复-Web]', data.toString().trim()));
+            child.stderr.on('data', (data) => console.log('[修复-Web]', data.toString().trim()));
+            child.on('close', async (code) => {
+                console.log('[修复-Web] 执行完成，退出码:', code);
+                if (code === 0) {
+                    console.log('[通知] 准备通知NAS, type=100(修复成功)');
+                    await notifyNas(100);
+                    console.log('[通知] NAS通知完成, type=100');
+                }
+            });
+            child.on('error', (err) => console.error('[修复-Web] 执行错误:', err));
+        } catch (error) {
+            console.error('[修复-Web] 启动失败:', error);
+        }
+    });
+});
+
+/**
  * POST /api/fix
- * 修复 OpenClaw 运行环境（异步执行）
- * 无需登录验证
+ * 修复 OpenClaw 运行环境（App 端，使用 accessToken 认证）
  */
 router.post('/fix', appAuthMiddleware, async (req, res) => {
     console.log('[操作] 修复任务已触发');

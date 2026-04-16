@@ -2699,7 +2699,7 @@
             showToast('正在执行修复，请稍候...', 'info');
 
             try {
-                const response = await fetch('/api/fix', {
+                const response = await fetch('/api/web/fix', {
                     method: 'POST'
                 });
 
