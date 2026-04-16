@@ -76,7 +76,11 @@ RUN cd /root/.openclaw/extensions && \
     timeout 300 openclaw plugins install @soimy/dingtalk || true && \
     timeout 300 openclaw plugins install @tencent-connect/openclaw-qqbot@latest || true && \
     timeout 300 openclaw plugins install @sunnoy/wecom || true && \
-    timeout 300 openclaw plugins install openclaw-weixin || true && \
+    # 微信插件：直接 npm 安装，避免 CLI 触发交互式登录 \
+    mkdir -p openclaw-weixin && cd openclaw-weixin && \
+    npm init -y >/dev/null 2>&1 && \
+    npm install openclaw-weixin --save --production && \
+    cd /root/.openclaw/extensions && \
     mkdir -p /root/.openclaw /root/.openclaw-seed && \
     find /root/.openclaw/extensions -name ".git" -type d -exec rm -rf {} + && \
     mv /root/.openclaw/extensions /root/.openclaw-seed/ && \
