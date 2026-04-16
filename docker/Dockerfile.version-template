@@ -16,7 +16,7 @@ RUN mkdir -p /root/.openclaw/extensions && \
 # ========== 安装微信插件 ==========
 # 使用官方 CLI 安装，超时跳过登录引导
 RUN echo "=== 安装微信插件 ===" && \
-    timeout 120 npx -y @tencent-weixin/openclaw-weixin-cli@latest install || true && \
+    timeout 180 npx -y @tencent-weixin/openclaw-weixin-cli@latest install || true && \
     if [ -f "/root/.openclaw/extensions/openclaw-weixin/openclaw.plugin.json" ]; then \
         echo "✅ 微信插件安装成功"; \
     else \
