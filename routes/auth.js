@@ -254,23 +254,9 @@ router.post('/auth/token', async (req, res) => {
         console.log('[认证] 远程验证结果:', result);
         
         if (result.code === 0 || result.success) {
-            // 检查是否已有有效 token（避免重复生成）
-            const existing = findAppTokenByBarCode(barCode.trim());
-            if (existing) {
-                console.log('[认证] 复用已有 accessToken, barCode:', barCode.trim());
-                return res.json({
-                    code: 0, msg: '认证成功', currentTime,
-                    data: {
-                        accessToken: existing.accessToken,
-                        expiresIn: Math.floor((existing.expiresAt - existing.createdAt) / 1000),
-                        barCode: barCode.trim()
-                    }
-                });
-            }
-            
-            // 生成新的持久化 token
+            // 每次认证都生成新 token，旧 token 自动失效（同一 barCode）
             const tokenInfo = createAppToken(barCode.trim());
-            console.log('[认证] 认证成功，生成 accessToken, barCode:', barCode.trim());
+            console.log('[认证] 认证成功，生成新 accessToken, barCode:', barCode.trim());
             
             return res.json({
                 code: 0, msg: '认证成功', currentTime,
