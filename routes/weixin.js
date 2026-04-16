@@ -40,10 +40,10 @@ router.get('/login', authMiddleware, (req, res) => {
 
     // 发送初始状态
     sendEvent('status', { code: 0, msg: '正在启动微信登录...' });
-    sendEvent('output', { code: 0, msg: '', data: { text: '$ openclaw channels login --channel openclaw-weixin\n\n' } });
+    sendEvent('output', { code: 0, msg: '', data: { text: '$ npx -y @tencent-weixin/openclaw-weixin-cli@latest install\n\n' } });
 
-    // 执行登录命令
-    const child = spawn('openclaw', ['channels', 'login', '--channel', 'openclaw-weixin'], {
+    // 执行安装+登录命令
+    const child = spawn('npx', ['-y', '@tencent-weixin/openclaw-weixin-cli@latest', 'install'], {
         env: { ...process.env, TERM: 'xterm-256color' },
         shell: true
     });
@@ -185,7 +185,7 @@ router.post('/qr/start', appAuthMiddleware, async (req, res) => {
         setImmediate(() => {
             console.log('[微信QR] 开始执行登录命令...');
             
-            const child = spawn('openclaw', ['channels', 'login', '--channel', 'openclaw-weixin'], {
+            const child = spawn('npx', ['-y', '@tencent-weixin/openclaw-weixin-cli@latest', 'install'], {
                 env: { ...process.env, TERM: 'xterm-256color' },
                 shell: true
             });

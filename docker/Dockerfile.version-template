@@ -13,17 +13,9 @@ RUN npm install -g openclaw@${OPENCLAW_VERSION}
 RUN mkdir -p /root/.openclaw/extensions && \
     cp -a /root/.openclaw-seed/extensions/. /root/.openclaw/extensions/
 
-# ========== 安装微信插件 ==========
-# 使用官方 CLI 安装，超时跳过登录引导
-RUN echo "=== 安装微信插件 ===" && \
-    timeout 180 npx -y @tencent-weixin/openclaw-weixin-cli@latest install || true && \
-    if [ -f "/root/.openclaw/extensions/openclaw-weixin/openclaw.plugin.json" ]; then \
-        echo "✅ 微信插件安装成功"; \
-    else \
-        echo "⚠️ 微信插件安装不完整"; \
-    fi && \
-    cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ || true && \
-    ls -la /root/.openclaw/extensions/openclaw-weixin/
+# ========== 微信插件不在构建时安装 ==========
+# 微信插件需要交互式登录，改为在运行时通过前端触发安装
+# 安装命令：npx -y @tencent-weixin/openclaw-weixin-cli@latest install
 
 # 更新 seed 版本标识
 RUN printf '%s\n' "${OPENCLAW_VERSION}" > /root/.openclaw-seed/extensions/.seed-version
