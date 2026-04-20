@@ -79,7 +79,7 @@ ENV HOME=/root \
 EXPOSE 18780 18789 18790
 
 # ========== 健康检查 ==========
-HEALTHCHECK --interval=5s --timeout=5s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=5s --timeout=5s --start-period=300s --retries=12 \
     CMD curl -f http://localhost:18789/health || exit 1
 
 
