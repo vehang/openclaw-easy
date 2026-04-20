@@ -38,6 +38,11 @@ const WEIXIN_BOUND_FILE = path.join(OPENCLAW_DIR, '.weixin-bound');
 const APP_TOKENS_FILE = path.join(OPENCLAW_DIR, '.app-tokens.json');
 const APP_TOKEN_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000; // 7 天
 
+// 升级相关
+const UPGRADE_STATUS_FILE = path.join(OPENCLAW_DIR, 'upgrade-status.json');
+const UPGRADE_ROLLBACK_FILE = path.join(OPENCLAW_DIR, 'upgrade-rollback.json');
+const UPGRADE_LOCK_TIMEOUT = 30 * 60 * 1000; // 30 分钟防死锁兜底
+
 module.exports = {
     DEFAULT_PLACEHOLDER,
     isPlaceholder,
@@ -51,5 +56,8 @@ module.exports = {
     WEIXIN_QR_STATE_FILE,
     WEIXIN_BOUND_FILE,
     APP_TOKENS_FILE,
-    APP_TOKEN_EXPIRE_TIME
+    APP_TOKEN_EXPIRE_TIME,
+    UPGRADE_STATUS_FILE,
+    UPGRADE_ROLLBACK_FILE,
+    UPGRADE_LOCK_TIMEOUT
 };

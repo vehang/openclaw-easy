@@ -349,19 +349,19 @@ router.post('/config/simple', appAuthMiddleware, async (req, res) => {
             console.error('[配置保存] 缓存文件写入失败:', e.message);
         }
 
-        // ==================== 异步重启（不阻塞响应）====================
-        setImmediate(async () => {
-            try {
-                console.log('[配置保存] 开始异步重启 Gateway...');
-                const result = await restartGateway();
-                console.log('[配置保存] 异步重启结果:', result);
-                console.log("[通知] 准备通知NAS, type=200(配置保存重启)");
-                await notifyNas(200);
-                console.log("[通知] NAS通知完成, type=200");
-            } catch (error) {
-                console.error('[配置保存] 异步重启失败:', error);
-            }
-        });
+        // ==================== 异步重启（临时禁用，升级功能调试阶段不自动重启）====================
+        // setImmediate(async () => {
+        //     try {
+        //         console.log('[配置保存] 开始异步重启 Gateway...');
+        //         const result = await restartGateway();
+        //         console.log('[配置保存] 异步重启结果:', result);
+        //         console.log("[通知] 准备通知NAS, type=200(配置保存重启)");
+        //         await notifyNas(200);
+        //         console.log("[通知] NAS通知完成, type=200");
+        //     } catch (error) {
+        //         console.error('[配置保存] 异步重启失败:', error);
+        //     }
+        // });
 
         res.json({
             code: 0,

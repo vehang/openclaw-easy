@@ -8,12 +8,14 @@
  * 4. 系统路由 - 直接挂载到 /api（包含 /gateway/restart, /fix, /test/ai）
  * 5. 更新路由 - 直接挂载到 /api（包含 /version, /update/check, /update）
  * 6. 页面路由 - 挂载到 /
+ * 7. 升级路由 - 挂载到 /api/openclaw（包含 /versions, /upgrade, /upgrade/status）
  */
 const auth = require('./auth');
 const config = require('./config');
 const weixin = require('./weixin');
 const system = require('./system');
 const update = require('./update');
+const upgrade = require('./upgrade');
 const pages = require('./pages');
 
 /**
@@ -39,7 +41,11 @@ function mountRoutes(app) {
     // 更新路由 - 挂载到 /api
     // 路径：/api/version, /api/update/check, /api/update
     app.use('/api', update);
-    
+
+    // 升级路由 - 挂载到 /api/openclaw
+    // 路径：/api/openclaw/versions, /api/openclaw/upgrade, /api/openclaw/upgrade/status
+    app.use('/api/openclaw', upgrade);
+
     // 页面路由 - 挂载到根路径
     // 路径：/
     app.use('/', pages);
