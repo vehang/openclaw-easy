@@ -24,12 +24,6 @@ RUN apt-get update && \
 # 将运行目录的插件复制到种子目录，确保启动时能同步
 RUN echo "=== 准备种子目录 ===" && \
     mkdir -p /root/.openclaw-seed/extensions && \
-    # 复制已有的 napcat 插件（种子目录已有） \
-    # 复制微信插件到种子目录 \
-    if [ -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
-        cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
-        echo "✅ 微信插件已复制到种子目录"; \
-    fi && \
     ls -la /root/.openclaw-seed/extensions/
 
 # ========== 安装 NIM YX Auth 插件到种子目录 ==========
