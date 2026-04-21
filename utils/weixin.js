@@ -2,7 +2,20 @@
  * 微信相关工具函数
  */
 const fs = require('fs');
+const { spawn } = require('child_process');
 const { WEIXIN_QR_STATE_FILE, WEIXIN_BOUND_FILE } = require('../constants');
+
+/**
+ * 安装微信插件
+ * 返回 child process，调用者可以监听 stdout/stderr/close 事件
+ */
+function spawnWeixinPluginInstall() {
+    console.log('[微信插件] 开始安装/更新个人微信插件...');
+    return spawn('npx', ['-y', '@tencent-weixin/openclaw-weixin-cli@latest', 'install'], {
+        env: { ...process.env, TERM: 'xterm-256color' },
+        shell: true
+    });
+}
 
 /**
  * 更新微信二维码状态文件
@@ -41,5 +54,6 @@ function setWeixinBoundStatus(bound) {
 module.exports = {
     updateWeixinQrState,
     getWeixinBoundStatus,
-    setWeixinBoundStatus
+    setWeixinBoundStatus,
+    spawnWeixinPluginInstall
 };
