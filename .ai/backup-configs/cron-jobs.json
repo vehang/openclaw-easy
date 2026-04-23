@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "cb38cb5c-a821-4f2c-b846-62364ca4ba35",
+      "agentId": "notify",
+      "name": "weather-morning",
+      "description": "每天7点天气早报（飞书卡片格式）",
+      "enabled": true,
+      "createdAtMs": 1772069060470,
+      "updatedAtMs": 1772492447697,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 7 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "执行天气早报推送：运行脚本 /root/.openclaw/workspace/scripts/weather-card.js 发送天气卡片到飞书。"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "feishu"
+      },
+      "state": {
+        "nextRunAtMs": 1772578800000,
+        "lastRunAtMs": 1772492400014,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 47683,
+        "lastDeliveryStatus": "delivered",
+        "consecutiveErrors": 0,
+        "lastDelivered": true
+      }
+    },
+    {
+      "id": "23aff38b-3cea-4e99-91bf-899613886006",
+      "agentId": "notify",
+      "name": "news-morning",
+      "description": "每天8点资讯早报",
+      "enabled": true,
+      "createdAtMs": 1772069066120,
+      "updatedAtMs": 1772496039808,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行脚本 /root/.openclaw/workspace/scripts/news-card.js 早报 发送科技资讯早报卡片到群聊。"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "feishu"
+      },
+      "state": {
+        "nextRunAtMs": 1772582400000,
+        "lastRunAtMs": 1772496000018,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 39790,
+        "lastDelivered": true,
+        "lastDeliveryStatus": "delivered",
+        "consecutiveErrors": 0
+      }
+    },
+    {
+      "id": "f0f41127-a140-4759-a3ed-79b02854aa86",
+      "agentId": "notify",
+      "name": "news-noon",
+      "description": "每天12点资讯午报",
+      "enabled": true,
+      "createdAtMs": 1772069071576,
+      "updatedAtMs": 1772424041491,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 12 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行脚本 /root/.openclaw/workspace/scripts/news-card.js 午报 发送科技资讯午报卡片到群聊。"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "feishu"
+      },
+      "state": {
+        "nextRunAtMs": 1772510400000,
+        "lastRunAtMs": 1772424000012,
+        "lastRunStatus": "ok",
+        "lastStatus": "ok",
+        "lastDurationMs": 41479,
+        "lastDelivered": true,
+        "lastDeliveryStatus": "delivered",
+        "consecutiveErrors": 0
+      }
+    },
+    {
+      "id": "3591e883-0f4b-4fae-9bc5-ea3cd911c046",
+      "agentId": "notify",
+      "name": "news-evening",
+      "description": "每天20点资讯晚报",
+      "enabled": true,
+      "createdAtMs": 1772069077061,
+      "updatedAtMs": 1772452884559,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 20 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "运行脚本 /root/.openclaw/workspace/scripts/news-card.js 晚报 发送科技资讯晚报卡片到群聊。"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "feishu"
+      },
+      "state": {
+        "nextRunAtMs": 1772539200000,
+        "lastRunAtMs": 1772452800016,
+        "lastRunStatus": "error",
+        "lastStatus": "error",
+        "lastDurationMs": 84543,
+        "lastDeliveryStatus": "unknown",
+        "consecutiveErrors": 1,
+        "lastError": "cron announce delivery failed"
+      }
+    },
+    {
+      "id": "3b73210c-7ecf-4523-a1b7-a780c5a925cd",
+      "name": "git-backup",
+      "enabled": true,
+      "createdAtMs": 1772502391484,
+      "updatedAtMs": 1772502531196,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 * * * *",
+        "staggerMs": 300000
+      },
+      "sessionTarget": "main",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "systemEvent",
+        "text": "执行工作区自动备份：cd /root/.openclaw/workspace && git add -A && git commit -m 'Auto backup' && git push origin master"
+      },
+      "state": {
+        "nextRunAtMs": 1772503377993,
+        "runningAtMs": 1772503378002
+      }
+    }
+  ]
+}

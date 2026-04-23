@@ -1,0 +1,38 @@
+# ========================================
+# Layer 2: Hermes Node Dependencies (NIM)
+# 基于 hermes-base，克隆源码 + npm install
+# 跳过 camoufox 下载（国内网络慢）
+# ========================================
+ARG BASE_IMAGE=hermes-base:latest
+FROM ${BASE_IMAGE}
+
+ARG HERMES_PR=13062
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+
+# 克隆 Hermes 源码（PR 分支）
+WORKDIR /opt
+RUN rm -rf /opt/hermes && \
+    git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /opt/hermes && \
+    cd /opt/hermes && \
+    git fetch origin refs/pull/${HERMES_PR}/head:pr-nim && \
+    git checkout pr-nim && \
+    rm -rf /opt/hermes/.git
+
+WORKDIR /opt/hermes
+
+# 配置 npm 国内镜像加速
+RUN npm config set registry ${NPM_REGISTRY}
+
+# 跳过 camoufox 浏览器下载：把 fetch 命令替换为空操作
+RUN echo '#!/bin/sh' > /usr/local/bin/camoufox-js && \
+    echo 'echo "camoufox-js fetch skipped"' >> /usr/local/bin/camoufox-js && \
+    chmod +x /usr/local/bin/camoufox-js
+
+# 安装 Node 依赖
+RUN npm install --prefer-offline --no-audit && \
+    cd /opt/hermes/scripts/whatsapp-bridge && \
+    npm install --prefer-offline --no-audit && \
+    npm cache clean --force
+
+# 恢复原始 camoufox-js（指向 node_modules 里的）
+RUN rm -f /usr/local/bin/camoufox-js

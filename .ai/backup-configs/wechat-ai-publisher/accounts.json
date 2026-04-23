@@ -1,0 +1,32 @@
+{
+  "default": "main",
+  "accounts": {
+    "main": {
+      "name": "主账号",
+      "appid": "",
+      "secret": "",
+      "author": "",
+      "default_style": "github",
+      "default_images": "封面+3张",
+      "note": "请填写 AppID 和 Secret"
+    }
+  },
+  "说明": {
+    "default": "默认使用的账号 ID",
+    "accounts": {
+      "账号ID": {
+        "name": "账号显示名称",
+        "appid": "微信公众号 AppID",
+        "secret": "微信公众号 AppSecret",
+        "author": "文章作者名",
+        "default_style": "默认风格 (purple/orangeheart/github)",
+        "default_images": "默认配图数量"
+      }
+    },
+    "使用方法": [
+      "1. 复制 main 账号模板，修改 name/appid/secret",
+      "2. 可以添加多个账号，如 'tech', 'life', 'work' 等",
+      "3. 发布时指定账号：'用 tech 账号发布AI热点'"
+    ]
+  }
+}

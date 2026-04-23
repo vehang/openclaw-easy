@@ -1,0 +1,27 @@
+{
+  "default": "main",
+  "accounts": {
+    "main": {
+      "name": "程序员宝盒",
+      "appid": "",
+      "secret": "",
+      "author": "程序员宝盒",
+      "default_style": "github",
+      "default_images": "封面+3张",
+      "note": "请填写程序员宝盒公众号的 AppID 和 Secret"
+    }
+  },
+  "说明": {
+    "default": "默认使用的账号 ID",
+    "accounts": {
+      "账号ID": {
+        "name": "公众号名称",
+        "appid": "微信公众号 AppID",
+        "secret": "微信公众号 AppSecret",
+        "author": "文章作者名",
+        "default_style": "默认风格 (github/purple/orangeheart)",
+        "default_images": "默认配图数量"
+      }
+    }
+  }
+}

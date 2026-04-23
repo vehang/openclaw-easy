@@ -1,0 +1,56 @@
+# ========================================
+# Layer 2: Hermes Node Dependencies (NIM) - 缓存优化版
+# 
+# 优化策略：
+#   1. 使用 BuildKit --mount=type=cache 缓存 npm 下载目录
+#   2. npm 下载缓存跨构建复用，避免重复下载 2.24GB
+#   3. 即使源码变动，npm 下载仍从本地缓存读取
+#
+# 预期效果：
+#   - 首次构建：~2小时（和之前一样）
+#   - 后续构建（仅源码变动）：~5-15分钟（npm 从缓存读取+解压）
+#
+# 使用方式：
+#   DOCKER_BUILDKIT=1 docker build -f Dockerfile.nim-node.cached \
+#     --build-arg BASE_IMAGE=hermes-base:latest \
+#     -t hermes-cloud-node:latest .
+#
+# ========================================
+# syntax=docker/dockerfile:1
+ARG BASE_IMAGE=hermes-base:latest
+FROM ${BASE_IMAGE}
+
+ARG HERMES_PR=13062
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+
+# ========== Step 1: 克隆源码 ==========
+WORKDIR /opt
+RUN rm -rf /opt/hermes && \
+    git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /opt/hermes && \
+    cd /opt/hermes && \
+    git fetch origin refs/pull/${HERMES_PR}/head:pr-nim && \
+    git checkout pr-nim && \
+    rm -rf /opt/hermes/.git
+
+WORKDIR /opt/hermes
+
+# ========== Step 2: 配置 npm 镜像 ==========
+RUN npm config set registry ${NPM_REGISTRY}
+
+# ========== Step 3: 跳过 camoufox ==========
+RUN echo '#!/bin/sh' > /usr/local/bin/camoufox-js && \
+    echo 'echo "camoufox-js fetch skipped"' >> /usr/local/bin/camoufox-js && \
+    chmod +x /usr/local/bin/camoufox-js
+
+# ========== Step 4: 安装 Node 依赖（带缓存） ==========
+# --mount=type=cache,target=/root/.npm → npm 下载缓存（tarballs）
+# 第一次下载后缓存在宿主机，后续构建直接读缓存，无需重新下载
+# 
+# 解压+link 仍需时间，但比从网络下载快得多（本地 IO vs 网络）
+RUN --mount=type=cache,target=/root/.npm,id=npm-hermes-cache,sharing=locked \
+    npm install --prefer-offline --no-audit && \
+    cd /opt/hermes/scripts/whatsapp-bridge && \
+    npm install --prefer-offline --no-audit
+
+# ========== Step 5: 恢复 camoufox-js ==========
+RUN rm -f /usr/local/bin/camoufox-js

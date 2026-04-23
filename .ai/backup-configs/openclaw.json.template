@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.22-2"
+  },
+  "update": {
+    "checkOnStart": false
+  },
+  "browser": {
+    "executablePath": "/usr/bin/chromium",
+    "headless": true,
+    "noSandbox": true,
+    "defaultProfile": "openclaw"
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "default": {
+        "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4",
+        "apiKey": "{{GLM_API_KEY_DEFAULT}}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "glm-5",
+            "name": "glm-5",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      },
+      "coding": {
+        "baseUrl": "https://open.bigmodel.cn/api/coding/paas/v4",
+        "apiKey": "{{GLM_API_KEY_CODING}}",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "glm-5",
+            "name": "glm-5-coding",
+            "reasoning": false,
+            "input": ["text", "image"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": { "primary": "default/glm-5" },
+      "imageModel": { "primary": "default/glm-5" },
+      "workspace": "/home/node/.openclaw/workspace",
+      "compaction": { "mode": "safeguard" },
+      "elevatedDefault": "full",
+      "maxConcurrent": 4,
+      "subagents": { "maxConcurrent": 8 }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions",
+    "tts": {
+      "edge": { "voice": "zh-CN-XiaoxiaoNeural" }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "channels": {
+    "feishu": {
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "groupPolicy": "open",
+      "accounts": {
+        "main": {
+          "appId": "{{FEISHU_MAIN_APP_ID}}",
+          "appSecret": "{{FEISHU_MAIN_APP_SECRET}}",
+          "botName": "OpenClaw Bot",
+          "agent": "main"
+        },
+        "dev": {
+          "appId": "{{FEISHU_DEV_APP_ID}}",
+          "appSecret": "{{FEISHU_DEV_APP_SECRET}}",
+          "botName": "Dev Bot",
+          "agent": "dev"
+        },
+        "notify": {
+          "appId": "{{FEISHU_NOTIFY_APP_ID}}",
+          "appSecret": "{{FEISHU_NOTIFY_APP_SECRET}}",
+          "botName": "Notify Bot",
+          "agent": "notify",
+          "renderMode": "card"
+        },
+        "wechat-official": {
+          "appId": "{{FEISHU_WECHAT_APP_ID}}",
+          "appSecret": "{{FEISHU_WECHAT_APP_SECRET}}",
+          "botName": "微信公众号助手",
+          "agent": "wechat-official"
+        }
+      }
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "lan",
+    "controlUi": { "allowInsecureAuth": true },
+    "auth": { "token": "{{GATEWAY_AUTH_TOKEN}}" }
+  },
+  "memory": {
+    "backend": "qmd",
+    "qmd": {
+      "command": "/usr/local/bin/qmd",
+      "paths": [
+        {
+          "path": "/home/node/.openclaw/workspace",
+          "name": "workspace",
+          "pattern": "**/*.md"
+        }
+      ]
+    }
+  },
+  "plugins": {
+    "entries": { "feishu": { "enabled": true } },
+    "installs": {
+      "feishu": {
+        "source": "npm",
+        "spec": "@openclaw/feishu",
+        "installPath": "/home/node/.openclaw/extensions/feishu"
+      }
+    }
+  }
+}

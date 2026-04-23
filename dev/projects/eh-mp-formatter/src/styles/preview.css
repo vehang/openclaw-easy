@@ -1,0 +1,279 @@
+/* 公众号排版预览样式 v2.0 - 优化版 */
+/* 更舒适的阅读体验，更专业的排版效果 */
+
+.mp-preview {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--theme-text, #1F2937);
+  word-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   标题系统 - 清晰的层级关系
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 28px 0 16px;
+  line-height: 1.35;
+  color: var(--theme-primary);
+  letter-spacing: -0.02em;
+}
+
+.mp-preview h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  line-height: 1.4;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--theme-border, #E5E7EB);
+  color: var(--theme-primary);
+  letter-spacing: -0.01em;
+}
+
+.mp-preview h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 20px 0 10px;
+  line-height: 1.45;
+  color: var(--theme-primary);
+}
+
+.mp-preview h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: var(--theme-primary);
+}
+
+/* 首个标题不需要上边距 */
+.mp-preview h1:first-child,
+.mp-preview h2:first-child,
+.mp-preview h3:first-child {
+  margin-top: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   段落 - 舒适的阅读间距
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview p {
+  margin: 16px 0;
+  color: var(--theme-text, #1F2937);
+  text-align: justify;
+}
+
+.mp-preview p:first-child {
+  margin-top: 0;
+}
+
+.mp-preview p:last-child {
+  margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   列表 - 清晰的层级
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview ul {
+  margin: 16px 0;
+  padding-left: 1.75em;
+  list-style-type: disc;
+}
+
+.mp-preview ul li {
+  margin: 6px 0;
+  line-height: 1.75;
+  padding-left: 4px;
+}
+
+.mp-preview ul li::marker {
+  color: var(--theme-secondary);
+}
+
+.mp-preview ul ul {
+  list-style-type: circle;
+  margin: 8px 0;
+}
+
+.mp-preview ul ul ul {
+  list-style-type: square;
+}
+
+.mp-preview ol {
+  margin: 16px 0;
+  padding-left: 1.75em;
+  list-style-type: decimal;
+}
+
+.mp-preview ol li {
+  margin: 6px 0;
+  line-height: 1.75;
+  padding-left: 4px;
+}
+
+.mp-preview ol li::marker {
+  color: var(--theme-secondary);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   引用块 - 醒目但不突兀
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview blockquote {
+  margin: 20px 0;
+  padding: 16px 20px;
+  background: var(--theme-blockquote-bg, #F5F3FF);
+  border-left: 4px solid var(--theme-blockquote-border, #6366F1);
+  border-radius: 0 12px 12px 0;
+  color: var(--theme-blockquote-color, #4B5563);
+  font-size: 15px;
+}
+
+.mp-preview blockquote p {
+  margin: 8px 0;
+}
+
+.mp-preview blockquote p:first-child {
+  margin-top: 0;
+}
+
+.mp-preview blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   代码 - 清晰的视觉区分
+   ═══════════════════════════════════════════════════════════ */
+
+/* 行内代码 */
+.mp-preview code {
+  background: var(--theme-code-inline-bg, #EEF2FF);
+  color: var(--theme-code-inline-color, #4338CA);
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, 'Liberation Mono', monospace;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+/* 代码块 */
+.mp-preview pre {
+  margin: 20px 0;
+  padding: 20px;
+  background: var(--theme-code-block-bg, #1E293B);
+  border-radius: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mp-preview pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--theme-code-block-color, #E2E8F0);
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   表格 - 专业的数据展示
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview table {
+  width: 100%;
+  margin: 20px 0;
+  border-collapse: collapse;
+  font-size: 14px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mp-preview th,
+.mp-preview td {
+  padding: 12px 16px;
+  text-align: left;
+  border: 1px solid var(--theme-table-border, #E5E7EB);
+}
+
+.mp-preview th {
+  background: var(--theme-table-header-bg, #F5F3FF);
+  font-weight: 600;
+  color: var(--theme-primary);
+}
+
+.mp-preview tr:nth-child(even) {
+  background: var(--theme-table-even-bg, #FAFAFA);
+}
+
+.mp-preview tr:hover {
+  background: var(--theme-blockquote-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   链接 - 温和的交互提示
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview a {
+  color: var(--theme-accent, #4F46E5) !important;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.mp-preview a:hover {
+  border-bottom-color: var(--theme-accent, #4F46E5);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   图片 - 优雅的展示
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 16px 0;
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   分割线 - 轻柔的视觉分隔
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview hr {
+  border: none;
+  border-top: 1px solid var(--theme-border, #E5E7EB);
+  margin: 24px 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   强调 - 层次分明的修饰
+   ═══════════════════════════════════════════════════════════ */
+
+.mp-preview strong {
+  font-weight: 600;
+  color: var(--theme-primary);
+}
+
+.mp-preview em {
+  font-style: italic;
+  color: var(--theme-text-light, #64748B) !important;
+}
+
+.mp-preview del {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* 代码块中的强调不应用颜色 */
+.mp-preview pre strong,
+.mp-preview pre em {
+  color: inherit;
+}

@@ -1,0 +1,16 @@
+services:
+  hermes:
+    image: hermes-agent:latest
+    container_name: hermes-test
+    restart: unless-stopped
+    volumes:
+      - hermes-data:/opt/data
+    ports:
+      - "48080:8080"
+    environment:
+      - TZ=Asia/Shanghai
+    command: gateway start
+
+volumes:
+  hermes-data:
+    driver: local

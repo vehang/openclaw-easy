@@ -1,0 +1,20 @@
+{
+  "currentProject": null,
+  "status": "idle",
+  "progress": {
+    "prd": null,
+    "plan": null,
+    "currentTask": null,
+    "completedTasks": [],
+    "totalTasks": 0
+  },
+  "agents": {
+    "pm": { "status": "idle", "lastActivity": null },
+    "architect": { "status": "idle", "lastActivity": null },
+    "dev": { "status": "idle", "lastActivity": null },
+    "review": { "status": "idle", "lastActivity": null },
+    "test": { "status": "idle", "lastActivity": null },
+    "ui": { "status": "idle", "lastActivity": null }
+  },
+  "history": []
+}

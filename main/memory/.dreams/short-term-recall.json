@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "updatedAt": "2026-04-19T02:03:11.295Z",
+  "entries": {
+    "memory:memory/2026-04-18.md:34:44": {
+      "key": "memory:memory/2026-04-18.md:34:44",
+      "path": "memory/2026-04-18.md",
+      "startLine": 34,
+      "endLine": 44,
+      "source": "memory",
+      "snippet": "- 技术方案：Claude Code `--print` + `--continue` + `background:true` 实现自动化循环 - 用户指出之前的方案**跳过了设计和验收标准定义**，测试没有参考依据 - 重新梳理了6阶段完整链路（PRD→产品设计→UI设计→技术方案→开发→测试），每阶段必须产出文档 - 等待用户确认：1)UI设计输出形式 2)先搭skill还是先拿项目试跑 ## 待处理 - 飞书回调地址可能需要更新（指向新服务器） - openclaw-easy 和部分项目需要 `npm install` 恢复依赖 ## 备注",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T02:03:11.295Z",
+      "lastRecalledAt": "2026-04-19T02:03:11.295Z",
+      "queryHashes": [
+        "caa5d86273d3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "openclaw-easy",
+        "技术",
+        "方案",
+        "claude",
+        "code",
+        "print",
+        "continue",
+        "background:true"
+      ]
+    },
+    "memory:memory/2026-04-18.md:21:36": {
+      "key": "memory:memory/2026-04-18.md:21:36",
+      "path": "memory/2026-04-18.md",
+      "startLine": 21,
+      "endLine": 36,
+      "source": "memory",
+      "snippet": "- 不需要用户再说\"帮我记住\" - 安装了 **Claude Code CLI v1.0.10**（纯Node.js版）+ **tmux 3.3a** - 最新版 2.1.x 用Rust原生二进制需要AVX2，服务器CPU（AMD A6-3670）不支持 - 配置了智谱 Anthropic 兼容API端点 - 整理了 v3.12→v4.15 版本更新要点报告 - 补迁了 feishu/dedup、backups、data/ai-backup 等遗漏数据 - 安装了 **Claude Code CLI v2.1.112**（已验证 2.1.113+ 因原生二进制缺失无法安装） - 编写了 Claude Code 安装指南文档 `workspace/docs/claude-code-install.md` ## 自动开发工作流设计 - 用户提出构建**多Agent自动化代码开发循环**的设想 - 目标：需求→PRD→产品设计→UI设计→技术方案→任务拆解→开发→测试（失败打回）→交付 - 分析了现有32个Skills中可用的：multi-agent-dev、full-stack-feature、vibe-coding-workflow、task-development-workflow、test-master、ui-ux-design、frontend-design-3、context-driven-development - 技术方案：Claude Code `--print` + `--continue` + `background:true` 实现自动化循环 -",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T02:03:11.295Z",
+      "lastRecalledAt": "2026-04-19T02:03:11.295Z",
+      "queryHashes": [
+        "caa5d86273d3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "backup",
+        "backups",
+        "v1.0.10",
+        "纯node.js版",
+        "3.3a",
+        "2.1.x",
+        "a6-3670",
+        "v3.12"
+      ]
+    },
+    "memory:memory/2026-03-30.md:1:44": {
+      "key": "memory:memory/2026-03-30.md:1:44",
+      "path": "memory/2026-03-30.md",
+      "startLine": 1,
+      "endLine": 44,
+      "source": "memory",
+      "snippet": "# 2026-03-30 记忆 ## 完成的工作 ### 1. Skills 合并 从备份 `openclaw-backup.tar.gz` 合并了 18 个 Skills： - moltguard（安全防护） - api-gateway（API 网关） - humanizer（去 AI 痕迹） - frontend-design-3、ui-ux-design（设计规范） - test-master、test-publish-check、test-runner、api-tester（测试工具） - skill-vetter（Skill 安全审查） - 等... **总计**: 从 12 个增加到 32 个 ### 2. 公共工具配置 - 安装 JDK 8 (Temurin x86_64) - 配置 Maven 3.6.3 - 位置：`~/.openclaw/tools/` - 环境脚本：`env-setup.sh` ### 3. 规范文件整理 - 创建 `shared/` 目录存放共享规范 - 包含：开发规范、测试规范、产品设计规范、红线规则等（10 个文件） ### 4. 记忆系统配置 - 创建 MEMORY.md（主记忆） - 创建 memory/ 目录（日常记录） - 更新 AGENTS.md、SOUL.md、HEARTBEAT.md ### 5. 多 Agent 共享记忆架构 - 创建公共记忆目录 `~/.openclaw/memory/` - 配置公共记忆 + 私有记忆双层架构 - 所有 Agent 共享用户信息、偏好、项目列表 ### 6. 规范优化",
+      "recallCount": 1,
+      "dailyCount": 0,
+      "groundedCount": 0,
+      "totalScore": 1,
+      "maxScore": 1,
+      "firstRecalledAt": "2026-04-19T02:03:11.295Z",
+      "lastRecalledAt": "2026-04-19T02:03:11.295Z",
+      "queryHashes": [
+        "caa5d86273d3"
+      ],
+      "recallDays": [
+        "2026-04-19"
+      ],
+      "conceptTags": [
+        "backup",
+        "gateway",
+        "备份",
+        "网关",
+        "openclaw-backup.tar.gz",
+        "api-gateway",
+        "frontend-design-3",
+        "ui-ux-design"
+      ]
+    }
+  }
+}

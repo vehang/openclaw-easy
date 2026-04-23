@@ -1,0 +1,15 @@
+{
+  "taskId": "TASK-001",
+  "status": "completed",
+  "currentStage": "完成",
+  "tmuxSession": "baoboxs-nav-TASK-001",
+  "model": "glm-5",
+  "lastUpdate": "2026-03-23T15:17:00Z",
+  "progress": 100,
+  "result": {
+    "nav": { "status": "healthy", "port": 43000 },
+    "service": { "status": "healthy", "port": 48080 },
+    "api": "http://192.168.1.123:48080/api/tools/list - OK",
+    "frontend": "http://192.168.1.123:43000"
+  }
+}

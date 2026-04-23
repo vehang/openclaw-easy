@@ -1,0 +1,80 @@
+{
+  "agents": {
+    "pm": {
+      "name": "产品经理",
+      "emoji": "📋",
+      "model": "default/glm-5",
+      "description": "理解需求、编写PRD、定义功能列表"
+    },
+    "architect": {
+      "name": "架构师",
+      "emoji": "📐",
+      "model": "default/glm-5",
+      "description": "技术设计、任务拆分、制定开发计划"
+    },
+    "dev": {
+      "name": "开发工程师",
+      "emoji": "💻",
+      "model": "coding/glm-5",
+      "sessionKey": "agent:dev:dev",
+      "description": "实现功能、编写代码、修复bug",
+      "spawn": {
+        "agentId": "dev",
+        "useExisting": true
+      }
+    },
+    "review": {
+      "name": "代码审核员",
+      "emoji": "🔍",
+      "model": "coding/glm-5",
+      "description": "审核代码质量、检查规范、发现问题"
+    },
+    "test": {
+      "name": "测试工程师",
+      "emoji": "🧪",
+      "model": "default/glm-5",
+      "description": "编写测试、执行测试、报告结果"
+    },
+    "ui": {
+      "name": "UI设计师",
+      "emoji": "🎨",
+      "model": "coding/glm-5",
+      "description": "设计界面、编写前端代码、UI测试",
+      "tools": ["browser"]
+    }
+  },
+  "workflow": {
+    "autoReview": true,
+    "autoTest": true,
+    "maxRetries": 3,
+    "taskSize": "small",
+    "steps": [
+      "pm",
+      "architect",
+      "dev-loop",
+      "integration",
+      "release"
+    ]
+  },
+  "review": {
+    "checklist": [
+      "代码可读性",
+      "命名规范",
+      "注释完整",
+      "逻辑正确",
+      "错误处理",
+      "性能优化",
+      "安全检查"
+    ],
+    "passScore": 7
+  },
+  "test": {
+    "types": ["unit", "integration", "e2e"],
+    "coverage": {
+      "minStatements": 80,
+      "minBranches": 70,
+      "minFunctions": 85
+    }
+  },
+  "note": "使用已配置的 GLM-5 模型，coding/glm-5 用于编程任务"
+}

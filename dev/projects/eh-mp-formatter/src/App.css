@@ -1,0 +1,655 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   温暖工业风设计系统 (Warm Industrial)
+   深灰底 + 橙色点缀 - 专业但有温度
+   支持白天/夜间模式切换
+   ═══════════════════════════════════════════════════════════ */
+
+:root,
+[data-theme="dark"] {
+  /* 字体系统 */
+  --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* 间距系统 (6px 基础) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* 圆角系统 */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  /* 动画时长 */
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+
+  /* 缓动函数 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ═══════════════════════════════════════════════
+     配色系统 - 温暖工业风
+     ═══════════════════════════════════════════════ */
+
+  /* 品牌色 - 橙色系 */
+  --orange-400: #FB923C;
+  --orange-500: #F97316;
+  --orange-600: #EA580C;
+
+  /* 中性色 - 锌灰系 */
+  --zinc-50: #FAFAFA;
+  --zinc-100: #F4F4F5;
+  --zinc-200: #E4E4E7;
+  --zinc-300: #D4D4D8;
+  --zinc-400: #A1A1AA;
+  --zinc-500: #71717A;
+  --zinc-600: #52525B;
+  --zinc-700: #3F3F46;
+  --zinc-800: #27272A;
+  --zinc-900: #18181B;
+  --zinc-950: #09090B;
+
+  /* 功能色 */
+  --green-500: #22C55E;
+  --green-600: #16A34A;
+  --red-500: #EF4444;
+  --red-600: #DC2626;
+  --amber-500: #F59E0B;
+  --blue-500: #3B82F6;
+
+  /* 界面色 - 默认深色主题 */
+  --bg-base: var(--zinc-900);
+  --bg-surface: var(--zinc-800);
+  --bg-elevated: var(--zinc-700);
+  --bg-muted: var(--zinc-800);
+  --border-default: var(--zinc-700);
+  --border-subtle: var(--zinc-800);
+  --text-primary: var(--zinc-50);
+  --text-secondary: var(--zinc-300);
+  --text-tertiary: var(--zinc-400);
+  --text-muted: var(--zinc-500);
+  --text-placeholder: var(--zinc-600);
+
+  /* 品牌色应用 */
+  --color-primary: var(--orange-500);
+  --color-primary-hover: var(--orange-600);
+  --color-primary-muted: rgba(249, 115, 22, 0.15);
+
+  /* 阴影系统 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(249, 115, 22, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   全局样式
+   ═══════════════════════════════════════════════════════════ */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--zinc-700);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--zinc-600);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   按钮系统
+   ═══════════════════════════════════════════════════════════ */
+
+/* 基础按钮 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 主要按钮 - 橙色实心 */
+.btn-primary {
+  background: var(--orange-500);
+  color: white;
+  border-color: var(--orange-500);
+}
+
+.btn-primary:hover {
+  background: var(--orange-600);
+  border-color: var(--orange-600);
+}
+
+.btn-primary:active {
+  background: var(--orange-600);
+}
+
+/* 次要按钮 - 深灰描边 */
+.btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.btn-secondary:hover {
+  background: var(--zinc-800);
+  border-color: var(--zinc-600);
+  color: var(--text-primary);
+}
+
+/* 成功按钮 - 绿色实心 */
+.btn-success {
+  background: var(--green-500);
+  color: white;
+  border-color: var(--green-500);
+}
+
+.btn-success:hover {
+  background: var(--green-600);
+  border-color: var(--green-600);
+}
+
+/* 幽灵按钮 - 无边框 */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-tertiary);
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--zinc-800);
+  color: var(--text-primary);
+}
+
+/* 图标按钮 */
+.btn-icon {
+  padding: var(--space-2);
+  min-width: 32px;
+  height: 32px;
+}
+
+/* 危险按钮 */
+.btn-danger {
+  background: transparent;
+  color: var(--red-500);
+  border-color: transparent;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--red-500);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   选择器系统
+   ═══════════════════════════════════════════════════════════ */
+
+.select {
+  padding: var(--space-2) var(--space-3);
+  padding-right: var(--space-8);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A1A1AA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+.select:hover {
+  border-color: var(--zinc-600);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--orange-500);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   卡片系统
+   ═══════════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--zinc-50);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  transition:
+    box-shadow var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   切换按钮组
+   ═══════════════════════════════════════════════════════════ */
+
+.toggle-group {
+  display: inline-flex;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+
+.toggle-btn {
+  padding: var(--space-1) var(--space-3);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.toggle-btn:hover {
+  color: var(--text-secondary);
+}
+
+.toggle-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   工具提示
+   ═══════════════════════════════════════════════════════════ */
+
+[title] {
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   主题过渡
+   ═══════════════════════════════════════════════════════════ */
+
+.theme-transition,
+.theme-transition * {
+  transition:
+    color var(--duration-slow) var(--ease-out),
+    background-color var(--duration-slow) var(--ease-out),
+    border-color var(--duration-slow) var(--ease-out);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Toast 通知系统
+   ═══════════════════════════════════════════════════════════ */
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  animation: toastSlideIn 0.3s var(--ease-out);
+  color: white;
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.toast-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.toast-success {
+  background: var(--green-600);
+}
+
+.toast-error {
+  background: var(--red-600);
+}
+
+.toast-warning {
+  background: var(--amber-500);
+  color: var(--zinc-900);
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   面板标题栏
+   ═══════════════════════════════════════════════════════════ */
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 var(--space-4);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panel-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--zinc-700);
+  color: var(--text-tertiary);
+  margin-left: var(--space-2);
+}
+
+.panel-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   工具栏分隔符
+   ═══════════════════════════════════════════════════════════ */
+
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-default);
+  margin: 0 var(--space-2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   状态指示器
+   ═══════════════════════════════════════════════════════════ */
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--green-500);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Iconify 图标样式
+   ═══════════════════════════════════════════════════════════ */
+
+.iconify {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.icon-sm {
+  font-size: 14px;
+}
+
+.icon-md {
+  font-size: 16px;
+}
+
+.icon-lg {
+  font-size: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   浅色主题 (Light Theme)
+   ═══════════════════════════════════════════════════════════ */
+
+[data-theme="light"] {
+  /* 界面色 - 浅色主题 */
+  --bg-base: var(--zinc-100);
+  --bg-surface: white;
+  --bg-elevated: var(--zinc-50);
+  --bg-muted: var(--zinc-100);
+  --border-default: var(--zinc-200);
+  --border-subtle: var(--zinc-100);
+  --text-primary: var(--zinc-900);
+  --text-secondary: var(--zinc-700);
+  --text-tertiary: var(--zinc-500);
+  --text-muted: var(--zinc-400);
+  --text-placeholder: var(--zinc-300);
+
+  /* 阴影系统 - 浅色主题 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px rgba(249, 115, 22, 0.1);
+}
+
+/* 浅色主题下的卡片 */
+[data-theme="light"] .card {
+  background: white;
+  box-shadow: var(--shadow-md);
+}
+
+/* 浅色主题下的面板 */
+[data-theme="light"] .panel-header {
+  background: var(--bg-surface);
+  border-bottom-color: var(--border-subtle);
+}
+
+/* 浅色主题下的面板徽章 */
+[data-theme="light"] .panel-badge {
+  background: var(--zinc-100);
+  color: var(--text-tertiary);
+}
+
+/* 浅色主题下的切换按钮 */
+[data-theme="light"] .toggle-group {
+  background: var(--bg-muted);
+  border-color: var(--border-default);
+}
+
+[data-theme="light"] .toggle-btn.active {
+  background: white;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* 浅色主题下的幽灵按钮 */
+[data-theme="light"] .btn-ghost:hover {
+  background: var(--zinc-100);
+}
+
+/* 浅色主题下的选择器 */
+[data-theme="light"] .select {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+}
+
+[data-theme="light"] .select:hover {
+  border-color: var(--zinc-300);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   主题切换过渡动画
+   ═══════════════════════════════════════════════════════════ */
+
+.theme-transitioning,
+.theme-transitioning * {
+  transition:
+    background-color 300ms ease-out,
+    border-color 300ms ease-out,
+    color 200ms ease-out,
+    box-shadow 300ms ease-out !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   主题切换按钮样式
+   ═══════════════════════════════════════════════════════════ */
+
+.theme-toggle-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--zinc-600);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+/* 图标容器 */
+.theme-icon-wrapper {
+  position: relative;
+  width: 18px;
+  height: 18px;
+}
+
+/* 太阳图标 */
+.theme-icon-sun {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--orange-500);
+  transition:
+    transform 300ms var(--ease-out),
+    opacity 200ms ease-out;
+}
+
+/* 月亮图标 */
+.theme-icon-moon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition:
+    transform 300ms var(--ease-out),
+    opacity 200ms ease-out;
+}
+
+/* 深色模式：显示月亮 */
+[data-theme="dark"] .theme-icon-sun {
+  transform: rotate(180deg) scale(0);
+  opacity: 0;
+}
+
+[data-theme="dark"] .theme-icon-moon {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+
+/* 浅色模式：显示太阳 */
+[data-theme="light"] .theme-icon-sun {
+  transform: rotate(0deg) scale(1);
+  opacity: 1;
+}
+
+[data-theme="light"] .theme-icon-moon {
+  transform: rotate(-180deg) scale(0);
+  opacity: 0;
+}

@@ -1,0 +1,246 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.14",
+    "lastTouchedAt": "2026-03-29T14:51:44.215Z"
+  },
+  "update": {
+    "checkOnStart": false
+  },
+  "browser": {
+    "headless": true,
+    "noSandbox": true,
+    "defaultProfile": "openclaw",
+    "executablePath": "/usr/bin/chromium"
+  },
+  "models": {
+    "mode": "merge",
+    "providers": {
+      "default": {
+        "baseUrl": "https://coding.dashscope.aliyuncs.com/v1",
+        "apiKey": "sk-sp-be814e83f712487e81f6c25fe117b005",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "glm-5",
+            "name": "glm-5",
+            "reasoning": false,
+            "input": [
+              "text",
+              "image"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "default/glm-5"
+      },
+      "imageModel": {
+        "primary": "default/glm-5"
+      },
+      "workspace": "/root/.openclaw/workspace",
+      "compaction": {
+        "mode": "safeguard",
+        "reserveTokensFloor": 20000
+      },
+      "sandbox": {
+        "mode": "off"
+      },
+      "elevatedDefault": "full",
+      "timeoutSeconds": 300,
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "name": "OpenClaw Bot",
+        "workspace": "/root/.openclaw/workspace/main"
+      },
+      {
+        "id": "dev",
+        "name": "Dev Bot",
+        "workspace": "/root/.openclaw/workspace/dev"
+      },
+      {
+        "id": "notify",
+        "name": "Notify Bot",
+        "workspace": "/root/.openclaw/workspace/notify"
+      },
+      {
+        "id": "wechat-official",
+        "name": "微信公众号助手",
+        "workspace": "/root/.openclaw/workspace/wechat-official"
+      }
+    ]
+  },
+  "tools": {
+    "profile": "full",
+    "sessions": {
+      "visibility": "all"
+    },
+    "fs": {
+      "workspaceOnly": true
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions",
+    "tts": {
+      "edge": {
+        "voice": "zh-CN-XiaoxiaoNeural"
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "channels": {
+    "nim": {
+      "enabled": true,
+      "nickName": "龙虾Bot3",
+      "authToken": "1u3pJvviUiDrwpE+NMz3edEr2PrqHk4nBctcsGz9zS43lj05qyYH7qL87JZ2Ea1VhPO7QOslScgVct5NdmIaual7iPEzi4NgVIcKXy+vbP757tgQtSmvb77RJ5gZ/ZngHipGpr5hiAl7xTqCuObLZA=="
+    },
+    "feishu": {
+      "enabled": true,
+      "dmPolicy": "open",
+      "groupPolicy": "open",
+      "allowFrom": [
+        "*"
+      ],
+      "streaming": true,
+      "footer": {
+        "elapsed": true,
+        "status": true
+      },
+      "requireMention": true,
+      "sessionIsolation": "account",
+      "memoryIsolation": "account",
+      "accounts": {
+        "dev": {
+          "appId": "cli_a914eb4d63795bc7",
+          "appSecret": "72HYKjyHT6VW87vOUJuf5giyG0hMD1Cj",
+          "botName": "Dev Bot",
+          "renderMode": "card"
+        },
+        "notify": {
+          "appId": "cli_a91476e0a5f8dbc0",
+          "appSecret": "CRV8phtp1hTE7sz5tpwlCfGXnaIEvWCV",
+          "botName": "Notify Bot",
+          "renderMode": "card"
+        },
+        "wechat-official": {
+          "appId": "cli_a92ab53d707a1bd8",
+          "appSecret": "A6EQpw9iEVMJhHYvzvksxc5coQnKHDcN",
+          "botName": "微信公众号助手",
+          "renderMode": "card"
+        },
+        "default": {
+          "appId": "cli_a917cd6de9b85cb3",
+          "appSecret": "BVNAJ3Ix50lII2drX4oSHcLTNV8Ojci5",
+          "botName": "OpenClaw Bot",
+          "renderMode": "card"
+        }
+      }
+    }
+  },
+  "memory": {
+    "backend": "qmd",
+    "qmd": {
+      "command": "/usr/local/bin/qmd",
+      "paths": [
+        {
+          "path": "/root/.openclaw/workspace",
+          "name": "workspace",
+          "pattern": "**/*.md"
+        }
+      ]
+    }
+  },
+  "plugins": {
+    "enabled": true,
+    "entries": {
+      "feishu-openclaw-plugin": {
+        "enabled": false
+      },
+      "feishu": {
+        "enabled": true
+      },
+      "nim": {
+        "enabled": true
+      }
+    },
+    "installs": {},
+    "allow": [
+      "feishu",
+      "nim"
+    ],
+    "load": {
+      "paths": [
+        "/root/.openclaw/extensions/openclaw-nim-yx-auth"
+      ]
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "bind": "lan",
+    "mode": "local",
+    "controlUi": {
+      "allowedOrigins": [
+        "http://localhost:18789",
+        "http://127.0.0.1:18789"
+      ],
+      "allowInsecureAuth": true,
+      "dangerouslyDisableDeviceAuth": false
+    },
+    "auth": {
+      "mode": "token",
+      "token": ""
+    }
+  },
+  "bindings": [
+    {
+      "agentId": "main",
+      "match": {
+        "channel": "feishu",
+        "accountId": "default"
+      }
+    },
+    {
+      "agentId": "dev",
+      "match": {
+        "channel": "feishu",
+        "accountId": "dev"
+      }
+    },
+    {
+      "agentId": "notify",
+      "match": {
+        "channel": "feishu",
+        "accountId": "notify"
+      }
+    },
+    {
+      "agentId": "wechat-official",
+      "match": {
+        "channel": "feishu",
+        "accountId": "wechat-official"
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+# ========================================
+# Layer 2: Hermes Node Dependencies (NIM) - 预缓存版
+# 
+# 优化策略：
+#   1. 先 COPY 预提取的 node_modules（从已构建镜像提取）
+#   2. 再 npm install，只下载缺失/版本变化的包
+#   3. 不依赖 BuildKit，任何 Docker 版本都能用
+#
+# 预期效果：
+#   - 依赖没变化时：npm install 几秒~几分钟完成
+#   - 依赖有变化时：只下载变化的部分
+#
+# 预缓存准备（只需一次）：
+#   mkdir -p npm-precache
+#   docker cp <容器ID>:/opt/hermes/node_modules npm-precache/hermes-node-modules
+#   docker cp <容器ID>:/opt/hermes/scripts/whatsapp-bridge/node_modules npm-precache/whatsapp-bridge-modules
+#
+# ========================================
+ARG BASE_IMAGE=hermes-base:latest
+FROM ${BASE_IMAGE}
+
+ARG HERMES_PR=13062
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+
+# ========== Step 1: 克隆源码 ==========
+WORKDIR /opt
+RUN rm -rf /opt/hermes && \
+    git clone --depth 1 https://github.com/NousResearch/hermes-agent.git /opt/hermes && \
+    cd /opt/hermes && \
+    git fetch origin refs/pull/${HERMES_PR}/head:pr-nim && \
+    git checkout pr-nim && \
+    rm -rf /opt/hermes/.git
+
+WORKDIR /opt/hermes
+
+# ========== Step 2: 配置 npm 镜像 ==========
+RUN npm config set registry ${NPM_REGISTRY}
+
+# ========== Step 3: 跳过 camoufox ==========
+RUN echo '#!/bin/sh' > /usr/local/bin/camoufox-js && \
+    echo 'echo "camoufox-js fetch skipped"' >> /usr/local/bin/camoufox-js && \
+    chmod +x /usr/local/bin/camoufox-js
+
+# ========== Step 4: 预装 node_modules（关键优化） ==========
+# 从已构建镜像提取的 node_modules，npm install 会跳过已存在的包
+# 如果依赖没变化，这一步只需几秒
+# 如果有新依赖，只下载新增的部分
+COPY npm-precache/hermes-node-modules /opt/hermes/node_modules/
+COPY npm-precache/whatsapp-bridge-modules /opt/hermes/scripts/whatsapp-bridge/node_modules/
+
+# ========== Step 5: 安装/更新依赖 ==========
+# --prefer-offline 优先使用本地缓存，已存在的包直接跳过
+RUN npm install --prefer-offline --no-audit && \
+    cd /opt/hermes/scripts/whatsapp-bridge && \
+    npm install --prefer-offline --no-audit && \
+    npm cache clean --force
+
+# ========== Step 6: 恢复 camoufox-js ==========
+RUN rm -f /usr/local/bin/camoufox-js
