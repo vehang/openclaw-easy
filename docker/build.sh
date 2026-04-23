@@ -78,7 +78,8 @@ build_version() {
 build_integrated() {
     local version="$1"
     local arch="${2:-$(detect_arch)}"
-    
+    local PLUGIN_HASH="${3:-}"
+
     if [ -z "$version" ]; then
         version="2026.4.1"
         log_warn "未指定版本，使用默认版本: ${version}"
@@ -97,6 +98,7 @@ build_integrated() {
     docker build \
         --build-arg BASE_VERSION="${version}-root-${arch}" \
         --build-arg OPENCLAW_VERSION="$version" \
+        ${PLUGIN_HASH:+--build-arg PLUGIN_GIT_HASH=$PLUGIN_HASH} \
         -f docker/Dockerfile.integrated \
         -t "openclaw:${version}-integrated-${arch}" \
         -t "openclaw-integrated:${arch}-latest" \
@@ -145,8 +147,9 @@ show_help() {
     echo "  version <版本> [x86|arm64]         构建版本镜像"
     echo "                                     输出: openclaw:<版本>-root-<平台>"
     echo ""
-    echo "  integrated <版本> [x86|arm64]      构建整合版镜像"
+    echo "  integrated <版本> [x86|arm64] [插件commit]  构建整合版镜像"
     echo "                                     输出: openclaw:<版本>-integrated-<平台>"
+    echo "                                     插件commit: 触发更新插件,默认303b415"
     echo ""
     echo "  all [x86|arm64]                    构建所有版本"
     echo ""
@@ -156,12 +159,12 @@ show_help() {
     echo "  # x86 平台 (默认)"
     echo "  ./build.sh base                    # 构建基础镜像"
     echo "  ./build.sh version 2026.4.1        # 构建版本镜像"
-    echo "  ./build.sh integrated 2026.3.13    # 构建整合版"
+    echo "  ./build.sh integrated 2026.3.13    # 构建整合版(默认插件)"
     echo ""
     echo "  # ARM64 平台"
     echo "  ./build.sh base arm64"
     echo "  ./build.sh version 2026.4.1 arm64"
-    echo "  ./build.sh integrated 2026.3.13 arm64"
+    echo "  ./build.sh integrated 2026.3.13 arm64 abc1234  # 构建整合版(指定插件commit)"
 }
 
 # 主入口

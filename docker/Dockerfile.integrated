@@ -33,15 +33,19 @@ RUN echo "=== 准备种子目录 ===" && \
     ls -la /root/.openclaw-seed/extensions/
 
 # ========== 安装 NIM YX Auth 插件到种子目录 ==========
-RUN echo "=== 安装 NIM YX Auth 插件 ===" && \
+# ⚠️ 插件版本升级说明（2026-04-23）：
+#   openclaw-nim 依赖: 0.3.0 → 1.0.6（multi-instance 格式）
+#   移除 nim-web-sdk-ng（已内置于 openclaw-nim 1.0.6）
+#   Docker 缓存破坏：每次插件更新需修改 PLUGIN_GIT_HASH 或手动 docker build --no-cache
+ARG PLUGIN_GIT_HASH=303b415
+RUN echo "=== 安装 NIM YX Auth 插件 (commit: ${PLUGIN_GIT_HASH}) ===" && \
     cd /tmp && \
     git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git && \
     cp -r /tmp/openclaw-nim-yx-auth /root/.openclaw-seed/extensions/ && \
     cd /root/.openclaw-seed/extensions/openclaw-nim-yx-auth && \
     npm install --production && \
-    npm install nim-web-sdk-ng@10.9.77-alpha.3 && \
     rm -rf .git dist node_modules/.cache /tmp/openclaw-nim-yx-auth && \
-    echo "✅ NIM YX Auth 插件安装完成"
+    echo "✅ NIM YX Auth 插件安装完成 (openclaw-nim 1.0.6+)"
 
 # ========== 更新种子版本标识 ==========
 RUN printf '%s\n' "${OPENCLAW_VERSION}" > /root/.openclaw-seed/extensions/.seed-version && \
@@ -79,8 +83,8 @@ ENV HOME=/root \
 EXPOSE 18780 18789 18790
 
 # ========== 健康检查 ==========
-HEALTHCHECK --interval=5s --timeout=5s --start-period=180s --retries=12 \
-    CMD curl -f http://localhost:18789/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
 
 
 # ========== 设置默认工作目录 ==========
