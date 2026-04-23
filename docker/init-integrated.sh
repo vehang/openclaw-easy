@@ -125,19 +125,7 @@ sync_config_with_env() {
   },
   "plugins": {
     "enabled": true,
-    "allow": ["nim"],
-    "load": {
-      "paths": [
-        "/root/.openclaw/extensions/openclaw-nim-yx-auth"
-      ]
-    },
-    "installs": {
-      "nim": {
-        "source": "path",
-        "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
-        "version": "1.0.0"
-      }
-    }
+    "allow": ["nim"]
   },
   "memory": {
     "backend": "qmd",
@@ -216,22 +204,10 @@ config_file = os.environ.get('CONFIG_FILE')
 with open(config_file, 'r') as f:
     config = json.load(f)
 
-# 确保 plugins 配置正确（NIM 插件，微信插件按需安装）
+# 确保 plugins 配置正确（NIM 插件通过 openclaw plugins install 安装）
 config["plugins"] = {
     "enabled": True,
-    "allow": ["nim"],
-    "load": {
-        "paths": [
-            "/root/.openclaw/extensions/openclaw-nim-yx-auth"
-        ]
-    },
-    "installs": {
-        "nim": {
-            "source": "path",
-            "installPath": "/root/.openclaw/extensions/openclaw-nim-yx-auth",
-            "version": "1.0.0"
-        }
-    }
+    "allow": ["nim"]
 }
 print("✅ plugins 配置已确保正确")
 
@@ -256,6 +232,22 @@ if [ -f "$OPENCLAW_HOME/.openclaw/openclaw.json" ]; then
     # 显示模型配置
     MODEL=$(jq -r '.agents.defaults.model.primary // "未配置"' "$OPENCLAW_HOME/.openclaw/openclaw.json" 2>/dev/null || echo "未配置")
     echo "默认模型: $MODEL"
+fi
+
+# ========== 安装 NIM YX Auth 插件 ==========
+echo ""
+echo "=== 安装 NIM YX Auth 插件 ==="
+NIM_PLUGIN_VERSION="${NIM_PLUGIN_VERSION:-0.3.0}"
+if openclaw plugins list 2>/dev/null | grep -q "nim"; then
+    echo "✅ NIM 插件已安装，跳过"
+else
+    echo "安装 openclaw-nim-yx-auth@${NIM_PLUGIN_VERSION}..."
+    openclaw plugins install "openclaw-nim-yx-auth@${NIM_PLUGIN_VERSION}" 2>&1
+    if [ $? -eq 0 ]; then
+        echo "✅ NIM 插件安装完成"
+    else
+        echo "⚠️ NIM 插件安装失败，将在首次配置时重试"
+    fi
 fi
 
 # ========== 显示插件信息 ==========
