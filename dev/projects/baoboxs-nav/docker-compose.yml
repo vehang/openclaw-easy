@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: baoboxs-nav-dev
+    image: registry.cn-shenzhen.aliyuncs.com/lupf/baoboxs-nav-web:1.0.0
+    restart: always
+    ports:
+      - "43000:3000"
+    environment:
+      - API_ENV=development
+      - API_BASE_URL=http://192.168.1.123:48082
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    # 添加调试选项
+    stdin_open: true
+    tty: true
+    # 挂载日志目录（可选）
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  baoboxs-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+  next_cache:

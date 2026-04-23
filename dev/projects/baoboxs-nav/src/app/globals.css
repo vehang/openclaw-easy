@@ -1,0 +1,854 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* iOS Safari 兼容性修复 */
+* {
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+/* 统一的CSS变量定义 */
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 245, 245, 245;
+  --background: #f5f5f5;
+  --foreground: #000000;
+}
+
+/* 防止横向溢出 - iOS Safari 特殊处理 */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* 全局隐藏滚动条，保留滚动功能（Chrome/Safari/Edge/Firefox/IE） */
+html,
+body,
+* {
+  -ms-overflow-style: none; /* IE/Edge 旧版 */
+  scrollbar-width: none; /* Firefox */
+}
+
+::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge(WebKit) */
+}
+
+/* 深色模式兼容性修复 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-rgb: 10, 10, 10;
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* iOS Safari 动画性能优化 */
+.animation-delay-150 {
+  animation-delay: 150ms;
+  -webkit-animation-delay: 150ms;
+}
+
+.animation-delay-300 {
+  animation-delay: 300ms;
+  -webkit-animation-delay: 300ms;
+}
+
+/* 旋转动画 - iOS兼容性 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+/* 慢速旋转动画 - 唱片机效果 */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@-webkit-keyframes spin-slow {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+
+/* 🚀 菜单过渡动画优化 */
+.menu-transition {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity, color, background-color;
+}
+
+.menu-transition-fast {
+  transition: color 0.1s ease-out, border-color 0.1s ease-out;
+  will-change: color, border-color;
+  transform: translateZ(0); /* GPU加速 */
+  -webkit-transform: translateZ(0);
+}
+
+/* Android 设备即时响应优化 - 绝对零延迟 */
+.menu-item-instant {
+  /* 完全移除所有过渡和动画 */
+  transition: none !important;
+  animation: none !important;
+  -webkit-transition: none !important;
+  -webkit-animation: none !important;
+  
+  /* 最强GPU加速 */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  
+  /* 移动端触摸零延迟优化 */
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  touch-action: manipulation !important;
+  
+  /* Android Chrome 深度优化 */
+  -webkit-appearance: none !important;
+  outline: none !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  
+  /* 强制硬件渲染 */
+  -webkit-perspective: 1000;
+  perspective: 1000;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+}
+
+/* 触摸设备绝对零延迟 */
+@media (pointer: coarse) {
+  .menu-item-instant {
+    -webkit-tap-highlight-color: rgba(0,0,0,0) !important;
+    tap-highlight-color: rgba(0,0,0,0) !important;
+    /* 强制立即响应 */
+    pointer-events: auto !important;
+  }
+}
+
+/* Android 设备特殊处理 */
+@media screen and (max-width: 768px) {
+  .menu-item-instant {
+    /* 移动端强制零延迟 */
+    -webkit-user-drag: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    /* 禁用所有可能的延迟 */
+    -webkit-touch-callout: none !important;
+    -webkit-text-size-adjust: none !important;
+  }
+}
+
+/* 防止动画闪烁 */
+.menu-item {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  /* 移动端触摸优化 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* 悬停状态优化 */
+.menu-hover {
+  transition: all 0.2s ease-out;
+  will-change: color, background-color, border-color;
+}
+
+/* 进度条动画 - iOS兼容性 */
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+
+  50% {
+    width: 70%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+@-webkit-keyframes progress {
+  0% {
+    width: 0%;
+  }
+
+  50% {
+    width: 70%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progress {
+  animation: progress 2s ease-in-out infinite;
+  -webkit-animation: progress 2s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+  -webkit-animation: spin-slow 8s linear infinite;
+}
+
+.animate-spin-slow-reverse {
+  animation: spin-slow 12s linear infinite reverse;
+  -webkit-animation: spin-slow 12s linear infinite reverse;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* iOS Safari 淡入动画修复 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    -webkit-transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    -webkit-transform: translateY(0);
+  }
+}
+
+@-webkit-keyframes fadeIn {
+  from {
+    opacity: 0;
+    -webkit-transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: translateY(0);
+  }
+}
+
+/* 容器溢出修复 */
+.container {
+  max-width: 100%;
+  width: 100%;
+}
+
+/* iOS Safari Flexbox修复 */
+.grid,
+.flex {
+  min-width: 0;
+}
+
+/* iOS Safari 触摸优化 */
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* iOS Safari 输入框修复 */
+input,
+textarea,
+select {
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+}
+
+/* iOS Safari viewport修复 */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* iOS Safari 字体渲染优化 */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS Safari 图片加载优化 */
+img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS Safari 安全区域适配 */
+@supports (padding: max(0px)) {
+  .ios-safe-top {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+
+  .ios-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+
+  .ios-safe-left {
+    padding-left: max(env(safe-area-inset-left), 1rem);
+  }
+
+  .ios-safe-right {
+    padding-right: max(env(safe-area-inset-right), 1rem);
+  }
+}
+
+/* 精致的滚动条样式 - 符合页面主题色调 */
+.elegant-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 187, 167, 0.6) transparent;
+  scrollbar-gutter: stable;
+}
+
+.elegant-scrollbar::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 2px;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 187, 167, 0.5);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.elegant-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 187, 167, 0.7);
+  transform: scaleX(1.3);
+}
+
+.elegant-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(0, 187, 167, 0.8);
+}
+
+/* 悬停时显示更明显的滚动条 */
+.elegant-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 187, 167, 0.65);
+}
+
+/* 滚动条边角处理 */
+.elegant-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 404页面专用动画 */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(0, 187, 167, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(0, 187, 167, 0.8), 0 0 30px rgba(0, 187, 167, 0.6);
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-scan {
+  animation: scan 2s linear infinite;
+}
+
+.animate-twinkle {
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* 摸鱼页面滚动条样式 - 悬停时显示 */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-hide:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+.hover\:scrollbar-show:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent;
+}
+
+.hover\:scrollbar-show:hover::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.hover\:scrollbar-show:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hover\:scrollbar-show:hover::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.hover\:scrollbar-show:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* 始终保留滚动条宽度但默认透明，悬停时显示颜色，内容不会被挤压 */
+.scrollbar-float {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  -ms-overflow-style: none;
+}
+.scrollbar-float::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+.scrollbar-float::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.scrollbar-float:hover {
+  scrollbar-color: rgba(0,0,0,0.18) transparent;
+}
+.scrollbar-float:hover::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.18);
+}
+.scrollbar-float:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.28);
+}
+
+/* 修复 iPhone 11 上 CategoryTabs 渐变遮罩的显示问题 - 仅在 iOS 设备上 */
+@supports (-webkit-touch-callout: none) {
+  /* iOS 下 modal 遮罩避免使用 blur，降低渲染压力，防止整层不显示 */
+  .ios-modal-overlay {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* iOS 倒计时显示修复 - 确保文本可见性 */
+  .ios-countdown-fix {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    /* 强制显示，避免被裁剪 */
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    /* iOS Safari 文本渲染优化 */
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    will-change: auto !important;
+  }
+
+  /* 隐藏左右两侧的渐变遮罩，但保留滚动按钮 */
+  .relative .absolute.pointer-events-none {
+    display: none !important;
+  }
+  
+  /* 移除按钮的渐变背景阴影效果，但保持按钮可见 */
+  .relative button.absolute.bg-gradient-to-r,
+  .relative button.absolute.bg-gradient-to-l {
+    background: rgba(255, 255, 255, 0.9) !important;
+    background-image: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-appearance: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 自定义下拉选择框样式 - 编辑收藏分组选择 */
+.group-select {
+  /* 当有选中值时，显示青色文字 */
+  color: #374151; /* 默认灰色 */
+}
+
+.group-select[data-selected="true"] {
+  color: #0d9488 !important; /* 青色 */
+  font-weight: 500;
+}
+
+/* 下拉选项样式 */
+.group-select option {
+  padding: 8px 12px;
+  color: #374151;
+  background-color: white;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+/* 选中的选项样式 */
+.group-select option:checked {
+  background-color: #ccfbf1 !important; /* 青色背景 */
+  color: #0d9488 !important; /* 青色文字 */
+  font-weight: 500 !important;
+}
+
+/* 悬停的选项样式 */
+.group-select option:hover {
+  background-color: #f0fdfa !important; /* 浅青色背景 */
+  color: #0d9488 !important; /* 青色文字 */
+}
+
+/* Firefox 兼容性 */
+@-moz-document url-prefix() {
+  .group-select option:hover {
+    background-color: #f0fdfa !important;
+    color: #0d9488 !important;
+  }
+  
+  .group-select option:checked {
+    background-color: #ccfbf1 !important;
+    color: #0d9488 !important;
+    font-weight: 500 !important;
+  }
+}
+
+/* WebKit 浏览器兼容性 */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  .group-select option {
+    background-color: white;
+    color: #374151;
+  }
+
+  .group-select option:hover {
+    background-color: #f0fdfa !important;
+    color: #0d9488 !important;
+  }
+
+  .group-select option:checked {
+    background-color: #ccfbf1 !important;
+    color: #0d9488 !important;
+    font-weight: 500 !important;
+  }
+}
+
+/* 站内相关样式 */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 187, 167, 0.6) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #00bba7;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00a593;
+}
+
+/* 搜索结果hover效果 */
+.search-result-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.search-result-hover:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 187, 167, 0.15);
+}
+
+/* 键盘提示样式 */
+.kbd {
+  display: inline-block;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  line-height: 1;
+  color: #374151;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* 高亮动画 */
+@keyframes highlight-fade {
+  0% {
+    background-color: #00bba7;
+    color: white;
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+.search-highlight {
+  animation: highlight-fade 1s ease-out;
+}
+
+/* 搜索下拉弹窗特殊样式 */
+.search-dropdown {
+  width: 420px;
+  max-width: 420px;
+}
+
+/* 响应式断点 */
+@media (max-width: 640px) {
+  .search-dropdown {
+    width: 100vw;
+    max-width: 100vw;
+    left: 0;
+    right: 0;
+  }
+}
+
+/* 文本截断样式 */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* 搜索结果动画效果 */
+.animate-in {
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.slide-in-from-top-1 {
+  animation: slideInFromTop 0.2s ease-out;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 搜索结果项过渡效果 */
+.search-result-item {
+  transition: all 0.15s ease-out;
+}
+
+.search-result-item:hover {
+  background-color: rgba(0, 187, 167, 0.05);
+}
+
+/* 分数显示样式 */
+.search-score {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #00bba7;
+  min-width: 2rem;
+  text-align: right;
+}
+
+/* 搜索下拉框强制防止横向溢出 */
+.search-dropdown-no-overflow {
+  max-width: 380px !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  min-width: 0 !important;
+  /* 防止滚动事件穿透 */
+  pointer-events: auto !important;
+  isolation: isolate !important;
+  transform: translateZ(0) !important;
+}
+
+.search-dropdown-no-overflow * {
+  overflow-x: hidden !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.search-dropdown-no-overflow .break-words {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+/* 搜索下拉框容器防止滚动穿透 */
+.search-dropdown-container {
+  touch-action: pan-y !important;
+  overscroll-behavior: contain !important;
+}
+
+/* 搜索弹窗所有区域阻止滚动事件 */
+.search-dropdown-no-overflow > div {
+  touch-action: none !important;
+  overscroll-behavior: contain !important;
+}
+
+.search-dropdown-no-overflow > div > * {
+  touch-action: none !important;
+  overscroll-behavior: contain !important;
+}
+
+/* 隐藏浏览器原生的密码显示/隐藏图标 */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
+/* 隐藏 WebKit 浏览器的密码自动填充按钮 */
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+/* 隐藏 Firefox 的密码显示图标 */
+input[type="password"]::-moz-reveal {
+  display: none !important;
+}

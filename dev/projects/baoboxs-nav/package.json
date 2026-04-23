@@ -1,0 +1,47 @@
+{
+  "name": "baoboxs-nav",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "cross-env NEXT_PUBLIC_API_ENV=development NODE_ENV=development next dev",
+    "dev:turbo": "cross-env NEXT_PUBLIC_API_ENV=development NODE_ENV=development next dev --turbopack",
+    "dev:stable": "cross-env NEXT_PUBLIC_API_ENV=development NODE_ENV=development next dev",
+    "build": "next build",
+    "build:dev": "cross-env NEXT_PUBLIC_API_ENV=development NODE_ENV=production next build",
+    "build:check": "npm run build && node scripts/test-console-removal.js",
+    "start": "next start",
+    "start:dev": "cross-env NEXT_PUBLIC_API_ENV=development NODE_ENV=production next start",
+    "lint": "next lint",
+    "test:console": "node scripts/test-console-removal.js"
+  },
+  "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^4.6.2",
+    "@radix-ui/react-tabs": "^1.1.8",
+    "@tailwindcss/line-clamp": "^0.4.4",
+    "clsx": "^2.1.1",
+    "next": "^15.2.6",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.1.4",
+    "react-dom": "^19.1.4",
+    "react-icons": "^5.5.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.2.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/forms": "^0.5.10",
+    "@types/node": "20.19.37",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "^15.2.6",
+    "postcss": "^8.4.47",
+    "ssh2": "^1.17.0",
+    "tailwindcss": "^3.4.14",
+    "terser-webpack-plugin": "^5.4.0",
+    "typescript": "5.9.3"
+  }
+}

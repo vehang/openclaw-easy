@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  baoboxs-nav-web-${IMAGE_ENV}:
+    container_name: baoboxs-nav-web-${IMAGE_ENV}
+    image: registry.cn-shenzhen.aliyuncs.com/lupf/baoboxs-nav-web:${IMAGE_VERSION}
+    restart: always
+    ports:
+      - "${IMAGE_PORT}:3000"
+    environment:
+      - API_ENV=${IMAGE_ENV}
+      - API_BASE_URL=${IMAGE_BASE_PATH}
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    # 添加调试选项
+    stdin_open: true
+    tty: true
+    # 挂载日志目录（可选）
+    volumes:
+      - ./logs:/app/logs
+
+networks:
+  baoboxs-network:
+    driver: bridge
+
+volumes:
+  node_modules:
+  next_cache:

@@ -1,0 +1,33 @@
+# 优化版 Dockerfile - 更小的镜像
+FROM node:18-alpine AS runner
+
+# 安装必要工具
+RUN apk add --no-cache libc6-compat curl
+
+# 创建非root用户
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+WORKDIR /app
+
+# 环境变量
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# 复制构建产物
+COPY --chown=nextjs:nodejs . .
+
+# 切换用户
+USER nextjs
+
+# 暴露端口
+EXPOSE 3000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
+
+# 启动命令
+CMD ["node", "server.js"]
