@@ -241,12 +241,48 @@ NIM_PLUGIN_VERSION="${NIM_PLUGIN_VERSION:-0.3.0}"
 if openclaw plugins list 2>/dev/null | grep -q "nim"; then
     echo "✅ NIM 插件已安装，跳过"
 else
+    # 临时移除配置中的 nim 引用，避免 openclaw 因插件未安装而拒绝执行
+    CONFIG_FILE="$OPENCLAW_HOME/.openclaw/openclaw.json"
+    if [ -f "$CONFIG_FILE" ]; then
+        cp "$CONFIG_FILE" "${CONFIG_FILE}.bak"
+        echo "临时移除 nim 配置引用..."
+        python3 -c "
+import json, os
+cfg = os.environ.get('CONFIG_FILE', '/root/.openclaw/openclaw.json')
+try:
+    with open(cfg, 'r') as f:
+        c = json.load(f)
+    ch = False
+    if 'channels' in c and 'nim' in c['channels']:
+        del c['channels']['nim']
+        if not c['channels']: del c['channels']
+        ch = True
+    if 'plugins' in c and 'allow' in c['plugins']:
+        c['plugins']['allow'] = [p for p in c['plugins']['allow'] if p != 'nim']
+        if not c['plugins']['allow']: del c['plugins']['allow']
+        ch = True
+    if ch:
+        with open(cfg, 'w') as f:
+            json.dump(c, f, indent=2, ensure_ascii=False)
+        print('  已临时移除 nim 引用')
+    else:
+        print('  配置中无 nim 引用')
+except Exception as e:
+    print(f'  移除 nim 引用失败: {e}')
+"
+    fi
     echo "安装 openclaw-nim-yx-auth@${NIM_PLUGIN_VERSION}..."
     openclaw plugins install "openclaw-nim-yx-auth@${NIM_PLUGIN_VERSION}" 2>&1
     if [ $? -eq 0 ]; then
         echo "✅ NIM 插件安装完成"
     else
         echo "⚠️ NIM 插件安装失败，将在首次配置时重试"
+    fi
+    # 恢复配置中的 nim 引用
+    if [ -f "${CONFIG_FILE}.bak" ]; then
+        cp "${CONFIG_FILE}.bak" "$CONFIG_FILE"
+        rm -f "${CONFIG_FILE}.bak"
+        echo "✅ 已恢复 nim 配置引用"
     fi
 fi
 
