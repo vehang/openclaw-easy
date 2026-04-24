@@ -21,32 +21,9 @@ RUN apt-get update && \
     mkdir -p /var/log/supervisor
 
 # ========== 准备种子目录 ==========
-# 将运行目录的插件复制到种子目录，确保启动时能同步
-RUN echo "=== 准备种子目录 ===" && \
-    mkdir -p /root/.openclaw-seed/extensions && \
-    # 复制已有的 napcat 插件（种子目录已有） \
-    # 复制微信插件到种子目录 \
-    if [ -d "/root/.openclaw/extensions/openclaw-weixin" ]; then \
-        cp -a /root/.openclaw/extensions/openclaw-weixin /root/.openclaw-seed/extensions/ && \
-        echo "✅ 微信插件已复制到种子目录"; \
-    fi && \
-    ls -la /root/.openclaw-seed/extensions/
-
-# ========== 安装 NIM YX Auth 插件到种子目录 ==========
-RUN echo "=== 安装 NIM YX Auth 插件 ===" && \
-    cd /tmp && \
-    git clone --depth 1 https://github.com/vehang/openclaw-nim-yx-auth.git && \
-    cp -r /tmp/openclaw-nim-yx-auth /root/.openclaw-seed/extensions/ && \
-    cd /root/.openclaw-seed/extensions/openclaw-nim-yx-auth && \
-    npm install --production && \
-    npm install nim-web-sdk-ng@10.9.77-alpha.3 && \
-    rm -rf .git dist node_modules/.cache /tmp/openclaw-nim-yx-auth && \
-    echo "✅ NIM YX Auth 插件安装完成"
-
-# ========== 更新种子版本标识 ==========
-RUN printf '%s\n' "${OPENCLAW_VERSION}" > /root/.openclaw-seed/extensions/.seed-version && \
-    echo "=== 种子目录最终内容 ===" && \
-    ls -la /root/.openclaw-seed/extensions/
+# NIM YX Auth 插件改为启动时通过 openclaw plugins install 安装
+# 不再在构建时 git clone，构建更快、镜像更小
+RUN mkdir -p /root/.openclaw-seed/extensions
 
 # ========== 清理运行目录（启动时会从种子目录同步） ==========
 RUN rm -rf /root/.openclaw/extensions/* 2>/dev/null || true
