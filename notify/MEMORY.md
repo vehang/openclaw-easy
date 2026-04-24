@@ -1,99 +1,58 @@
 # MEMORY.md - Notify Bot 记忆
 
+## 🔒 推送铁律
+
+> **只推有效内容，不推任何系统执行结果。**
+> 详细规范见 `PUSH_RULES.md`
+
+- ✅ 允许推：天气早报卡片、科技资讯早/午/晚报卡片
+- ❌ 禁止推：cron执行结果、脚本输出、错误日志、系统通知、确认消息、调试信息
+
+---
+
 ## 每日任务
 
-### 1️⃣ 天气早报推送
+| 时间 | 任务 | Cron | 推送内容 |
+|------|------|------|----------|
+| 07:00 | 天气早报 | `0 7 * * *` | 宜昌夷陵区天气卡片 |
+| 08:00 | 科技早报 | `0 8 * * *` | 资讯卡片 |
+| 12:00 | 科技午报 | `0 12 * * *` | 资讯卡片 |
+| 20:00 | 科技晚报 | `0 20 * * *` | 资讯卡片 |
 
-| 项目 | 配置 |
-|------|------|
-| **推送时间** | 每天 07:00 (Asia/Shanghai) |
-| **地址** | 湖北省宜昌市夷陵区东湖大道50号 |
-| **坐标** | 30.77°N, 111.33°E |
-| **用户ID** | ou_7172afb8fa3c2f51bb02b6af097a4b27 |
-| **推送方式** | 飞书私聊卡片消息 |
+### 配置
 
-**模板位置**: `/root/.openclaw/workspace/.ai/schedules/weather-template.md`
-**配置位置**: `/root/.openclaw/workspace/.ai/schedules/daily-weather-yichang.md`
-
----
-
-### 2️⃣ 科技资讯推送
-
-| 时间 | 名称 | Cron |
-|------|------|------|
-| **08:00** | 早报 | `0 8 * * *` |
-| **12:00** | 午报 | `0 12 * * *` |
-| **20:00** | 晚报 | `0 20 * * *` |
-
-**关键词筛选**:
-- AI / 人工智能 / 大模型 / LLM
-- 芯片 / 半导体 / GPU / CPU
-- 英伟达 / NVIDIA / 台积电
-- 微软 / 甲骨文 / Salesforce
-- 新能源 / 存储 / 内存
-- 软件股 / SaaS / 云计算
-
-**信息来源**:
-- 36氪 (36kr.com)
-- 虎嗅 (huxiu.com)
-- 机器之心 (jiqizhixin.com)
-- IT之家 (ithome.com)
-
-**配置位置**: `/root/.openclaw/workspace/.ai/schedules/news-config.md`
-**执行指南**: `/root/.openclaw/workspace/.ai/schedules/cron-news-task.md`
+| 项目 | 值 |
+|------|-----|
+| **天气地址** | 湖北省宜昌市夷陵区东湖大道50号 |
+| **天气坐标** | 30.77°N, 111.33°E |
+| **推送目标** | 飞书私聊 ou_7172afb8fa3c2f51bb02b6af097a4b27 |
+| **资讯关键词** | AI/大模型/芯片/GPU/英伟达/微软/新能源/SaaS/云计算 |
+| **资讯来源** | 36氪、虎嗅、机器之心、IT之家 RSS |
+| **去重记录** | scripts/sent-news.json |
 
 ---
 
-### 3️⃣ GitHub 仓库日报
+## 已知问题
 
-| 项目 | 配置 |
-|------|------|
-| **仓库** | openclaw/openclaw |
-| **推送时间** | 每天 21:00 (Asia/Shanghai) |
-| **Cron** | `0 21 * * *` |
-| **监控内容** | Commits + Pull Requests |
-| **脚本位置** | `/root/.openclaw/workspace/scripts/github-repo-monitor.js` |
-| **状态文件** | `/root/.openclaw/workspace/scripts/github-monitor-state.json` |
-| **认证方式** | GitHub PAT (ghp_...HPAF) |
-| **推送方式** | 飞书卡片消息 |
+### 脚本路径问题
+- `scripts/weather-card.js` 存在（可用）
+- `scripts/news-card.js` **不存在**，cron 引用了不存在的脚本
+- **解决方案**：cron 触发后由 agent 内联执行（抓 RSS → 筛选 → 生成卡片 → 发送），不依赖脚本文件
 
-**卡片标题**: `🐙 OpenClaw 仓库日报 - {日期}`
-
-**内容结构**:
-1. PR 概览（已合并/新开/关闭）
-2. 已合并 PR 详情（含 label、作者）
-3. 新开/关闭 PR
-4. Commits 按分类展示（新功能/修复/优化/重构/文档/CI/其他）
-5. 贡献者统计
+### news-evening 上次失败
+- 晚报 cron 上次执行报错 "cron announce delivery failed"
+- 需要调整 delivery 配置，避免系统 announce 推送执行结果
 
 ---
 
-## 重要修正记录
+## 账号信息
 
-### 2026-03-21 天气位置修正
-- ❌ 错误配置: `location: 'Shanghai'`
-- ✅ 正确配置: `location: 'Yichang'` → 改为坐标 `30.77,111.33`
-
-### 2026-03-21 资讯格式修正
-- ❌ 错误格式: 简单 `lark_md` 列表
-- ✅ 正确格式: fields 布局 + plain_text 内容 + hr 分隔
+| 项目 | 值 |
+|------|-----|
+| **用户 ID** | ou_7172afb8fa3c2f51bb02b6af097a4b27 |
+| **Bot App ID** | cli_a91476e0a5f8dbc0 |
+| **Bot App Secret** | CRV8phtp1hTE7sz5tpwlCfGXnaIEvWCV |
 
 ---
 
-## 推送规范
-
-### 天气推送规范
-- 卡片标题: `🌤️ 宜昌夷陵区 天气早报`
-- 必须包含: 日期、农历、温度、湿度、风速、日出日落、穿搭建议、出行建议
-
-### 资讯推送规范
-- 卡片标题: `📰 科技资讯早/午/晚报 - {日期} {时间}`
-- 分类标题使用 fields 布局（左标题右空白）
-- 新闻内容使用 plain_text 格式
-- 分隔线使用 hr
-- 底部注明来源
-
----
-
-*创建时间: 2026-03-31*
-_来源: 主工作区记忆文件迁移_
+*更新时间: 2026-04-24*
