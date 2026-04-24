@@ -285,12 +285,6 @@ router.post('/config/simple', appAuthMiddleware, async (req, res) => {
         }
         
         // 设置插件加载路径
-        plugins.load = plugins.load || {};
-        plugins.load.paths = plugins.load.paths || [];
-        const nimPluginPath = '/root/.openclaw/extensions/openclaw-nim-yx-auth';
-        if (!plugins.load.paths.includes(nimPluginPath)) {
-            plugins.load.paths.push(nimPluginPath);
-        }
 
         // 合并配置
         const newConfig = {
