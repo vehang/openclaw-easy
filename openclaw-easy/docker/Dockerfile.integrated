@@ -3,11 +3,9 @@
 # 全部以 root 权限运行
 
 # 使用已构建的版本镜像作为基础
-# 构建时传入：--build-arg BASE_VERSION=2026.3.13-root
 ARG BASE_VERSION=2026.3.13-root
 FROM openclaw:${BASE_VERSION}
 
-# 设置要安装的 OpenClaw 版本（用于标签）
 ARG OPENCLAW_VERSION=2026.3.13
 
 LABEL maintainer="OpenClaw Integrated"
@@ -21,9 +19,9 @@ RUN apt-get update && \
     mkdir -p /var/log/supervisor
 
 # ========== 安装 NIM YX Auth 插件 ==========
-# 构建时安装，启动时和 simple 接口仅做兜底
+# 构建时通过 openclaw plugins install 安装，启动时和 simple 接口仅做兜底
 ARG NIM_PLUGIN_VERSION=0.3.0
-RUN echo "=== 安装 NIM YX Auth 插件@${NIM_PLUGIN_VERSION} ===" &&     mkdir -p /root/.openclaw/extensions &&     cd /tmp &&     npm pack "openclaw-nim-yx-auth@${NIM_PLUGIN_VERSION}" &&     tgz=$(ls openclaw-nim-yx-auth-*.tgz | head -1) &&     mkdir -p /root/.openclaw/extensions/openclaw-nim-yx-auth &&     tar xzf "$tgz" -C /root/.openclaw/extensions/openclaw-nim-yx-auth --strip-components=1 &&     cd /root/.openclaw/extensions/openclaw-nim-yx-auth &&     npm install --production &&     rm -rf /tmp/openclaw-nim-yx-auth-*.tgz .git dist node_modules/.cache &&     echo "✅ NIM YX Auth 插件@${NIM_PLUGIN_VERSION} 安装完成"
+RUN openclaw plugins install "openclaw-nim-yx-auth@${NIM_PLUGIN_VERSION}"
 
 # ========== 准备种子目录（保留，兼容旧逻辑） ==========
 RUN mkdir -p /root/.openclaw-seed/extensions
@@ -32,7 +30,7 @@ RUN mkdir -p /root/.openclaw-seed/extensions
 COPY . /app/openclaw-easy
 WORKDIR /app/openclaw-easy
 RUN npm install --production && \
-    echo "✅ openclaw-easy 安装完成"
+    echo "openclaw-easy installed"
 
 # ========== 复制配置文件 ==========
 COPY docker/supervisord-integrated.conf /etc/supervisor/conf.d/openclaw.conf
@@ -43,22 +41,17 @@ RUN chmod +x /usr/local/bin/init-integrated.sh
 RUN rm -rf /root/.npm /tmp/* /root/.cache
 
 # ========== 环境变量 ==========
-# 注意：OPENCLAW_HOME 应该是用户主目录，OpenClaw 会在其下创建 .openclaw/ 目录
 ENV HOME=/root \
     OPENCLAW_HOME=/root \
     SYNC_MODEL_CONFIG=false \
     OPENCLAW_VERSION=${OPENCLAW_VERSION}
 
 # ========== 端口 ==========
-# 18780 - openclaw-easy Web 界面
-# 18789 - OpenClaw Gateway
-# 18790 - OpenClaw Node
 EXPOSE 18780 18789 18790
 
 # ========== 健康检查 ==========
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:18789/health && curl -f http://localhost:18780/api/status || exit 1
-
 
 # ========== 设置默认工作目录 ==========
 WORKDIR /root/.openclaw
