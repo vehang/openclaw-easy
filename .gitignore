@@ -35,3 +35,11 @@ coverage/
 -e 
 # Legacy/archived files
 tmp/
+-e 
+# Nested git repos
+dev/
+-e 
+# Nested workspaces
+main/
+dev/
+notify/
