@@ -1,0 +1,33 @@
+# ========================================
+# 增量 Base：基于已有 hermes-base-root，追加 JDK 8 + Maven + Claude Code 升级
+# 使用本地预下载的 tar 包，避免构建时网络问题
+# ========================================
+ARG BASE_IMAGE=hermes-base-root:latest
+FROM ${BASE_IMAGE}
+
+# ===== JDK 8 (Eclipse Temurin) - 从本地文件 =====
+COPY local-cache/jdk8.tar.gz /tmp/jdk8.tar.gz
+RUN mkdir -p /opt/jdk && \
+    tar xz --strip-components=1 -C /opt/jdk -f /tmp/jdk8.tar.gz && \
+    rm -f /tmp/jdk8.tar.gz
+
+# ===== Maven 3.6.3 - 从本地文件 =====
+COPY local-cache/maven.tar.gz /tmp/maven.tar.gz
+RUN mkdir -p /opt/maven && \
+    tar xz --strip-components=1 -C /opt/maven -f /tmp/maven.tar.gz && \
+    rm -f /tmp/maven.tar.gz
+
+# ===== Java 环境变量 =====
+RUN printf 'export JAVA_HOME=/opt/jdk\nexport PATH=$JAVA_HOME/bin:$PATH\nexport MAVEN_HOME=/opt/maven\nexport PATH=$MAVEN_HOME/bin:$PATH\n' > /etc/profile.d/java.sh
+
+ENV JAVA_HOME=/opt/jdk
+ENV MAVEN_HOME=/opt/maven
+ENV PATH="/opt/jdk/bin:/opt/maven/bin:${PATH}"
+
+# ===== 升级 Claude Code CLI（锁定版本）=====
+RUN npm install -g @anthropic-ai/claude-code@2.1.112
+
+# ===== 验证 =====
+RUN echo "=== Java ===" && java -version 2>&1 && \
+    echo "=== Maven ===" && mvn -version && \
+    echo "=== Claude Code ===" && claude --version
