@@ -1,0 +1,59 @@
+# ========================================
+# Layer 2: Hermes Agent App v0.15.0 (Root, no precache)
+# 基于 hermes-base-root，从 GitHub v2026.5.28 tag 拉取代码 (= 0.15.0)
+# ========================================
+ARG BASE_IMAGE=hermes-base-root:latest
+FROM ${BASE_IMAGE}
+
+ARG HERMES_VERSION=v2026.5.28
+
+# ===== 二进制下载加速 =====
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true
+ENV PUPPETEER_DOWNLOAD_HOST=https://cdn.npmmirror.com/binaries/chrome-for-testing
+ENV SASS_BINARY_SITE=https://cdn.npmmirror.com/binaries/node-sass
+ENV ELECTRON_MIRROR=https://cdn.npmmirror.com/binaries/electron/
+
+# ===== 克隆 v2026.5.28 源码 =====
+WORKDIR /opt
+RUN rm -rf /opt/hermes && \
+    git clone --depth 1 --branch ${HERMES_VERSION} \
+    https://github.com/NousResearch/hermes-agent.git /opt/hermes && \
+    rm -rf /opt/hermes/.git
+
+WORKDIR /opt/hermes
+
+# 修复 exclude-newer 导致 pip 依赖解析失败
+RUN sed -i '/exclude-newer/d' pyproject.toml && \
+    sed -i '/exclude-newer/d' uv.lock
+
+# ===== npm install（跳过 postinstall 脚本避免下载浏览器）=====
+RUN npm install --ignore-scripts --prefer-offline --no-audit && \
+    cd /opt/hermes/scripts/whatsapp-bridge && \
+    npm install --ignore-scripts --prefer-offline --no-audit
+
+# 编译 native 模块
+RUN npm rebuild && \
+    cd /opt/hermes/scripts/whatsapp-bridge && \
+    npm rebuild
+
+# 清理 npm 缓存
+RUN npm cache clean --force
+
+# ===== Python 依赖 =====
+RUN uv venv && \
+    uv pip install --no-cache-dir --prerelease=allow \
+      -i https://pypi.tuna.tsinghua.edu.cn/simple \
+      -e ".[all]" && \
+    uv pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple lark-oapi
+
+# 预置默认配置
+COPY hermes.env /opt/hermes/hermes.env.example
+
+# entrypoint
+COPY entrypoint.sh /opt/hermes/docker/entrypoint.sh
+RUN chmod +x /opt/hermes/docker/entrypoint.sh
+
+ENV HERMES_HOME=/opt/data
+VOLUME ["/opt/data"]
+ENTRYPOINT ["/opt/hermes/docker/entrypoint.sh"]
