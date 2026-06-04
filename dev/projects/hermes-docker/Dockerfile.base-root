@@ -93,8 +93,12 @@ RUN PLAYWRIGHT_DOWNLOAD_HOST= npx playwright install --with-deps chromium --only
 # ===== npm 全局配置 =====
 RUN npm config set registry https://registry.npmmirror.com
 
+# ===== rmux (Rust terminal multiplexer) =====
+RUN curl -fsSL https://rmux.io/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
+
 # ===== 验证 =====
-RUN java -version && mvn -version && claude --version
+RUN java -version && mvn -version && claude --version && rmux -V
 
 # ===== 预创建目录 =====
 RUN mkdir -p /opt/hermes /opt/data/{cron,sessions,logs,hooks,memories,skills,skins,plans,workspace,home}
