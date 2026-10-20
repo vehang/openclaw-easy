@@ -1,147 +1,126 @@
-# -*- coding: utf-8 -*-
 import json, subprocess
 
-# commits: (sha7, 中文概括, 分类, 作者)
-commits = [
-    ("bde1d5f","移除Telegram入口目录编码","重构","Peter Steinberger"),
-    ("49acf31","防止并发创建会话时标签重复","修复","Peter Steinberger"),
-    ("0a46ce7","修复cron拒绝带调度错误计数诊断的任务","修复","Yufeng He"),
-    ("b909cae","复用未变更的工具schema投影","性能优化","Peter Steinberger"),
-    ("09a6051","模型目录v2预留有序模型推荐","新功能","Ayaan Zaidi"),
-    ("ce19b0b","复用已准备的工具链缓存","测试","Peter Steinberger"),
-    ("5790b12","限制会话环境清理重试次数","性能优化","Peter Steinberger"),
-    ("d4e7850","复用当前会话能力facts","性能优化","Peter Steinberger"),
-    ("412eecc","活动回顾复用常驻facts","性能优化","Peter Steinberger"),
-    ("4e4473b","复用已准备的助手身份与头像","性能优化","Peter Steinberger"),
-    ("75e416f","结算时保留渠道入口声明","修复","Peter Steinberger"),
-    ("9faa93d","启动时不再读取原生插件工件","性能优化","Peter Steinberger"),
-    ("31522be","修复离开设置页时agent菜单未关闭","修复","Peter Steinberger"),
-    ("8eed7e8","精简memory/migration/utility插件","重构","Peter Steinberger"),
-    ("e518bd7","被拒操作后释放已附着的桌面","修复","Vincent Koc"),
-    ("7abc1b2","降低agent worker写入的宿主CPU占用","性能优化","Peter Steinberger"),
-    ("3a5e3be","流式传输期间跳过未使用的扩展分发","性能优化","Peter Steinberger"),
-    ("7814f26","Telegram正确识别论坛话题回复","修复","Sanjay Santhanam"),
-    ("e4515f1","精简browser与memory-core插件(第三轮)","重构","Peter Steinberger"),
-    ("1197afd","精简Apple共享Swift包","重构","Peter Steinberger"),
-    ("185e65f","浅克隆中恢复远端PR基准","修复","Peter Steinberger"),
-    ("18b0130","跟随规范的渠道协议引用","修复","Peter Steinberger"),
-    ("ca90c71","稳定浏览器依赖与会话测试夹具","修复","Peter Steinberger"),
-    ("642a463","父级导航中保留已保存的分叉","修复","Peter Steinberger"),
-    ("bc3fdea","移除已被SQLite替代的旧transcripts","修复","Peter Steinberger"),
-    ("31419ae","cron恢复不再阻塞Gateway","修复","Peter Steinberger"),
-    ("9810475","共享最终源码镜像清单","性能优化","Peter Steinberger"),
-    ("10619e2","文件工作流复用fs-safe读取器","重构","Peter Steinberger"),
-    ("a53efa5","隔离编译lint夹具与加载器服务","测试","Peter Steinberger"),
-    ("2ff07db","源码更新前检查工件所有权再停Gateway","修复","Peter Steinberger"),
-    ("cd2724e","自动化iOS与安卓商店发布流程","新功能","Josh Avant"),
-    ("11a11ef","插件路由保留回调端口","新功能","Peter Steinberger"),
-    ("813169e","允许嵌套检出中构建与lint","修复","Peter Steinberger"),
-    ("1011b10","精简auto-reply(第三轮)","重构","Peter Steinberger"),
-    ("1d10971","简化工件历史记录","重构","Peter Steinberger"),
-    ("0805a9d","会话创建期间保留排队中的设置","修复","Peter Steinberger"),
-    ("3151eb1","等待批量库存准备完成","重构","Peter Steinberger"),
-    ("2bdf870","移除低价值测试(批次d009)","测试","Peter Steinberger"),
-    ("eaf8d91","精简小型channel与access插件","重构","Peter Steinberger"),
-    ("443a067","抽取渠道入口变更内核","重构","Peter Steinberger"),
-    ("239bae9","简化文件编辑空操作规划","重构","Peter Steinberger"),
-    ("2442c30","工作区证明写入移出主线程","性能优化","Peter Steinberger"),
-    ("2a53c32","移除低价值测试(批次d016)","测试","Peter Steinberger"),
-    ("8fd72da","允许所有者在对话中直接交给agent密钥、配置与技能编辑","新功能","Ayaan Zaidi"),
-    ("35f17c7","移除低价值测试(批次d012)","测试","Peter Steinberger"),
-    ("44c9551","避免为内部运行更新重建列表索引","性能优化","Peter Steinberger"),
-    ("df4cee1","移除低价值测试(批次d015)","测试","Peter Steinberger"),
-    ("b9a4be5","避免嵌套迭代器结果作用域条目","性能优化","Peter Steinberger"),
-    ("3b829ce","恢复读worker测试的lint门禁","修复","Jason (Json)"),
-    ("468039a","创建会话时避免库存扫描","性能优化","Peter Steinberger"),
-]
+def sha_line(sha, msg, author):
+    return "[%s](https://github.com/openclaw/openclaw/commit/%s) %s — %s" % (sha, sha, msg, author)
 
-# PRs: (num, 中文概括, 作者)
+def pr_line(num, msg, author):
+    return "✅ [#%s](https://github.com/openclaw/openclaw/pull/%s) %s — %s" % (num, num, msg, author)
+
 prs = [
-    (158885,"限制写准入之外的维护规划","steipete"),
-    (158860,"移除Telegram入口目录编码","steipete"),
-    (158839,"防止并发创建会话时标签重复","steipete"),
-    (158792,"避免为内部运行更新重建列表索引","steipete"),
-    (158772,"共享ACL检查与fs-safe文件写入","steipete"),
-    (158779,"恢复前等待重试身份读取","steipete"),
-    (158771,"新会话worker写入命令减半","steipete"),
-    (158686,"精选插件分类并新增Computer use发现","Patrick-Erichsen"),
-    (158782,"会话列表不再占用Gateway线程","steipete"),
-    (158766,"加速保留运行时的准备过程","steipete"),
-    (158775,"agentsapi服务端错误后重试事件提交","sjf-oa"),
-    (152671,"外发纯文本回复去掉无空格的比较文案","leilei3167"),
-    (158769,"恢复缺失的保留捕获目录","steipete"),
-    (158773,"WAL截断繁忙时强制执行磁盘配额","steipete"),
-    (158767,"保留已取消进程夹具输入直至清理合并","fuller-stack-dev"),
-    (158774,"原生超时后合并UI页面回调","steipete"),
-    (158756,"减少活跃视图间的会话更新开销","steipete"),
-    (158443,"文件编辑不再阻塞其他会话","steipete"),
-    (158744,"改用OpenAI公司图标","Patrick-Erichsen"),
-    (158323,"释放每轮worker状态并归因worker内存","steipete"),
-    (158745,"规范官方插件图标磁贴","Patrick-Erichsen"),
-    (157497,"修复cron拒绝带调度错误计数诊断的任务","he-yufeng"),
-    (158871,"复用未变更的工具schema投影","steipete"),
-    (158616,"collector组获得独立执行通道","steipete"),
-    (158522,"库存盘点期间避免缺失元数据读取","steipete"),
-    (158477,"在worker中发现渠道入口账户","steipete"),
-    (158469,"降低聊天历史追补的CPU开销","steipete"),
+ (178407,"重构：直接读取预置配置","steipete"),
+ (178021,"新功能：在任务边界与缓存过期前自动压缩上下文","roboclaw-bot"),
+ (178390,"重构：测试夹具使用原生 owner","steipete"),
+ (178329,"修复：分配压力测试中等待必需工具","steipete"),
+ (178339,"修复：无需重启 Gateway 即可识别 Claude CLI 登录变更","steipete"),
+ (178385,"修复：出站消息遵循请求级目标规范化","steipete"),
+ (178400,"性能：嵌套仓库与外部忽略时复用差异","steipete"),
+ (178393,"修复：审计证明补上移除版本读取","steipete"),
+ (178377,"重构：移除未读取的私有运行时字段","steipete"),
+ (178363,"测试：移除低价值测试（批次 d317）","steipete"),
+ (178369,"性能：减少启动维护与会话目录数据库开销","steipete"),
+ (178337,"测试：移除低价值测试（批次 d314）","steipete"),
+ (177943,"修复：恢复期间保留安全检查与结果","joshavant"),
+ (178340,"测试：移除低价值测试（批次 d315）","steipete"),
+ (178343,"重构：会话测试使用原生资源加载器","steipete"),
+ (178344,"重构：信任预置目录与入口事实","steipete"),
+ (177942,"新功能：持久流在其授权沙箱中运行","joshavant"),
+ (178386,"文档：迁移状态目录后需重启；doctor 提示更清晰","steipete"),
+ (178341,"测试：移除低价值测试（批次 d316）","steipete"),
+ (178356,"重构：合并私有引导与显示交接","steipete"),
+ (178352,"重构：删除未使用的插件兼容清单","steipete"),
+ (178354,"修复：Twitch 探测前等待认证完成","steipete"),
+ (178345,"重构：移除未读取的私有 owner 投影","steipete"),
+ (178301,"修复：更新报告指明失败原因且不暴露私有数据","steipete"),
 ]
 
-CAT_ORDER = ["新功能","修复","性能优化","重构","文档","测试","构建","杂项","其他"]
-CAT_EMOJI = {"新功能":"✨","修复":"🐛","性能优化":"⚡","重构":"♻️","文档":"📝","测试":"🧪","构建":"🔧","杂项":"🔨","其他":"📦"}
-
-date_str = "2026-09-26"
-elements = []
-
-pr_lines = [f"✅ [#{n}](https://github.com/openclaw/openclaw/pull/{n}) {t} — {a}" for n,t,a in prs]
-elements.append({"tag":"div","text":{"tag":"lark_md","content":f"**🔀 合并请求（{len(prs)}个）**\n"+"\n".join(pr_lines)}})
-
-groups = {}
-for sha,t,cat,author in commits:
-    groups.setdefault(cat,[]).append(f"[{sha}](https://github.com/openclaw/openclaw/commit/{sha}) {t} — {author}")
-commit_md = [f"**📊 代码提交（{len(commits)}条）**"]
-for cat in CAT_ORDER:
-    if cat in groups:
-        commit_md.append(f"{CAT_EMOJI[cat]} **{cat}**（{len(groups[cat])}）")
-        commit_md.extend(groups[cat])
-elements.append({"tag":"div","text":{"tag":"lark_md","content":"\n".join(commit_md)}})
-
-authors = {}
-for _,_,_,a in commits:
-    authors[a] = authors.get(a,0)+1
-author_str = "、".join(f"{n}({c})" for n,c in sorted(authors.items(), key=lambda x:-x[1]))
-elements.append({"tag":"hr"})
-elements.append({"tag":"div","text":{"tag":"lark_md","content":f"**👥 贡献者**: {author_str}"}})
-elements.append({"tag":"note","elements":[{"tag":"plain_text","content":f"openclaw/openclaw 仓库日报 · {date_str}"}]})
-
-card = {
-    "config":{"wide_screen_mode":True},
-    "header":{"template":"purple","title":{"tag":"plain_text","content":f"🐙 OpenClaw 仓库日报 - {date_str}"}},
-    "elements":elements,
+commits = {
+"✨ 新功能": [
+ ("68efa3d9986842255fe78ef17cbc2e894a554ac0","新功能：在任务边界与缓存过期前自动压缩上下文","RoboClaw"),
+ ("a11879cd40f6f0a91fbb0306f680c67c5e5a4269","新功能：持久 cron 流在授权沙箱中运行","Josh Avant"),
+ ("8e4c7a0f23d00e159f513a47c48d1148a0c265f5","新功能：持久主机流需知情批准后授权","Josh Avant"),
+],
+"🛠 修复": [
+ ("2d03d5632a69d04181844f85b05d5509240dcc14","修复：出站消息遵循请求级目标规范化","Peter Steinberger"),
+ ("906e0b06be92f6b17d5e5dcfe3044b4e9b9b277d","修复：恢复期间保留安全检查与结果","Josh Avant"),
+ ("2d40bdf8da9c86ae6a5c32af1db4311ab360b827","修复：Twitch 探测前等待认证完成","Peter Steinberger"),
+ ("f6427568d96deb91f6501d48bdb3f1709089aaea","修复：更新报告指明失败原因且不暴露私有数据","Peter Steinberger"),
+ ("28d696e6ede1d2756c759a1242c0df7ce9e92c07","修复：允许在已有对话中提及访客","Shakker"),
+ ("2f4b1783e1bf6f8ddd6a497a5723cab944ecd3bd","修复：Gateway 关机排空等待保持单调","Peter Steinberger"),
+ ("8b818b8fe9ea47f483dab086630aa99d424e647b","修复：模型可用性识别原生 CLI 登录","Peter Steinberger"),
+ ("73dc02db0a8a2993d916eb4e8de1896c6e337b2b","修复：SQLite 临时锁竞争时重试启动恢复","Peter Steinberger"),
+ ("f0ad815092d4acd4ea81dd4d6a6a49572b50a4e2","修复：退出 Google Meet 会议时关闭工具创建的标签页","Peter Steinberger"),
+ ("4adcfea0900c8f51d6c6c990798c73d3473d1f2f9b","修复：分配压力测试中等待必需工具","Peter Steinberger"),
+ ("e449e9ad3fcd44f013a1dc577d871ff0cb6dcee4","修复：解决附件缺失与媒体数量限制阻塞 Google Chat","Peter Steinberger"),
+ ("3e517e9eb12d6c5697a2974ae7ac38da092cb3ca","修复：恢复对已确认人类提及的收件箱投递","Shakker"),
+],
+"⚡ 性能优化": [
+ ("aa7fc04fe0e2c582982bd8b04f15a86bcc6e6d8a","性能：嵌套仓库与外部忽略时复用差异","Peter Steinberger"),
+ ("d53309cd8ea4d0761fec3ac81ae73290b81e569a","性能：减少启动维护与目录读取","Peter Steinberger"),
+ ("729f30224f07a0c68ccfe17ab2b53288de75372d","性能：保留已完成的迁移就绪状态","Peter Steinberger"),
+],
+"♻️ 重构": [
+ ("8f2586bcbecee5d4a14473d37b506767a83a67c8","重构：直接读取预置配置","Peter Steinberger"),
+ ("3ecfdb717de626397c46e9f3567b45b05b9ac055","重构：测试夹具使用原生 owner","Peter Steinberger"),
+ ("42a73b62bb18abd0dc6b68fca0daf50f62331f79","重构：移除未读取的私有运行时字段","Peter Steinberger"),
+ ("8fe652f7cef3a1901eb6b916ec002bef90d9598","重构：会话测试使用原生资源加载器","Peter Steinberger"),
+ ("f1500699bdd0218345c803e5a6d3d0f0d55a02d8","重构：信任预置目录与入口事实","Peter Steinberger"),
+ ("98bb32b30f2d9c7b10f64526c65bc1967180a2c3","重构：合并私有引导与显示交接","Peter Steinberger"),
+ ("114ab00601d83d0df51a75d70ca171ad7c7169ec","重构：删除未使用的插件兼容清单","Peter Steinberger"),
+ ("7d46d4197c47f5c42fb9263c268857f53fcf824f","重构：移除未读取的私有 owner 投影","Peter Steinberger"),
+ ("a52ba4f23834749cb75fab7db36473aa91e667a2","重构：测试使用规范的 Docker 拉取类型","Peter Steinberger"),
+ ("40185dd87c2e43a49614e8bf4543727c0d8d65c7","重构：核心与 QA 复用运行时 owner","Peter Steinberger"),
+ ("f1fd15fed562277f1ecf76c74f873590f6bdc659","重构：移除未使用的证明与契约导出","Peter Steinberger"),
+ ("d8c96213c5cf40295863fb5fb6d347e1f9caf6b7","重构：移除未读取的私有生产者结果","Peter Steinberger"),
+ ("3213e3e542c5658f4095d08942f2636e6a40153b","重构：统一配置模型组装","Peter Steinberger"),
+ ("ff495873081c508206bc1dda4072fddf63eb6a5f","重构：信任迁移写入后像","Peter Steinberger"),
+ ("c518cbdbd0e5baa49d5e900662d484e6bae9144d","重构：私有发现包并入现有 owner","Peter Steinberger"),
+],
+"📚 文档": [
+ ("9ab34fa57bdcf6271aa0bbda33d4a47d5464bb9a","文档：迁移状态目录后需重启；优化 doctor 提示","Peter Steinberger"),
+],
+"🧪 测试": [
+ ("4ac4a4c541bf8d8850e6f8eee09473d515c08921","测试：移除低价值测试（批次 d317）","Peter Steinberger"),
+ ("898c2fca7caa96753c03bab5cfb575dfe88e5c13","测试：审计证明包含移除版本读取","Peter Steinberger"),
+ ("5c5bd2eaf0b3aa753a9adda0d634d091f0e9150c","测试：等待后续工作区声明释放","Peter Steinberger"),
+ ("85e7a9b6cfb46448c9a6d6fe8aa9702f4bbf3463","测试：移除低价值测试（批次 d314）","Peter Steinberger"),
+ ("0784da52a55c438e2abc5f15c2383f61d7d8337","测试：移除低价值测试（批次 d315）","Peter Steinberger"),
+ ("cbfaa0d8b7dfb9b55aabd5db6fbe42c468036f35","测试：移除低价值测试（批次 d316）","Peter Steinberger"),
+ ("f428baadf3d6e59faecebe43f2dd15e48f07ebe9","测试：移除低价值测试（批次 d313）","Peter Steinberger"),
+ ("95f3324f71767e0f424a579c2f88f3f9458344cf","测试：目录获取失败时输出诊断","Peter Steinberger"),
+ ("017eaef0491b2447985b5bb81a4cfed2d3b5ced4","测试：隔离移动发布路由子进程","Peter Steinberger"),
+ ("8318dc331a6b657213d12e8bb9d0080f7c2619f6","测试：移除低价值测试（批次 d311）","Peter Steinberger"),
+ ("1ff58cefbe8d69c1ac833d435b19afe413262a94","测试：移除低价值测试（批次 d310）","Peter Steinberger"),
+ ("fa09d910c399798c879ab96a75a04c35653889b","测试：Stop 断言期间保留子进程终止权","Peter Steinberger"),
+ ("02b58b2bc87bc84986feb89d195cf0775354d26c","测试：会话文件缓存淘汰确定性化","Peter Steinberger"),
+ ("80afbe1b7950116b6d55c55c7c7d4bc5fd01330","测试：覆盖重连时的头部重命名","Peter Steinberger"),
+ ("a4893de9275a789efea7cef33bfd847b06ea5b1f","测试：提供预演 agent 名册","Peter Steinberger"),
+],
+"📦 杂项": [
+ ("9b3ebd7f5a2772f187907dfa859ba6f3dbf7b5f3","杂项：刷新控制界面多语言","openclaw-mantis[bot]"),
+],
 }
 
-with open("/root/.openclaw/workspace/notify/tmp/card.json","w") as f:
-    json.dump(card,f,ensure_ascii=False)
+md = "**🔀 合并请求（近 24 小时共 %d 个）**\n" % len(prs)
+for n,m,a in prs: md += pr_line(n,m,a)+"\n"
+md += "\n**📊 代码提交（按类别，共 50 条）**\n"
+total_c = 0
+for cat, items in commits.items():
+    md += "\n**%s（%d）**\n" % (cat, len(items))
+    for sha,m,a in items:
+        md += sha_line(sha,m,a)+"\n"
+        total_c += 1
+md += "\n**👥 贡献者统计（%d 条提交）**\nPeter Steinberger 43 次 · Josh Avant 3 次 · Shakker 2 次 · RoboClaw 1 次 · openclaw-mantis[bot] 1 次" % total_c
 
-tok_res = subprocess.run(["curl","-s","-X","POST",
-    "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
-    "-H","Content-Type: application/json",
-    "-d",json.dumps({"app_id":"cli_a91476e0a5f8dbc0","app_secret":"CRV8phtp1hTE7sz5tpwlCfGXnaIEvWCV"})],
-    capture_output=True,text=True).stdout
-token = json.loads(tok_res).get("tenant_access_token")
-print("token:", "OK" if token else "FAIL: "+tok_res[:200])
+card = {
+  "config": {"wide_screen_mode": True},
+  "header": {"template": "purple", "title": {"tag": "plain_text", "content": "🐙 OpenClaw 仓库日报 - 2026-10-20"}},
+  "elements": [
+    {"tag": "div", "text": {"tag": "lark_md", "content": md}},
+    {"tag": "note", "elements": [{"tag": "plain_text", "content": "数据区间：2026-10-19 13:00 UTC 至 2026-10-20 13:00 UTC"}]}
+  ]
+}
 
-payload = json.dumps({"receive_id":"ou_7172afb8fa3c2f51bb02b6af097a4b27","msg_type":"interactive","content":json.dumps(card,ensure_ascii=False)})
-send_res = subprocess.run(["curl","-s","-X","POST",
-    "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id",
-    "-H",f"Authorization: Bearer {token}","-H","Content-Type: application/json",
-    "-d",payload],capture_output=True,text=True).stdout
-print("send:", send_res[:300])
-
-try:
-    if json.loads(send_res).get("code") == 0:
-        state = {"lastSha":"bde1d5fae5976acd64c04902af82c9a866100f3f","lastDate":"2026-09-26","lastRun":"2026-09-26T13:00:00Z"}
-        with open("/root/.openclaw/workspace/scripts/github-monitor-state.json","w") as f:
-            json.dump(state,f,indent=2,ensure_ascii=False)
-        print("state updated")
-except Exception as e:
-    print("state update skipped:", e)
+cmd = ["openclaw","message","send","--channel","feishu","--target","user:ou_7172afb8fa3c2f51bb02b6af097a4b27","--card",json.dumps(card,ensure_ascii=False)]
+r = subprocess.run(cmd, capture_output=True, text=True)
+print("RC", r.returncode)
+print(r.stdout); print(r.stderr)
